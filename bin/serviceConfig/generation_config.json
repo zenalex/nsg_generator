@@ -1,0 +1,23 @@
+{
+  "cSharpPath": "codeNET",
+  "cSharpNamespace": "Wfrs.Server",
+  "dartPath": "codeDart",
+  "controller":[
+  {
+    "api_prefix": "Api/Data",
+    "class_name": "DataController",
+    "dataType": "NsgDataItem",
+    "serverUri": "http://alex.nsgsoft.ru:5073",
+    "method": [
+      {
+        "name": "GetNews",
+        "description" : "Get news",
+        "api_prefix": "GetNews",
+        "authorize": "anonymous",
+        "type": "post",
+        "dataTypeFile": "newsItem.json"
+      }
+    ]
+  }
+  ]
+}

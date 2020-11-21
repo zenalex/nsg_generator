@@ -1,0 +1,31 @@
+{
+    "typeName": "NewsItem",
+    "fields":[
+      {
+        "name": "Id",
+        "type": "String",
+        "isPrimary": "true"
+      },
+      {
+        "name": "Date",
+        "type": "Date"
+      },
+      {
+        "name": "Title",
+        "type": "String"
+      },
+      {
+        "name": "Text",
+        "type": "String"
+      },
+      {
+        "name": "ImageUri",
+        "type": "Image",
+        "api_prefix": "/Api/Data/Image/"
+      },
+      {
+        "name": "Link",
+        "type": "String"
+      }
+    ]
+}
