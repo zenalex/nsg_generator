@@ -5,15 +5,25 @@ class NsgGenDataItemField {
   final String type;
   final String apiPrefix;
   final bool isPrimary;
+  final String referenceName;
+  final String referenceType;
 
-  NsgGenDataItemField({this.name, this.type, this.apiPrefix, this.isPrimary});
+  NsgGenDataItemField(
+      {this.name,
+      this.type,
+      this.apiPrefix,
+      this.isPrimary,
+      this.referenceName,
+      this.referenceType});
 
   factory NsgGenDataItemField.fromJson(Map<String, dynamic> parsedJson) {
     return NsgGenDataItemField(
         name: parsedJson['name'],
         type: parsedJson['type'],
         apiPrefix: parsedJson['api_prefix'],
-        isPrimary: parsedJson['isPrimary'] == 'true');
+        isPrimary: parsedJson['isPrimary'] == 'true',
+        referenceName: parsedJson['referenceName'],
+        referenceType: parsedJson['referenceType']);
   }
 
   String get dartName => NsgGenerator.generator.getDartName(name);
@@ -35,7 +45,7 @@ class NsgGenDataItemField {
     } else if (type == 'Image') {
       return 'NsgDataImageField';
     } else if (type == 'Reference') {
-      return 'NsgDataReferencedField';
+      return 'NsgDataReferenceField';
     } else {
       print("get nsgDataType for field tye $type doesn't found");
       throw Exception();
@@ -59,14 +69,26 @@ class NsgGenDataItemField {
       codeList.add('  else {');
       codeList.add('    return s;}');
       codeList.add('}');
+    } else if (type == 'Reference') {
+      codeList.add(
+          'String get $dartName => getFieldValue($fieldNameVar).toString();');
+      codeList.add(
+          '$referenceType get $referenceName => getReferent<$referenceType>($fieldNameVar);');
+      codeList.add('Future<$referenceType> ${referenceName}Async() async {');
+      codeList.add(
+          ' return await getReferentAsync<$referenceType>($fieldNameVar);');
+      codeList.add('}');
     } else {
-      print("write getter for field tye $type doesn't found");
+      print("write getter for field type $type doesn't found");
       throw Exception();
     }
   }
 
   void writeSetter(List<String> codeList) {
     if (type == 'Image') {
+      codeList.add(
+          'set $dartName(String value) => setFieldValue($fieldNameVar, value);');
+    } else if (type == 'Reference') {
       codeList.add(
           'set $dartName(String value) => setFieldValue($fieldNameVar, value);');
     } else {

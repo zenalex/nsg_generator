@@ -28,7 +28,7 @@ class NsgGenerator {
   String get genPathName => 'generated';
   String get dartPathGen => dartPath + '/' + genPathName;
 
-  void writeCode(String path) async {
+  Future writeCode(String path) async {
     jsonPath = path;
     var dir = Directory(cSharpPath);
     await dir.create();
@@ -40,10 +40,14 @@ class NsgGenerator {
     await generateCode();
   }
 
-  void generateCode() async {
-    controllers.forEach((element) {
-      element.load(this);
-      element.generateCode(this);
+  Future generateCode() async {
+    await Future.forEach<NsgGenController>(controllers, (element) async {
+      print('loading ${element.class_name}');
+      await element.load(this);
+    });
+    await Future.forEach<NsgGenController>(controllers, (element) async {
+      print('generating ${element.class_name}');
+      await element.generateCode(this);
     });
   }
 

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 
 import 'nsgGenMethod.dart';
 import 'nsgGenerator.dart';
@@ -54,8 +55,9 @@ class NsgGenController {
     codeList.add('      #endif');
     codeList.add('    }');
 
-    methods.forEach(
-        (element) => element.generateCode(codeList, nsgGenerator, this));
+    await Future.forEach<NsgGenMethod>(methods, (element) async {
+      await element.generateCode(codeList, nsgGenerator, this);
+    });
 
     codeList.add('  }');
     codeList.add('}');
@@ -67,16 +69,18 @@ class NsgGenController {
   }
 
   void load(NsgGenerator nsgGenerator) async {
-    methods.forEach((element) {
-      element.loadGenDataItem(nsgGenerator);
+    print('load Controller ${class_name} start');
+    await Future.forEach<NsgGenMethod>(methods, (element) async {
+      await element.loadGenDataItem(nsgGenerator);
     });
+    print('load ${class_name} finished');
   }
 
   void generateCodeDart(NsgGenerator nsgGenerator) async {
     //Init controller initialization
     await generateInitController(nsgGenerator);
-    methods.forEach((_) {
-      _.generateCodeDart(nsgGenerator, this);
+    await Future.forEach<NsgGenMethod>(methods, (_) async {
+      await _.generateCodeDart(nsgGenerator, this);
     });
     await generateExportFile(nsgGenerator);
   }
@@ -95,12 +99,16 @@ class NsgGenController {
   }
 
   Future generateInitController(NsgGenerator nsgGenerator) async {
+    //----------------------------------------------------------
+    //generate service class ControllerName.g.dart
+    //----------------------------------------------------------
     var codeList = <String>[];
     codeList.add("import 'package:get/get.dart';");
     codeList.add("import 'package:nsg_data/nsg_data.dart';");
-    codeList.add("import '${nsgGenerator.getDartName(class_name)}Model.dart';");
+    codeList
+        .add("import '../${nsgGenerator.getDartName(class_name)}Model.dart';");
     codeList.add('');
-    codeList.add('class ${class_name} extends GetxController');
+    codeList.add('class ${class_name}_g extends GetxController');
     codeList.add('    with StateMixin<NsgBaseControllerData> {');
     codeList.add('  NsgDataProvider provider;');
     codeList.add('  @override');
@@ -125,6 +133,22 @@ class NsgGenController {
 
     codeList.add('}');
 
+    await File('${nsgGenerator.dartPathGen}/${class_name}.g.dart')
+        .writeAsString(codeList.join('\n'));
+
+    //----------------------------------------------------------
+    //generate main class ControllerName.dart
+    //----------------------------------------------------------
+    codeList = <String>[];
+    codeList.add("import '${nsgGenerator.getDartName(class_name)}Model.dart';");
+    codeList.add("import '${nsgGenerator.genPathName}/${class_name}.g.dart';");
+    codeList.add('');
+    codeList.add('class ${class_name} extends ${class_name}_g {');
+    codeList.add('  @override');
+    codeList.add('  Future loadData() async {}');
+
+    codeList.add('}');
+
     await File('${nsgGenerator.dartPath}/${class_name}.dart')
         .writeAsString(codeList.join('\n'));
   }
@@ -132,6 +156,9 @@ class NsgGenController {
   void addRegisterDataItems(NsgGenerator nsgGenerator, List<String> codeList) {
     methods.forEach((_) {
       codeList.add('      NsgDataClient.client');
+      if (_.genDataItem == null) {
+        print('${_.name}.genDataItem == null');
+      }
       codeList.add(
           '       .registerDataItem(${_.genDataItem.typeName}(), remoteProvider: provider);');
     });

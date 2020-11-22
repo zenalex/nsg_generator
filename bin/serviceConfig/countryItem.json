@@ -1,0 +1,18 @@
+{
+    "typeName": "CountryItem",
+    "fields":[
+      {
+        "name": "Id",
+        "type": "String",
+        "isPrimary": "true"
+      },
+      {
+        "name": "Title",
+        "type": "String"
+      },
+      {
+        "name": "CountryCode",
+        "type": "String"
+      }
+    ]
+}

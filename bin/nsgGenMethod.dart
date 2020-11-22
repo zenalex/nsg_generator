@@ -34,7 +34,7 @@ class NsgGenMethod {
     );
   }
 
-  void generateCode(List<String> codeList, NsgGenerator nsgGenerator,
+  Future generateCode(List<String> codeList, NsgGenerator nsgGenerator,
       NsgGenController controller) async {
     codeList.add('    /// <summary>');
     codeList.add('    /// $description');
@@ -67,15 +67,17 @@ class NsgGenMethod {
   }
 
   Future loadGenDataItem(NsgGenerator nsgGenerator) async {
+    print('$name genDataItem initializing');
     var text =
         await File('${nsgGenerator.jsonPath}/${dataTypeFlie}').readAsString();
     genDataItem = NsgGenDataItem.fromJson(json.decode(text));
+    print('$name genDataItem initialized');
   }
 
-  void generateCodeDart(
-      NsgGenerator nsgGenerator, NsgGenController nsgGenController) {
+  Future generateCodeDart(
+      NsgGenerator nsgGenerator, NsgGenController nsgGenController) async {
     if (genDataItem != null) {
-      genDataItem.generateCodeDart(nsgGenerator, nsgGenController, this);
+      await genDataItem.generateCodeDart(nsgGenerator, nsgGenController, this);
     }
   }
 }

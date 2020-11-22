@@ -1,0 +1,20 @@
+{
+    "typeName": "CityItem",
+    "fields":[
+      {
+        "name": "Id",
+        "type": "String",
+        "isPrimary": "true"
+      },
+      {
+        "name": "Title",
+        "type": "String"
+      },
+      {
+        "name": "CountryId",
+        "type": "Reference",
+        "referenceName": "CountryId",
+        "referenceType": "CountryItem"
+      }
+    ]
+}

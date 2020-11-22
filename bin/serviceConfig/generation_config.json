@@ -1,7 +1,7 @@
 {
   "cSharpPath": "codeNET",
   "cSharpNamespace": "Wfrs.Server",
-  "dartPath": "codeDart",
+  "dartPath": "f:/Projects2010/flutter1/codogeneration_test/lib/model",
   "controller":[
   {
     "api_prefix": "Api/Data",
@@ -14,8 +14,32 @@
         "description" : "Get news",
         "api_prefix": "GetNews",
         "authorize": "anonymous",
-        "type": "post",
+        "type": "get",
         "dataTypeFile": "newsItem.json"
+      },
+      {
+        "name": "GetCard",
+        "description" : "Get card",
+        "api_prefix": "GetCard",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "cardItem.json"
+      },
+      {
+        "name": "GetCity",
+        "description" : "Get cities",
+        "api_prefix": "GetCity",
+        "authorize": "anonymous",
+        "type": "get",
+        "dataTypeFile": "cityItem.json"
+      },
+      {
+        "name": "GetCountry",
+        "description" : "Get countries",
+        "api_prefix": "GetCountry",
+        "authorize": "anonymous",
+        "type": "get",
+        "dataTypeFile": "countryItem.json"
       }
     ]
   }

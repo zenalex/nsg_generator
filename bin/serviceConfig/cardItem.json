@@ -1,0 +1,26 @@
+{
+    "typeName": "CardItem",
+    "fields":[
+      {
+        "name": "Id",
+        "type": "String",
+        "isPrimary": "true"
+      },
+      {
+        "name": "CardNumber",
+        "type": "String"
+      },
+      {
+        "name": "Title",
+        "type": "String"
+      },
+      {
+        "name": "IssueDate",
+        "type": "Date"
+      },
+      {
+        "name": "ValidUntil",
+        "type": "Date"
+      }
+    ]
+}

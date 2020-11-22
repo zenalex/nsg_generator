@@ -12,7 +12,7 @@ void startGenerator() async {
   var text = await readFile(path);
   var generator = NsgGenerator.fromJson(json.decode(text));
   print('controllers: ${generator.controllers.length}');
-  generator.writeCode(path);
+  await generator.writeCode(path);
 }
 
 Future<String> readFile(String path) async {
