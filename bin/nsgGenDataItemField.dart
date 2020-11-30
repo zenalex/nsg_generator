@@ -40,8 +40,10 @@ class NsgGenDataItemField {
       return 'NsgDataStringField';
     } else if (type == 'Date') {
       return 'NsgDataDateField';
-    } else if (type == 'Int') {
+    } else if (type == 'int') {
       return 'NsgDataIntField';
+    } else if (type == 'double') {
+      return 'NsgDataDoubleField';
     } else if (type == 'Image') {
       return 'NsgDataImageField';
     } else if (type == 'Reference') {
@@ -59,8 +61,12 @@ class NsgGenDataItemField {
     } else if (type == 'Date') {
       codeList.add(
           '$dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
-    } else if (type == 'Int') {
-      codeList.add('$dartType get $dartName => getFieldValue($fieldNameVar);');
+    } else if (type == 'int') {
+      codeList.add(
+          '$dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
+    } else if (type == 'double') {
+      codeList.add(
+          '$dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
     } else if (type == 'Image') {
       codeList.add('String get $dartName {');
       codeList.add('  var s = getFieldValue($fieldNameVar).toString();');

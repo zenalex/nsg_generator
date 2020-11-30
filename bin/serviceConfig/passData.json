@@ -1,0 +1,30 @@
+{
+    "typeName": "PassData",
+    "fields":[
+      {
+        "name": "number",
+        "type": "String",
+        "isPrimary": "true"
+      },
+      {
+        "name": "IssueDate",
+        "type": "Date"
+      },
+      {
+        "name": "IssueBy",
+        "type": "String"
+      },
+      {
+        "name": "FirstName",
+        "type": "String"
+      },
+      {
+        "name": "SecondName",
+        "type": "String"
+      },
+      {
+        "name": "LastName",
+        "type": "String"
+      }
+    ]
+}

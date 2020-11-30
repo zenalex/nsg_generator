@@ -33,8 +33,10 @@ class NsgGenDataItem {
     codeList.add('  }');
     codeList.add('}');
 
-    await File('${nsgGenerator.cSharpPath}/${typeName}.cs')
-        .writeAsString(codeList.join('\n'));
+    var fn = '${nsgGenerator.cSharpPath}/${typeName}.cs';
+    //if (!File(fn).existsSync()) {
+    await File(fn).writeAsString(codeList.join('\n'));
+    //}
   }
 
   Future generateCodeDart(NsgGenerator nsgGenerator,
@@ -49,9 +51,10 @@ class NsgGenDataItem {
     codeList.add("import 'package:nsg_data/nsg_data.dart';");
     codeList.add(
         "import '../${nsgGenerator.getDartName(nsgGenController.class_name)}Model.dart';");
-    codeList.add('class ${typeName}_g extends NsgDataItem {');
+    codeList.add('class ${typeName}Generated extends NsgDataItem {');
     fields.forEach((_) {
-      codeList.add(" static const ${_.fieldNameVar} = '${_.name}';");
+      codeList.add(
+          " static const ${_.fieldNameVar} = '${nsgGenerator.getDartName(_.name)}';");
     });
     codeList.add('');
     codeList.add('  @override');
@@ -70,6 +73,13 @@ class NsgGenDataItem {
       _.writeGetter(codeList);
       _.writeSetter(codeList);
     });
+    codeList.add('');
+    codeList.add('  @override');
+    codeList.add('  String get apiRequestItems {');
+    codeList.add(
+        "    return '${nsgGenController.api_prefix}/${nsgGenMethod.apiPrefix}';");
+    codeList.add('  }');
+
     codeList.add('}');
 
     await File('${nsgGenerator.dartPathGen}/${typeName}.g.dart')
@@ -80,10 +90,12 @@ class NsgGenDataItem {
     codeList = <String>[];
     codeList.add("import '${nsgGenerator.genPathName}/${typeName}.g.dart';");
     codeList.add('');
-    codeList.add('class ${typeName} extends ${typeName}_g {');
+    codeList.add('class ${typeName} extends ${typeName}Generated {');
     codeList.add('}');
 
-    await File('${nsgGenerator.dartPath}/${typeName}.dart')
-        .writeAsString(codeList.join('\n'));
+    var fn = '${nsgGenerator.dartPath}/${typeName}.dart';
+    if (!File(fn).existsSync()) {
+      await File(fn).writeAsString(codeList.join('\n'));
+    }
   }
 }

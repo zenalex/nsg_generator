@@ -31,8 +31,13 @@ class NsgGenController {
 
   void generateCode(NsgGenerator nsgGenerator) async {
     var codeList = <String>[];
-    codeList.add('using System.Net.Http;');
-    codeList.add('using System.Web.Http;');
+    codeList.add('using Microsoft.AspNetCore.Mvc;');
+    codeList.add('using Microsoft.Extensions.Logging;');
+    codeList.add('using System;');
+    codeList.add('using System.Collections.Generic;');
+    codeList.add('using System.Linq;');
+    codeList.add('using System.Threading.Tasks;');
+    codeList.add('using Microsoft.AspNetCore.Authorization;');
     codeList.add('using ${nsgGenerator.cSharpNamespace};');
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
@@ -40,32 +45,67 @@ class NsgGenController {
     codeList.add('  /// <summary>');
     codeList.add('  ///${dataType}Interface Controller');
     codeList.add('  /// </summary>');
-    codeList.add('  [RoutePrefix("${api_prefix}")]');
-    codeList.add('  public class ${class_name} : ApiController');
+    codeList.add('  [ApiController]');
+    codeList.add('  [Route("${api_prefix}")]');
+    codeList.add('  public class ${class_name} : ControllerBase');
     codeList.add('  {');
 
-    codeList.add('    DataSource controller;');
-    codeList.add('    public ${class_name}()');
-    codeList.add('    {');
+    codeList.add('    ${class_name}Interface controller;');
 
+    codeList.add('    private readonly ILogger<${class_name}> _logger;');
+    codeList.add('    public ${class_name}(ILogger<${class_name}> logger)');
+    codeList.add('    {');
+    codeList.add('      _logger = logger;');
     codeList.add('      #if (Real)');
-    codeList.add('        controller = new Real_${class_name}();');
+    codeList.add('        controller = new ${class_name}Real();');
     codeList.add('      #else');
-    codeList.add('        controller = new fake_${class_name}();');
+    codeList.add('        controller = new ${class_name}Mock();');
     codeList.add('      #endif');
     codeList.add('    }');
+    codeList.add('    ');
 
     await Future.forEach<NsgGenMethod>(methods, (element) async {
-      await element.generateCode(codeList, nsgGenerator, this);
+      await element.generateCode(codeList, nsgGenerator, this, element);
     });
 
     codeList.add('  }');
     codeList.add('}');
 
-    await File('${nsgGenerator.cSharpPath}/${class_name}.cs')
-        .writeAsString(codeList.join('\n'));
-
+    var fn = '${nsgGenerator.cSharpPath}/${class_name}.cs';
+    //if (!File(fn).existsSync()) {
+    await File(fn).writeAsString(codeList.join('\n'));
+    //}
+    await generateInterfaceData(nsgGenerator);
     await generateCodeDart(nsgGenerator);
+  }
+
+  void generateInterfaceData(NsgGenerator nsgGenerator) async {
+    var codeList = <String>[];
+    codeList.add('using System;');
+    codeList.add('using System.Collections.Generic;');
+    codeList.add('using System.IO;');
+    codeList.add('using System.Net;');
+    codeList.add('using System.Net.Http;');
+    codeList.add('using System.Net.Http.Headers;');
+    codeList.add('using ${nsgGenerator.cSharpNamespace};');
+    codeList.add('');
+    codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
+    codeList.add('{');
+    codeList.add('  public interface ${class_name}Interface');
+    codeList.add('  {');
+
+    methods.forEach((_) {
+      codeList.add(
+          '    public IEnumerable<${_.genDataItem.typeName}> ${_.name}();');
+    });
+
+    codeList.add('  }');
+    codeList.add('}');
+
+    var fn = '${nsgGenerator.cSharpPath}/${class_name}Interface.cs';
+    //if (!File(fn).existsSync()) {
+    await File(fn).writeAsString(codeList.join('\n'));
+    //}
   }
 
   void load(NsgGenerator nsgGenerator) async {
@@ -108,7 +148,7 @@ class NsgGenController {
     codeList
         .add("import '../${nsgGenerator.getDartName(class_name)}Model.dart';");
     codeList.add('');
-    codeList.add('class ${class_name}_g extends GetxController');
+    codeList.add('class ${class_name}Generated extends GetxController');
     codeList.add('    with StateMixin<NsgBaseControllerData> {');
     codeList.add('  NsgDataProvider provider;');
     codeList.add('  @override');
@@ -143,14 +183,16 @@ class NsgGenController {
     codeList.add("import '${nsgGenerator.getDartName(class_name)}Model.dart';");
     codeList.add("import '${nsgGenerator.genPathName}/${class_name}.g.dart';");
     codeList.add('');
-    codeList.add('class ${class_name} extends ${class_name}_g {');
+    codeList.add('class ${class_name} extends ${class_name}Generated {');
     codeList.add('  @override');
     codeList.add('  Future loadData() async {}');
 
     codeList.add('}');
 
-    await File('${nsgGenerator.dartPath}/${class_name}.dart')
-        .writeAsString(codeList.join('\n'));
+    var fn = '${nsgGenerator.dartPath}/${class_name}.dart';
+    if (!File(fn).existsSync()) {
+      await File(fn).writeAsString(codeList.join('\n'));
+    }
   }
 
   void addRegisterDataItems(NsgGenerator nsgGenerator, List<String> codeList) {

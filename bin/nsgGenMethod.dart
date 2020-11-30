@@ -35,17 +35,20 @@ class NsgGenMethod {
   }
 
   Future generateCode(List<String> codeList, NsgGenerator nsgGenerator,
-      NsgGenController controller) async {
+      NsgGenController controller, NsgGenMethod method) async {
     codeList.add('    /// <summary>');
     codeList.add('    /// $description');
     codeList.add('    /// </summary>');
     codeList.add('    [Route("$apiPrefix")]');
     //Authorization
     if (authorize == 'anonymous') {
-      codeList.add('    [System.Web.Http.Authorize]');
+      codeList.add('    [Authorize]');
     }
     if (authorize == 'user') {
-      codeList.add('    [System.Web.Http.Authorize(Roles = UserRoles.User)]');
+      codeList.add('    [Authorize(Roles = UserRoles.User)]');
+    }
+    if (authorize != 'none') {
+      throw Exception('Wrong authorization type in method ${method.name}()');
     }
     //POST or GET
     var apiType = '';
@@ -53,11 +56,16 @@ class NsgGenMethod {
     if (type == 'post') apiType = 'HttpPost';
     codeList.add('    [$apiType]');
 
-    codeList.add('    public IHttpActionResult $name()');
+    codeList.add(
+        '    public IEnumerable<${method.genDataItem.typeName}> ${method.name}()');
     codeList.add('    {');
-    codeList
-        .add('      var user = AuthImplReal.GetUserSettingsByToken(Request);');
-    codeList.add('      return Ok(controller.$name(user));');
+    if (authorize != 'none') {
+      codeList.add(
+          '      var user = AuthImplReal.GetUserSettingsByToken(Request);');
+      codeList.add('      return controller.${method.name}(user);');
+    } else {
+      codeList.add('      return controller.${method.name}();');
+    }
     codeList.add('    }');
     codeList.add('');
 

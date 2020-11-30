@@ -1,0 +1,93 @@
+{
+  "cSharpPath": "f:/Projects2010/flutterServer/WFRS.serverCore/WFRS.serverCore/Models",
+  "cSharpNamespace": "Wfrs.Server",
+  "dartPath": "f:/Projects2010/flutter1/codogeneration_test/lib/model",
+  "controller":[
+  {
+    "api_prefix": "Api/Data",
+    "class_name": "DataController",
+    "dataType": "NsgDataItem",
+    "serverUri": "http://alex.nsgsoft.ru:5073",
+    "method": [
+      {
+        "name": "GetNews",
+        "description" : "Get news",
+        "api_prefix": "GetNews",
+        "authorize": "anonymous",
+        "type": "get",
+        "dataTypeFile": "newsItem.json"
+      },
+      {
+        "name": "GetCard",
+        "description" : "Get card",
+        "api_prefix": "GetCard",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "cardItem.json"
+      },
+      {
+        "name": "GetCity",
+        "description" : "Get cities",
+        "api_prefix": "GetCity",
+        "authorize": "anonymous",
+        "type": "get",
+        "dataTypeFile": "cityItem.json"
+      },
+      {
+        "name": "GetCountry",
+        "description" : "Get countries",
+        "api_prefix": "GetCountry",
+        "authorize": "anonymous",
+        "type": "get",
+        "dataTypeFile": "countryItem.json"
+      },
+      {
+        "name": "GetEvent",
+        "description" : "Get events",
+        "api_prefix": "GetEvent",
+        "authorize": "anonymous",
+        "type": "get",
+        "dataTypeFile": "eventItem.json"
+      },
+      {
+        "name": "GetLeague",
+        "description" : "Get league",
+        "api_prefix": "GetLeague",
+        "authorize": "anonymous",
+        "type": "get",
+        "dataTypeFile": "leagueItem.json"
+      },
+      {
+        "name": "GetOrder",
+        "description" : "Get order",
+        "api_prefix": "GetOrder",
+        "authorize": "anonymous",
+        "type": "get",
+        "dataTypeFile": "orderItem.json"
+      },
+      {
+        "name": "GetTeam",
+        "description" : "Get team",
+        "api_prefix": "GetTeam",
+        "authorize": "anonymous",
+        "type": "get",
+        "dataTypeFile": "teamItem.json"
+      },{
+        "name": "GetTicket",
+        "description" : "Get ticket",
+        "api_prefix": "GetTicket",
+        "authorize": "anonymous",
+        "type": "get",
+        "dataTypeFile": "ticketItem.json"
+      },{
+        "name": "GetUserSettings",
+        "description" : "Get user settings",
+        "api_prefix": "GetUserSettings",
+        "authorize": "anonymous",
+        "type": "get",
+        "dataTypeFile": "userSettingsItem.json"
+      }
+    ]
+  }
+  ]
+}
