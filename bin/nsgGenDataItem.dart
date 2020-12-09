@@ -28,7 +28,13 @@ class NsgGenDataItem {
     codeList.add('  {');
 
     fields.forEach((element) {
-      codeList.add('    public string ${element.name} { get; set; }');
+      if (element.dartType == 'int') {
+        codeList.add('    public int ${element.name} { get; set; }');
+      } else if (element.dartType == 'double') {
+        codeList.add('    public double ${element.name} { get; set; }');
+      } else {
+        codeList.add('    public string ${element.name} { get; set; }');
+      }
     });
     codeList.add('  }');
     codeList.add('}');

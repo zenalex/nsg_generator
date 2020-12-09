@@ -44,12 +44,14 @@ class NsgGenDataItemField {
       return 'NsgDataIntField';
     } else if (type == 'double') {
       return 'NsgDataDoubleField';
+    } else if (type == 'bool') {
+      return 'NsgDataBoolField';
     } else if (type == 'Image') {
       return 'NsgDataImageField';
     } else if (type == 'Reference') {
-      return 'NsgDataReferenceField';
+      return 'NsgDataReferenceField<${referenceType}>';
     } else {
-      print("get nsgDataType for field tye $type doesn't found");
+      print("get nsgDataType for field type $type doesn't found");
       throw Exception();
     }
   }
@@ -62,6 +64,9 @@ class NsgGenDataItemField {
       codeList.add(
           '$dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
     } else if (type == 'int') {
+      codeList.add(
+          '$dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
+    } else if (type == 'bool') {
       codeList.add(
           '$dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
     } else if (type == 'double') {
@@ -79,8 +84,9 @@ class NsgGenDataItemField {
       codeList.add(
           'String get $dartName => getFieldValue($fieldNameVar).toString();');
       codeList.add(
-          '$referenceType get $referenceName => getReferent<$referenceType>($fieldNameVar);');
-      codeList.add('Future<$referenceType> ${referenceName}Async() async {');
+          '$referenceType get ${NsgGenerator.generator.getDartName(referenceName)} => getReferent<$referenceType>($fieldNameVar);');
+      codeList.add(
+          'Future<$referenceType> ${NsgGenerator.generator.getDartName(referenceName)}Async() async {');
       codeList.add(
           ' return await getReferentAsync<$referenceType>($fieldNameVar);');
       codeList.add('}');

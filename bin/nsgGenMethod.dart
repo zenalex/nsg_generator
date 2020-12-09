@@ -43,11 +43,9 @@ class NsgGenMethod {
     //Authorization
     if (authorize == 'anonymous') {
       codeList.add('    [Authorize]');
-    }
-    if (authorize == 'user') {
+    } else if (authorize == 'user') {
       codeList.add('    [Authorize(Roles = UserRoles.User)]');
-    }
-    if (authorize != 'none') {
+    } else if (authorize != 'none') {
       throw Exception('Wrong authorization type in method ${method.name}()');
     }
     //POST or GET
@@ -60,8 +58,7 @@ class NsgGenMethod {
         '    public IEnumerable<${method.genDataItem.typeName}> ${method.name}()');
     codeList.add('    {');
     if (authorize != 'none') {
-      codeList.add(
-          '      var user = AuthImplReal.GetUserSettingsByToken(Request);');
+      codeList.add('      var user = authController.GetUserByToken(Request);');
       codeList.add('      return controller.${method.name}(user);');
     } else {
       codeList.add('      return controller.${method.name}();');

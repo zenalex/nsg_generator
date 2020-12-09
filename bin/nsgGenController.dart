@@ -9,6 +9,7 @@ class NsgGenController {
   final String class_name;
   final String dataType;
   final String serverUri;
+  final bool useAuthorization;
   final List<NsgGenMethod> methods;
 
   NsgGenController(
@@ -16,6 +17,7 @@ class NsgGenController {
       this.class_name,
       this.dataType,
       this.serverUri,
+      this.useAuthorization,
       this.methods});
 
   factory NsgGenController.fromJson(Map<String, dynamic> parsedJson) {
@@ -24,6 +26,7 @@ class NsgGenController {
         class_name: parsedJson['class_name'],
         dataType: parsedJson['dataType'],
         serverUri: parsedJson['serverUri'],
+        useAuthorization: parsedJson['useAuthorization'] == 'true',
         methods: (parsedJson['method'] as List)
             .map((i) => NsgGenMethod.fromJson(i))
             .toList());
@@ -39,6 +42,7 @@ class NsgGenController {
     codeList.add('using System.Threading.Tasks;');
     codeList.add('using Microsoft.AspNetCore.Authorization;');
     codeList.add('using ${nsgGenerator.cSharpNamespace};');
+    codeList.add('using NsgServerClasses;');
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
     codeList.add('{');
@@ -51,6 +55,7 @@ class NsgGenController {
     codeList.add('  {');
 
     codeList.add('    ${class_name}Interface controller;');
+    codeList.add('    AuthImplInterface authController;');
 
     codeList.add('    private readonly ILogger<${class_name}> _logger;');
     codeList.add('    public ${class_name}(ILogger<${class_name}> logger)');
@@ -58,8 +63,10 @@ class NsgGenController {
     codeList.add('      _logger = logger;');
     codeList.add('      #if (Real)');
     codeList.add('        controller = new ${class_name}Real();');
+    codeList.add('        authController = new AuthControllerReal();');
     codeList.add('      #else');
     codeList.add('        controller = new ${class_name}Mock();');
+    codeList.add('        authController = new AuthImplMock();');
     codeList.add('      #endif');
     codeList.add('    }');
     codeList.add('    ');
@@ -88,6 +95,7 @@ class NsgGenController {
     codeList.add('using System.Net.Http;');
     codeList.add('using System.Net.Http.Headers;');
     codeList.add('using ${nsgGenerator.cSharpNamespace};');
+    codeList.add('using NsgServerClasses;');
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
     codeList.add('{');
@@ -95,8 +103,13 @@ class NsgGenController {
     codeList.add('  {');
 
     methods.forEach((_) {
-      codeList.add(
-          '    public IEnumerable<${_.genDataItem.typeName}> ${_.name}();');
+      if (_.authorize != 'none') {
+        codeList.add(
+            '    public IEnumerable<${_.genDataItem.typeName}> ${_.name}(INsgTokenExtension user);');
+      } else {
+        codeList.add(
+            '    public IEnumerable<${_.genDataItem.typeName}> ${_.name}();');
+      }
     });
 
     codeList.add('  }');
@@ -157,19 +170,29 @@ class NsgGenController {
     codeList.add('      provider = NsgDataProvider();');
     codeList.add("      provider.serverUri = '${serverUri}';");
     addRegisterDataItems(nsgGenerator, codeList);
+    codeList.add('      provider.useNsgAuthorization = ${useAuthorization};');
     codeList.add('      await provider.connect();');
-    codeList.add('      if (provider.isAnonymous) {');
-    codeList.add('        await Get.to(NsgPhoneLoginPage(provider,');
-    codeList.add('          widgetParams: NsgPhoneLoginParams.defaultParams))');
-    codeList.add('          .then((value) => loadData());');
-    codeList.add('      } else {');
-    codeList.add('        await loadData();');
-    codeList.add('      }');
+    if (useAuthorization) {
+      codeList.add('      if (provider.isAnonymous) {');
+      codeList.add('        await Get.to(NsgPhoneLoginPage(provider,');
+      codeList
+          .add('          widgetParams: NsgPhoneLoginParams.defaultParams))');
+      codeList.add('          .then((value) => loadData());');
+      codeList.add('      } else {');
+
+      codeList.add('        await loadData();');
+      codeList.add('      }');
+    } else {
+      codeList.add('        await loadData();');
+    }
     codeList.add('    }');
     codeList.add('    super.onInit();');
     codeList.add('  }');
     codeList.add('  ');
-    codeList.add('  Future loadData() async {}');
+    codeList.add('  Future loadData() async {');
+    codeList.add(
+        '    change(NsgBaseControllerData(), status: RxStatus.success());');
+    codeList.add('  }');
 
     codeList.add('}');
 
@@ -180,12 +203,14 @@ class NsgGenController {
     //generate main class ControllerName.dart
     //----------------------------------------------------------
     codeList = <String>[];
-    codeList.add("import '${nsgGenerator.getDartName(class_name)}Model.dart';");
+    //codeList.add("import '${nsgGenerator.getDartName(class_name)}Model.dart';");
     codeList.add("import '${nsgGenerator.genPathName}/${class_name}.g.dart';");
     codeList.add('');
     codeList.add('class ${class_name} extends ${class_name}Generated {');
     codeList.add('  @override');
-    codeList.add('  Future loadData() async {}');
+    codeList.add('  Future loadData() async {');
+    codeList.add('    super.loadData();');
+    codeList.add('  }');
 
     codeList.add('}');
 
