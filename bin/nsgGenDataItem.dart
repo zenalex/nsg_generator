@@ -19,7 +19,7 @@ class NsgGenDataItem {
             .toList());
   }
 
-  void writeCode(NsgGenerator nsgGenerator) async {
+  void writeCode(NsgGenerator nsgGenerator, NsgGenMethod nsgMethod) async {
     var codeList = <String>[];
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
     codeList.add('{');
@@ -35,6 +35,7 @@ class NsgGenDataItem {
       } else {
         codeList.add('    public string ${element.name} { get; set; }');
       }
+      if (element.type == 'Image') nsgMethod.addImageMethod(element);
     });
     codeList.add('  }');
     codeList.add('}');
@@ -76,8 +77,8 @@ class NsgGenDataItem {
     codeList.add('');
 
     fields.forEach((_) {
-      _.writeGetter(codeList);
-      _.writeSetter(codeList);
+      _.writeGetter(nsgGenController, codeList);
+      _.writeSetter(nsgGenController, codeList);
     });
     codeList.add('');
     codeList.add('  @override');

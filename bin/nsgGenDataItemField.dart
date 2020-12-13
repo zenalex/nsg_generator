@@ -1,3 +1,4 @@
+import 'nsgGenController.dart';
 import 'nsgGenerator.dart';
 
 class NsgGenDataItemField {
@@ -56,7 +57,7 @@ class NsgGenDataItemField {
     }
   }
 
-  void writeGetter(List<String> codeList) {
+  void writeGetter(NsgGenController nsgGenController, List<String> codeList) {
     if (type == 'String') {
       codeList.add(
           '$dartType get $dartName => getFieldValue($fieldNameVar).toString();');
@@ -76,7 +77,8 @@ class NsgGenDataItemField {
       codeList.add('String get $dartName {');
       codeList.add('  var s = getFieldValue($fieldNameVar).toString();');
       codeList.add("  if (!s.contains('http')){");
-      codeList.add("    return remoteProvider.serverUri + '$apiPrefix' + s;}");
+      codeList.add(
+          "    return remoteProvider.serverUri + '/${nsgGenController.api_prefix}/$apiPrefix/' + s;}");
       codeList.add('  else {');
       codeList.add('    return s;}');
       codeList.add('}');
@@ -96,7 +98,7 @@ class NsgGenDataItemField {
     }
   }
 
-  void writeSetter(List<String> codeList) {
+  void writeSetter(NsgGenController nsgGenController, List<String> codeList) {
     if (type == 'Image') {
       codeList.add(
           'set $dartName(String value) => setFieldValue($fieldNameVar, value);');

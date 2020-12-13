@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'nsgGenController.dart';
 import 'nsgGenDataItem.dart';
+import 'nsgGenDataItemField.dart';
 import 'nsgGenerator.dart';
 
 class NsgGenMethod {
@@ -12,6 +13,7 @@ class NsgGenMethod {
   final String authorize;
   final String type;
   final String dataTypeFlie;
+  final bool allowPost;
 
   NsgGenDataItem genDataItem;
 
@@ -21,7 +23,8 @@ class NsgGenMethod {
       this.apiPrefix,
       this.authorize,
       this.type,
-      this.dataTypeFlie});
+      this.dataTypeFlie,
+      this.allowPost});
 
   factory NsgGenMethod.fromJson(Map<String, dynamic> parsedJson) {
     return NsgGenMethod(
@@ -31,6 +34,7 @@ class NsgGenMethod {
       authorize: parsedJson['authorize'],
       type: parsedJson['type'],
       dataTypeFlie: parsedJson['dataTypeFile'],
+      allowPost: parsedJson['allowPost'] == 'true',
     );
   }
 
@@ -54,6 +58,7 @@ class NsgGenMethod {
     if (type == 'post') apiType = 'HttpPost';
     codeList.add('    [$apiType]');
 
+    //Generation get gata method
     codeList.add(
         '    public IEnumerable<${method.genDataItem.typeName}> ${method.name}()');
     codeList.add('    {');
@@ -66,9 +71,61 @@ class NsgGenMethod {
     codeList.add('    }');
     codeList.add('');
 
-    if (genDataItem != null) {
-      genDataItem.writeCode(nsgGenerator);
+    //Generation post data method
+    if (allowPost) {
+      codeList.add('    [Route("$apiPrefix/Post")]');
+      //Authorization
+      if (authorize == 'anonymous') {
+        codeList.add('    [Authorize]');
+      } else if (authorize == 'user') {
+        codeList.add('    [Authorize(Roles = UserRoles.User)]');
+      } else if (authorize != 'none') {
+        throw Exception(
+            'Wrong authorization type in method ${method.name}([FromBody] ${method.genDataItem.typeName} items)');
+      }
+      codeList.add('    [HttpPost]');
+      codeList.add(
+          '    public IEnumerable<${method.genDataItem.typeName}> ${method.name}Post([FromBody] IEnumerable<${method.genDataItem.typeName}> items)');
+      codeList.add('    {');
+      if (authorize != 'none') {
+        codeList
+            .add('      var user = authController.GetUserByToken(Request);');
+        codeList
+            .add('      return controller.${method.name}Post(user, items);');
+      } else {
+        codeList.add('      return controller.${method.name}Post(items);');
+      }
+      codeList.add('    }');
+      codeList.add('');
     }
+    //Generation data class
+    if (genDataItem != null) {
+      genDataItem.writeCode(nsgGenerator, this);
+    }
+    //Generation image tranfer methods
+    imageFieldList.forEach((element) {
+      codeList.add('    [Route("${element.apiPrefix}/{file}")]');
+      codeList.add('    [HttpGet]');
+      if (authorize == 'anonymous') {
+        codeList.add('    [Authorize]');
+      } else if (authorize == 'user') {
+        codeList.add('    [Authorize(Roles = UserRoles.User)]');
+      }
+      codeList.add(
+          '    public FileStreamResult ${method.name}${element.apiPrefix}([FromRoute] string file)');
+      codeList.add('    {');
+      if (authorize != 'none') {
+        codeList
+            .add('      var user = authController.GetUserByToken(Request);');
+        codeList.add(
+            '      return controller.${method.name}${element.apiPrefix}(user);');
+      } else {
+        codeList.add(
+            '      return controller.${method.name}${element.apiPrefix}();');
+      }
+      codeList.add('    }');
+      codeList.add('');
+    });
   }
 
   Future loadGenDataItem(NsgGenerator nsgGenerator) async {
@@ -84,5 +141,10 @@ class NsgGenMethod {
     if (genDataItem != null) {
       await genDataItem.generateCodeDart(nsgGenerator, nsgGenController, this);
     }
+  }
+
+  var imageFieldList = <NsgGenDataItemField>[];
+  void addImageMethod(NsgGenDataItemField element) {
+    imageFieldList.add(element);
   }
 }

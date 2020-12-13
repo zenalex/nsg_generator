@@ -92,8 +92,7 @@ class NsgGenController {
     codeList.add('using System.Collections.Generic;');
     codeList.add('using System.IO;');
     codeList.add('using System.Net;');
-    codeList.add('using System.Net.Http;');
-    codeList.add('using System.Net.Http.Headers;');
+    codeList.add('using Microsoft.AspNetCore.Mvc;');
     codeList.add('using ${nsgGenerator.cSharpNamespace};');
     codeList.add('using NsgServerClasses;');
     codeList.add('');
@@ -106,10 +105,27 @@ class NsgGenController {
       if (_.authorize != 'none') {
         codeList.add(
             '    public IEnumerable<${_.genDataItem.typeName}> ${_.name}(INsgTokenExtension user);');
+        if (_.allowPost) {
+          codeList.add(
+              '    public IEnumerable<${_.genDataItem.typeName}> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
+        }
       } else {
         codeList.add(
             '    public IEnumerable<${_.genDataItem.typeName}> ${_.name}();');
+        if (_.allowPost) {
+          codeList.add(
+              '    public IEnumerable<${_.genDataItem.typeName}> ${_.name}Post([FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
+        }
       }
+      _.imageFieldList.forEach((el) {
+        if (_.authorize != 'none') {
+          codeList.add(
+              '    public FileStreamResult ${_.name}${el.apiPrefix}(INsgTokenExtension user);');
+        } else {
+          codeList
+              .add('    public FileStreamResult ${_.name}${el.apiPrefix}();');
+        }
+      });
     });
 
     codeList.add('  }');
@@ -161,8 +177,7 @@ class NsgGenController {
     codeList
         .add("import '../${nsgGenerator.getDartName(class_name)}Model.dart';");
     codeList.add('');
-    codeList.add('class ${class_name}Generated extends GetxController');
-    codeList.add('    with StateMixin<NsgBaseControllerData> {');
+    codeList.add('class ${class_name}Generated extends NsgBaseController {');
     codeList.add('  NsgDataProvider provider;');
     codeList.add('  @override');
     codeList.add('  void onInit() async {');
