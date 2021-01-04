@@ -1,0 +1,23 @@
+{
+    "typeName": "GuardianItem",
+    "fields":[
+      {
+        "name": "Id",
+        "type": "String",
+        "isPrimary": "true"
+      },
+      {
+        "name": "FirstName",
+        "type": "String"
+      },
+      {
+        "name": "SecondName",
+        "type": "String"
+      },
+      {
+        "name": "PhotoUri",
+        "type": "Image",
+        "api_prefix": "PhotoGuardian"
+      }
+    ]
+}

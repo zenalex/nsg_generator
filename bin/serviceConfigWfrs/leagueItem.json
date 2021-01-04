@@ -1,0 +1,28 @@
+{
+    "typeName": "LeagueItem",
+    "fields":[
+      {
+        "name": "Id",
+        "type": "String",
+        "isPrimary": "true"
+      },
+      {
+        "name": "Title",
+        "type": "String"
+      },
+      {
+        "name": "Description",
+        "type": "String"
+      },
+      {
+        "name": "CountryId",
+        "type": "Reference",
+        "referenceName": "Country",
+        "referenceType": "CountryItem"
+      },
+      {
+        "name": "Rating",
+        "type": "int"
+      }
+    ]
+}

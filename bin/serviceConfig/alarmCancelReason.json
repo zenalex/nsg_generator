@@ -1,0 +1,18 @@
+{
+    "typeName": "AlarmCancelReason",
+    "fields":[
+      {
+        "name": "Id",
+        "type": "String",
+        "isPrimary": "true"
+      },
+      {
+        "name": "Description",
+        "type": "String"
+      },
+      {
+        "name": "EnableComment",
+        "type": "bool"
+      }
+    ]
+}

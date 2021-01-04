@@ -1,0 +1,42 @@
+{
+    "typeName": "CarItem",
+    "fields":[
+      {
+        "name": "Id",
+        "type": "String",
+        "isPrimary": "true"
+      },
+      {
+        "name": "Number",
+        "type": "String"
+      },
+      {
+        "name": "GroupNumber",
+        "type": "String"
+      },
+      {
+        "name": "CarType",
+        "type": "String"
+      },
+      {
+        "name": "Lat",
+        "type": "double"
+      },
+      {
+        "name": "Lng",
+        "type": "double"
+      },
+      {
+        "name": "Guardian1Id",
+        "type": "Reference",
+        "referenceName": "Guardian1",
+        "referenceType": "GuardianItem"
+      },
+      {
+        "name": "Guardian2Id",
+        "type": "Reference",
+        "referenceName": "Guardian2",
+        "referenceType": "GuardianItem"
+      }
+    ]
+}

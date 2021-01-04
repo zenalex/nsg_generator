@@ -13,7 +13,7 @@
         "name": "GetNews",
         "description" : "Get news",
         "api_prefix": "GetNews",
-        "authorize": "anonymous",
+        "authorize": "user",
         "type": "get",
         "dataTypeFile": "newsItem.json"
       },
@@ -29,7 +29,7 @@
         "name": "GetCity",
         "description" : "Get cities",
         "api_prefix": "GetCity",
-        "authorize": "anonymous",
+        "authorize": "user",
         "type": "get",
         "dataTypeFile": "cityItem.json"
       },
@@ -37,7 +37,7 @@
         "name": "GetCountry",
         "description" : "Get countries",
         "api_prefix": "GetCountry",
-        "authorize": "anonymous",
+        "authorize": "user",
         "type": "get",
         "dataTypeFile": "countryItem.json"
       },
@@ -45,7 +45,7 @@
         "name": "GetEvent",
         "description" : "Get events",
         "api_prefix": "GetEvent",
-        "authorize": "anonymous",
+        "authorize": "user",
         "type": "get",
         "dataTypeFile": "eventItem.json"
       },
@@ -53,7 +53,7 @@
         "name": "GetLeague",
         "description" : "Get league",
         "api_prefix": "GetLeague",
-        "authorize": "anonymous",
+        "authorize": "user",
         "type": "get",
         "dataTypeFile": "leagueItem.json"
       },
@@ -61,7 +61,7 @@
         "name": "GetOrder",
         "description" : "Get order",
         "api_prefix": "GetOrder",
-        "authorize": "anonymous",
+        "authorize": "user",
         "type": "get",
         "dataTypeFile": "orderItem.json"
       },
@@ -69,21 +69,21 @@
         "name": "GetTeam",
         "description" : "Get team",
         "api_prefix": "GetTeam",
-        "authorize": "anonymous",
+        "authorize": "user",
         "type": "get",
         "dataTypeFile": "teamItem.json"
       },{
         "name": "GetTicket",
         "description" : "Get ticket",
         "api_prefix": "GetTicket",
-        "authorize": "anonymous",
+        "authorize": "user",
         "type": "get",
         "dataTypeFile": "ticketItem.json"
       },{
         "name": "GetUserSettings",
         "description" : "Get user settings",
         "api_prefix": "GetUserSettings",
-        "authorize": "anonymous",
+        "authorize": "user",
         "type": "get",
         "dataTypeFile": "userSettingsItem.json"
       }

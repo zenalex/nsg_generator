@@ -1,0 +1,36 @@
+{
+    "typeName": "TicketItem",
+    "fields":[
+      {
+        "name": "Id",
+        "type": "String",
+        "isPrimary": "true"
+      },
+      {
+        "name": "Title",
+        "type": "String"
+      },
+      {
+        "name": "Description",
+        "type": "String"
+      },
+      {
+        "name": "EventId",
+        "type": "Reference",
+        "referenceName": "Event",
+        "referenceType": "EventItem"
+      },
+      {
+        "name": "ValidFrom",
+        "type": "Date"
+      },
+      {
+        "name": "ValidUntil",
+        "type": "Date"
+      },
+      {
+        "name": "Price",
+        "type": "double"
+      }
+    ]
+}

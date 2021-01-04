@@ -1,0 +1,32 @@
+{
+    "typeName": "TeamItem",
+    "fields":[
+      {
+        "name": "Id",
+        "type": "String",
+        "isPrimary": "true"
+      },
+      {
+        "name": "Title",
+        "type": "String"
+      },
+      {
+        "name": "Description",
+        "type": "String"
+      },
+      {
+        "name": "LeagueId",
+        "type": "Reference",
+        "referenceName": "League",
+        "referenceType": "LeagueItem"
+      },
+      {
+        "name": "Rating",
+        "type": "int"
+      },
+      {
+        "name": "RatingChange",
+        "type": "int"
+      }
+    ]
+}

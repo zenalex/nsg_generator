@@ -1,0 +1,38 @@
+{
+    "typeName": "RegistrationData",
+    "fields":[
+      {
+        "name": "Phone",
+        "type": "String"
+      },
+      {
+        "name": "Email",
+        "type": "String"
+      },
+      {
+        "name": "PassportSeries",
+        "type": "String"
+      },
+      {
+        "name": "PassportNumber",
+        "type": "String"
+      },
+      {
+        "name": "PassportIssueBy",
+        "type": "String"
+      },
+      {
+        "name": "PassportIssueDate",
+        "type": "String"
+      },
+      {
+        "name": "PassportIssueByCode",
+        "type": "String"
+      },
+      {
+        "name": "PhotoUri",
+        "type": "Image",
+        "api_prefix": "Image"
+      }
+   ]
+}

@@ -1,0 +1,24 @@
+{
+    "typeName": "OrderItem",
+    "fields":[
+      {
+        "name": "Id",
+        "type": "String",
+        "isPrimary": "true"
+      },
+      {
+        "name": "Title",
+        "type": "String"
+      },
+      {
+        "name": "EventId",
+        "type": "Reference",
+        "referenceName": "Event",
+        "referenceType": "EventItem"
+      },
+      {
+        "name": "Rating",
+        "type": "int"
+      }
+    ]
+}

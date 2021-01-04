@@ -1,0 +1,77 @@
+{
+    "typeName": "UserItem",
+    "fields":[
+      {
+        "name": "Id",
+        "type": "String",
+        "isPrimary": "true"
+      },
+      {
+        "name": "Phone",
+        "type": "String"
+      },
+      {
+        "name": "FirstName",
+        "type": "String"
+      },
+      {
+        "name": "SecondName",
+        "type": "String"
+      },
+      {
+        "name": "LastName",
+        "type": "String"
+      },
+      {
+        "name": "Email",
+        "type": "String"
+      },
+      {
+        "name": "CompanyPosition",
+        "type": "String"
+      },
+      {
+        "name": "CompanyName",
+        "type": "String"
+      },
+      {
+        "name": "PhotoUri",
+        "type": "Image",
+        "api_prefix": "Image"
+      },
+      {
+        "name": "Balance",
+        "type": "double"
+      },
+      {
+        "name": "TarifId",
+        "type": "Reference",
+        "referenceName": "Tarif",
+        "referenceType": "TarifItem"
+      },
+      {
+        "name": "SubscriptionActive",
+        "type": "bool"
+      },
+      {
+        "name": "SubscriptionValidUntil",
+        "type": "Date"
+      },
+      {
+        "name": "SubscriptionPaymentMethod",
+        "type": "String"
+      },
+      {
+        "name": "VisitPaymentMethod",
+        "type": "String"
+      },
+      {
+        "name": "UpdateAvailable",
+        "type": "bool"
+      },
+      {
+        "name": "UpdateRequired",
+        "type": "bool"
+      }
+    ]
+}

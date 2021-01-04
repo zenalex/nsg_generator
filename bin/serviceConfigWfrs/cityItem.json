@@ -13,7 +13,7 @@
       {
         "name": "CountryId",
         "type": "Reference",
-        "referenceName": "CountryId",
+        "referenceName": "Country",
         "referenceType": "CountryItem"
       }
     ]

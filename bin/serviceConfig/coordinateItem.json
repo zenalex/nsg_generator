@@ -1,0 +1,13 @@
+{
+    "typeName": "CoordinateItem",
+    "fields":[
+      {
+        "name": "Lat",
+        "type": "double"
+      },
+      {
+        "name": "Lng",
+        "type": "double"
+      }
+    ]
+}

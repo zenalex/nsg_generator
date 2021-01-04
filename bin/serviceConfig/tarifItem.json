@@ -1,0 +1,22 @@
+{
+    "typeName": "TarifItem",
+    "fields":[
+      {
+        "name": "Id",
+        "type": "String",
+        "isPrimary": "true"
+      },
+      {
+        "name": "Name",
+        "type": "String"
+      },
+      {
+        "name": "MountlyPrice",
+        "type": "double"
+      },
+      {
+        "name": "VisitPrice",
+        "type": "double"
+      }
+    ]
+}

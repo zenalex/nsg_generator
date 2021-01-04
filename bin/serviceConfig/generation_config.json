@@ -1,45 +1,99 @@
 {
-  "cSharpPath": "codeNET",
-  "cSharpNamespace": "Wfrs.Server",
-  "dartPath": "f:/Projects2010/flutter1/codogeneration_test/lib/model",
+  "cSharpPath": "f:/Projects2010/flutterServer/TitanLK5/TitanLK5/Model",
+  "cSharpNamespace": "titan.LK",
+  "dartPath": "f:/Projects2010/flutter2/TitanLK/lib/model",
   "controller":[
   {
-    "api_prefix": "Api/Data",
+    "api_prefix": "Api",
     "class_name": "DataController",
+    "useAuthorization": "true",
     "dataType": "NsgDataItem",
     "serverUri": "http://alex.nsgsoft.ru:5073",
     "method": [
       {
-        "name": "GetNews",
-        "description" : "Get news",
-        "api_prefix": "GetNews",
-        "authorize": "anonymous",
-        "type": "get",
-        "dataTypeFile": "newsItem.json"
-      },
-      {
-        "name": "GetCard",
-        "description" : "Get card",
-        "api_prefix": "GetCard",
+        "name": "UserData",
+        "description" : "Get user data",
+        "api_prefix": "UserData",
         "authorize": "user",
         "type": "get",
-        "dataTypeFile": "cardItem.json"
+        "dataTypeFile": "userItem.json",
+        "allowPost": "true"
       },
       {
-        "name": "GetCity",
-        "description" : "Get cities",
-        "api_prefix": "GetCity",
-        "authorize": "anonymous",
+        "name": "Tarif",
+        "description" : "Get Tarif",
+        "api_prefix": "Tarif",
+        "authorize": "user",
         "type": "get",
-        "dataTypeFile": "cityItem.json"
+        "dataTypeFile": "tarifItem.json"
       },
       {
-        "name": "GetCountry",
-        "description" : "Get countries",
-        "api_prefix": "GetCountry",
-        "authorize": "anonymous",
+        "name": "Coordinate",
+        "description" : "Coordinates",
+        "api_prefix": "Coordinate",
+        "authorize": "user",
         "type": "get",
-        "dataTypeFile": "countryItem.json"
+        "dataTypeFile": "coordinateItem.json"
+      },
+      {
+        "name": "Car",
+        "description" : "Get Car",
+        "api_prefix": "Car",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "carItem.json"
+      },    
+      {
+        "name": "Guardian",
+        "description" : "Get Guardian",
+        "api_prefix": "Guardian",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "guardianItem.json"
+      },
+      {
+        "name": "Alarm",
+        "description" : "Get Alarm",
+        "api_prefix": "Alarm",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "alarmItem.json"
+      },
+      {
+        "name": "AlarmMark",
+        "description" : "Set Alarm Mark",
+        "api_prefix": "AlarmMark",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "alarmMark.json",
+        "allowPost": "true"  
+      },
+      {
+        "name": "AlarmCancelReason",
+        "description" : "Alarm cancel reason",
+        "api_prefix": "AlarmCancelReason",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "alarmCancelReason.json",
+        "allowPost": "post"  
+      },
+      {
+        "name": "RegistrationData",
+        "description" : "Send registration data",
+        "api_prefix": "RegistrationData",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "registrationData.json",
+        "allowPost": "true"
+      },
+      {
+        "name": "VerificationResult",
+        "description" : "Result of verification",
+        "api_prefix": "VerificationResult",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "VerificationResult.json",
+        "allowPost": "false"
       }
     ]
   }

@@ -1,0 +1,44 @@
+{
+    "typeName": "AlarmItem",
+    "fields":[
+      {
+        "name": "Id",
+        "type": "String",
+        "isPrimary": "true"
+      },
+      {
+        "name": "Active",
+        "type": "bool"
+      },
+      {
+        "name": "AlarmBeginTime",
+        "type": "Date"
+      },
+      {
+        "name": "CarId",
+        "type": "Reference",
+        "referenceName": "Car",
+        "referenceType": "CarItem"
+      },
+      {
+        "name": "ArrivalTime",
+        "type": "int"
+      },
+      {
+        "name": "Distance",
+        "type": "double"
+      },
+      {
+        "name": "CancelTime",
+        "type": "int"
+      },
+      {
+        "name": "Status",
+        "type": "int"
+      },
+      {
+        "name": "ServicePrice",
+        "type": "double"
+      }
+    ]
+}

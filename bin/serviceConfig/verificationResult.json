@@ -1,0 +1,21 @@
+{
+    "typeName": "VerificationResult",
+    "fields":[
+      {
+        "name": "securityCheck",
+        "type": "bool"
+      },
+      {
+        "name": "clientServiceVerification",
+        "type": "bool"
+      },
+      {
+        "name": "automaticVerification",
+        "type": "bool"
+      },
+      {
+        "name": "verificationResult",
+        "type": "bool"
+      }
+   ]
+}
