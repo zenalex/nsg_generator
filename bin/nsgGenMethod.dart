@@ -66,7 +66,7 @@ class NsgGenMethod {
       codeList.add('      var user = authController.GetUserByToken(Request);');
       codeList.add('      return controller.${method.name}(user);');
     } else {
-      codeList.add('      return controller.${method.name}();');
+      codeList.add('      return controller.${method.name}(null);');
     }
     codeList.add('    }');
     codeList.add('');
@@ -93,7 +93,8 @@ class NsgGenMethod {
         codeList
             .add('      return controller.${method.name}Post(user, items);');
       } else {
-        codeList.add('      return controller.${method.name}Post(items);');
+        codeList
+            .add('      return controller.${method.name}Post(null, items);');
       }
       codeList.add('    }');
       codeList.add('');
@@ -118,10 +119,10 @@ class NsgGenMethod {
         codeList
             .add('      var user = authController.GetUserByToken(Request);');
         codeList.add(
-            '      return controller.${method.name}${element.apiPrefix}(user);');
+            '      return controller.${method.name}${element.apiPrefix}(user, file);');
       } else {
         codeList.add(
-            '      return controller.${method.name}${element.apiPrefix}();');
+            '      return controller.${method.name}${element.apiPrefix}(null, file);');
       }
       codeList.add('    }');
       codeList.add('');

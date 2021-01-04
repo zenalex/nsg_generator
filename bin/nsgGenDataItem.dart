@@ -21,6 +21,7 @@ class NsgGenDataItem {
 
   void writeCode(NsgGenerator nsgGenerator, NsgGenMethod nsgMethod) async {
     var codeList = <String>[];
+    codeList.add('using System;');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
     codeList.add('{');
     codeList.add('  public class $typeName');
@@ -32,6 +33,10 @@ class NsgGenDataItem {
         codeList.add('    public int ${element.name} { get; set; }');
       } else if (element.dartType == 'double') {
         codeList.add('    public double ${element.name} { get; set; }');
+      } else if (element.dartType == 'bool') {
+        codeList.add('    public bool ${element.name} { get; set; }');
+      } else if (element.dartType == 'DateTime') {
+        codeList.add('    public DateTime ${element.name} { get; set; }');
       } else {
         codeList.add('    public string ${element.name} { get; set; }');
       }
@@ -84,7 +89,7 @@ class NsgGenDataItem {
     codeList.add('  @override');
     codeList.add('  String get apiRequestItems {');
     codeList.add(
-        "    return '${nsgGenController.api_prefix}/${nsgGenMethod.apiPrefix}';");
+        "    return '/${nsgGenController.api_prefix}/${nsgGenMethod.apiPrefix}';");
     codeList.add('  }');
 
     codeList.add('}');

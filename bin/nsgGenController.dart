@@ -111,19 +111,19 @@ class NsgGenController {
         }
       } else {
         codeList.add(
-            '    public IEnumerable<${_.genDataItem.typeName}> ${_.name}();');
+            '    public IEnumerable<${_.genDataItem.typeName}> ${_.name}(INsgTokenExtension user);');
         if (_.allowPost) {
           codeList.add(
-              '    public IEnumerable<${_.genDataItem.typeName}> ${_.name}Post([FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
+              '    public IEnumerable<${_.genDataItem.typeName}> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
         }
       }
       _.imageFieldList.forEach((el) {
         if (_.authorize != 'none') {
           codeList.add(
-              '    public FileStreamResult ${_.name}${el.apiPrefix}(INsgTokenExtension user);');
+              '    public FileStreamResult ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
         } else {
-          codeList
-              .add('    public FileStreamResult ${_.name}${el.apiPrefix}();');
+          codeList.add(
+              '    public FileStreamResult ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
         }
       });
     });
@@ -186,7 +186,7 @@ class NsgGenController {
     codeList.add("      provider.serverUri = '${serverUri}';");
     addRegisterDataItems(nsgGenerator, codeList);
     codeList.add('      provider.useNsgAuthorization = ${useAuthorization};');
-    codeList.add('      await provider.connect();');
+    codeList.add('      await provider.connect(this);');
     if (useAuthorization) {
       codeList.add('      if (provider.isAnonymous) {');
       codeList.add('        await Get.to(NsgPhoneLoginPage(provider,');
