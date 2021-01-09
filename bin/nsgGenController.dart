@@ -95,6 +95,7 @@ class NsgGenController {
     codeList.add('using Microsoft.AspNetCore.Mvc;');
     codeList.add('using ${nsgGenerator.cSharpNamespace};');
     codeList.add('using NsgServerClasses;');
+    codeList.add('using System.Threading.Tasks;');
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
     codeList.add('{');
@@ -104,26 +105,26 @@ class NsgGenController {
     methods.forEach((_) {
       if (_.authorize != 'none') {
         codeList.add(
-            '    public IEnumerable<${_.genDataItem.typeName}> ${_.name}(INsgTokenExtension user);');
+            '    public Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user);');
         if (_.allowPost) {
           codeList.add(
-              '    public IEnumerable<${_.genDataItem.typeName}> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
+              '    public Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
         }
       } else {
         codeList.add(
-            '    public IEnumerable<${_.genDataItem.typeName}> ${_.name}(INsgTokenExtension user);');
+            '    public Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user);');
         if (_.allowPost) {
           codeList.add(
-              '    public IEnumerable<${_.genDataItem.typeName}> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
+              '    public Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
         }
       }
       _.imageFieldList.forEach((el) {
         if (_.authorize != 'none') {
           codeList.add(
-              '    public FileStreamResult ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
+              '    public Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
         } else {
           codeList.add(
-              '    public FileStreamResult ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
+              '    public Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
         }
       });
     });
