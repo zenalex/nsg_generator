@@ -39,6 +39,10 @@
       {
         "name": "ServicePrice",
         "type": "double"
+      },
+      {
+        "name": "ErrorText",
+        "type": "String"
       }
     ]
 }

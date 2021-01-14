@@ -1,7 +1,7 @@
 {
   "cSharpPath": "f:/Projects2010/flutterServer/TitanLK5/TitanLK5/Model",
   "cSharpNamespace": "titan.LK",
-  "dartPath": "f:/Projects2010/flutter2/TitanLK/lib/model",
+  "dartPath": "f:/Projects2010/flutter2/titan112/lib/model",
   "controller":[
   {
     "api_prefix": "Api",
