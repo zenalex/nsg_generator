@@ -2,6 +2,18 @@
     "typeName": "RegistrationData",
     "fields":[
       {
+        "name": "FirstName",
+        "type": "String"
+      },
+      {
+        "name": "SecondName",
+        "type": "String"
+      },
+      {
+        "name": "LastName",
+        "type": "String"
+      },
+      {
         "name": "Phone",
         "type": "String"
       },
