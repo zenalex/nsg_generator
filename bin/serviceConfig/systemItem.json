@@ -1,0 +1,22 @@
+{
+    "typeName": "SystemItem",
+    "fields":[
+      {
+        "name": "Id",
+        "type": "String",
+        "isPrimary": "true"
+      },
+      {
+        "name": "UpdateAvailable",
+        "type": "bool"
+      },
+      {
+        "name": "UpdateRequired",
+        "type": "bool"
+      },
+      {
+        "name": "Version",
+        "type": "String"
+      }
+    ]
+}

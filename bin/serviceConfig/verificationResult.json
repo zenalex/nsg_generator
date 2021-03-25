@@ -2,6 +2,18 @@
     "typeName": "VerificationResult",
     "fields":[
       {
+        "name": "dataSent",
+        "type": "bool"
+      },
+      {
+        "name": "userPhotoSent",
+        "type": "bool"
+      },
+      {
+        "name": "userPassportSent",
+        "type": "bool"
+      },
+      {
         "name": "securityCheck",
         "type": "bool"
       },

@@ -35,7 +35,7 @@
       },
       {
         "name": "PassportIssueDate",
-        "type": "String"
+        "type": "Date"
       },
       {
         "name": "PassportIssueByCode",
@@ -44,7 +44,8 @@
       {
         "name": "PhotoUri",
         "type": "Image",
-        "api_prefix": "Image"
+        "api_prefix": "Image",
+        "uploadEnabled": "true"
       }
    ]
 }

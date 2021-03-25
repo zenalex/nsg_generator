@@ -94,6 +94,33 @@
         "type": "get",
         "dataTypeFile": "VerificationResult.json",
         "allowPost": "false"
+      },
+      {
+        "name": "InformationItem",
+        "description" : "Information from server",
+        "api_prefix": "InformationItem",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "informationItem.json",
+        "allowPost": "false"
+      },
+      {
+        "name": "SystemItem",
+        "description" : "System Information",
+        "api_prefix": "SystemItem",
+        "authorize": "none",
+        "type": "get",
+        "dataTypeFile": "systemItem.json",
+        "allowPost": "false"  
+      },
+      {
+        "name": "BalanceItem",
+        "description" : "Balance Information",
+        "api_prefix": "BalanceItem",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "balanceItem.json",
+        "allowPost": "true"  
       }
     ]
   }

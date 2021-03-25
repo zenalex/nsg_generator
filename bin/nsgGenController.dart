@@ -10,6 +10,7 @@ class NsgGenController {
   final String dataType;
   final String serverUri;
   final bool useAuthorization;
+  final bool uploadEnabled;
   final List<NsgGenMethod> methods;
 
   NsgGenController(
@@ -18,6 +19,7 @@ class NsgGenController {
       this.dataType,
       this.serverUri,
       this.useAuthorization,
+      this.uploadEnabled,
       this.methods});
 
   factory NsgGenController.fromJson(Map<String, dynamic> parsedJson) {
@@ -27,6 +29,7 @@ class NsgGenController {
         dataType: parsedJson['dataType'],
         serverUri: parsedJson['serverUri'],
         useAuthorization: parsedJson['useAuthorization'] == 'true',
+        uploadEnabled: parsedJson['uploadEnabled'] == 'true',
         methods: (parsedJson['method'] as List)
             .map((i) => NsgGenMethod.fromJson(i))
             .toList());
@@ -68,6 +71,10 @@ class NsgGenController {
     codeList.add('        controller = new ${class_name}Mock();');
     codeList.add('        authController = new AuthImplMock();');
     codeList.add('      #endif');
+    codeList.add('    }');
+    codeList.add('    public AuthImplInterface AuthController');
+    codeList.add('    {');
+    codeList.add('      get { return authController; }');
     codeList.add('    }');
     codeList.add('    ');
 
@@ -181,19 +188,18 @@ class NsgGenController {
     codeList.add('class ${class_name}Generated extends NsgBaseController {');
     codeList.add('  NsgDataProvider provider;');
     codeList.add('  @override');
-    codeList.add('  void onInit() async {');
+    codeList.add('  Future onInit() async {');
     codeList.add('    if (provider == null) {');
     codeList.add('      provider = NsgDataProvider();');
+    codeList.add('    }');
     codeList.add("      provider.serverUri = '${serverUri}';");
     addRegisterDataItems(nsgGenerator, codeList);
     codeList.add('      provider.useNsgAuthorization = ${useAuthorization};');
     codeList.add('      await provider.connect(this);');
     if (useAuthorization) {
       codeList.add('      if (provider.isAnonymous) {');
-      codeList.add('        await Get.to(NsgPhoneLoginPage(provider,');
-      codeList
-          .add('          widgetParams: NsgPhoneLoginParams.defaultParams))');
-      codeList.add('          .then((value) => loadData());');
+      codeList.add(
+          '        await Get.to(provider.loginPage).then((value) => loadData());');
       codeList.add('      } else {');
 
       codeList.add('        await loadData();');
@@ -201,13 +207,14 @@ class NsgGenController {
     } else {
       codeList.add('        await loadData();');
     }
-    codeList.add('    }');
+    codeList.add('    ');
     codeList.add('    super.onInit();');
     codeList.add('  }');
     codeList.add('  ');
     codeList.add('  Future loadData() async {');
     codeList.add(
         '    change(NsgBaseControllerData(), status: RxStatus.success());');
+    codeList.add('    sendNotify();');
     codeList.add('  }');
 
     codeList.add('}');

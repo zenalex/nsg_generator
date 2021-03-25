@@ -1,0 +1,17 @@
+{
+    "typeName": "BalanceItem",
+    "fields":[
+      {
+        "name": "Id",
+        "type": "String"
+      },
+      {
+        "name": "Value",
+        "type": "double"
+      },
+      {
+        "name": "Comment",
+        "type": "String"
+      }
+    ]
+}

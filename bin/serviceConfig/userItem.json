@@ -66,16 +66,8 @@
         "type": "String"
       },
       {
-        "name": "UpdateAvailable",
-        "type": "bool"
-      },
-      {
-        "name": "UpdateRequired",
-        "type": "bool"
-      },
-      {
-        "name": "Version",
-        "type": "String"
+        "name": "UserRegistrationStatus",
+        "type": "int"
       }
     ]
 }
