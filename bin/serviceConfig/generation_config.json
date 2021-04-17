@@ -121,6 +121,15 @@
         "type": "get",
         "dataTypeFile": "balanceItem.json",
         "allowPost": "true"  
+      },
+      {
+        "name": "ChatMessage",
+        "description" : "Chat with call center",
+        "api_prefix": "Chat",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "chatMessage.json",
+        "allowPost": "true"  
       }
     ]
   }

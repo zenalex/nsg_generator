@@ -1,0 +1,18 @@
+{
+    "typeName": "ChatMessage",
+    "fields":[
+      {
+        "name": "Id",
+        "type": "int",
+        "isPrimary": "true"
+      },
+      {
+        "name": "MessageType",
+        "type": "int"
+      },
+      {
+        "name": "Message",
+        "type": "String"
+      }
+    ]
+}

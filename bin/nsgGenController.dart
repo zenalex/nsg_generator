@@ -72,10 +72,6 @@ class NsgGenController {
     codeList.add('        authController = new AuthImplMock();');
     codeList.add('      #endif');
     codeList.add('    }');
-    codeList.add('    public AuthImplInterface AuthController');
-    codeList.add('    {');
-    codeList.add('      get { return authController; }');
-    codeList.add('    }');
     codeList.add('    ');
 
     await Future.forEach<NsgGenMethod>(methods, (element) async {
