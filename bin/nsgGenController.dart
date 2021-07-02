@@ -65,8 +65,8 @@ class NsgGenController {
     codeList.add('    {');
     codeList.add('      _logger = logger;');
     codeList.add('      #if (Real)');
-    codeList.add('        controller = new ${class_name}Real();');
-    codeList.add('        authController = new AuthControllerReal();');
+    codeList.add('        controller = new ${class_name}();');
+    codeList.add('        authController = new AuthController();');
     codeList.add('      #else');
     codeList.add('        controller = new ${class_name}Mock();');
     codeList.add('        authController = new AuthImplMock();');

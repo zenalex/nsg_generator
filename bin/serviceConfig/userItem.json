@@ -54,16 +54,16 @@
         "type": "bool"
       },
       {
+        "name": "SubscriptionMonths",
+        "type": "int"
+      },
+      {
+        "name": "SubscriptionVisits",
+        "type": "int"
+      },
+      {
         "name": "SubscriptionValidUntil",
         "type": "Date"
-      },
-      {
-        "name": "SubscriptionPaymentMethod",
-        "type": "String"
-      },
-      {
-        "name": "VisitPaymentMethod",
-        "type": "String"
       },
       {
         "name": "UserRegistrationStatus",

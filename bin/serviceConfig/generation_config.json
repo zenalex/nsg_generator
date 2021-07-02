@@ -1,6 +1,6 @@
 {
   "cSharpPath": "f:/Projects2010/flutterServer/TitanLK5/TitanLK5/Model",
-  "cSharpNamespace": "titan.LK",
+  "cSharpNamespace": "Titan112Server",
   "dartPath": "f:/Projects2010/flutter2/titan112/lib/model",
   "controller":[
   {
@@ -8,7 +8,7 @@
     "class_name": "DataController",
     "useAuthorization": "true",
     "dataType": "NsgDataItem",
-    "serverUri": "http://alex.nsgsoft.ru:5073",
+    "serverUri": "http://alex.nsgsoft.ru:5074",
     "method": [
       {
         "name": "UserData",
@@ -130,6 +130,15 @@
         "type": "get",
         "dataTypeFile": "chatMessage.json",
         "allowPost": "true"  
+      },
+      {
+        "name": "TarifPack",
+        "description" : "Tarif packs",
+        "api_prefix": "TarifPack",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "tarifPack.json",
+        "allowPost": "false"  
       }
     ]
   }

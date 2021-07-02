@@ -6,6 +6,10 @@
         "type": "String"
       },
       {
+        "name": "TarifRequestId",
+        "type": "String"
+      },
+      {
         "name": "Value",
         "type": "double"
       },

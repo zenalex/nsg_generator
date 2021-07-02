@@ -1,0 +1,43 @@
+{
+    "typeName": "TarifPack",
+    "fields":[
+      {
+        "name": "Id",
+        "type": "String",
+        "isPrimary": "true"
+      },
+      {
+        "name": "Name",
+        "type": "String"
+      },
+      {
+        "name": "TarifId",
+        "type": "Reference",
+        "referenceName": "Tarif",
+        "referenceType": "TarifItem"
+      },
+      {
+        "name": "RecommendedPack",
+        "type": "bool"
+      },
+      {
+        "name": "ActiveUntil",
+        "type": "Date"
+      },
+      {
+        "name": "Price",
+        "type": "double"
+      },      {
+        "name": "MonthToBuy",
+        "type": "int"
+      },
+      {
+        "name": "VisitsToBuy",
+        "type": "int"
+      },
+      {
+        "name": "Description",
+        "type": "String"
+      }
+    ]
+}

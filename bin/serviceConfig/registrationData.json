@@ -42,6 +42,15 @@
         "type": "String"
       },
       {
+        "name": "PassportValidUntil",
+        "type": "Date"
+      },
+      
+      {
+        "name": "DateOfBirth",
+        "type": "Date"
+      },
+      {
         "name": "PhotoUri",
         "type": "Image",
         "api_prefix": "Image",

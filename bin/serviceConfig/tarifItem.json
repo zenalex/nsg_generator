@@ -11,12 +11,12 @@
         "type": "String"
       },
       {
-        "name": "MountlyPrice",
+        "name": "VisitPrice",
         "type": "double"
       },
       {
-        "name": "VisitPrice",
-        "type": "double"
+        "name": "Description",
+        "type": "String"
       }
     ]
 }
