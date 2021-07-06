@@ -49,44 +49,97 @@ class NsgGenController {
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
     codeList.add('{');
-    codeList.add('  /// <summary>');
-    codeList.add('  ///${dataType}Interface Controller');
-    codeList.add('  /// </summary>');
-    codeList.add('  [ApiController]');
-    codeList.add('  [Route("${api_prefix}")]');
-    codeList.add('  public class ${class_name} : ControllerBase');
-    codeList.add('  {');
+    codeList.add('/// <summary>');
+    codeList.add('///${dataType}Interface Controller');
+    codeList.add('/// </summary>');
+    codeList.add('[ApiController]');
+    codeList.add('[Route("${api_prefix}")]');
+    codeList.add('public class ${class_name} : ControllerBase');
+    codeList.add('{');
 
-    codeList.add('    ${class_name}Interface controller;');
-    codeList.add('    AuthImplInterface authController;');
+    codeList.add('${class_name}Interface controller;');
+    codeList.add('AuthImplInterface authController;');
 
-    codeList.add('    private readonly ILogger<${class_name}> _logger;');
-    codeList.add('    public ${class_name}(ILogger<${class_name}> logger)');
-    codeList.add('    {');
-    codeList.add('      _logger = logger;');
-    codeList.add('      #if (Real)');
-    codeList.add('        controller = new ${class_name}Real();');
-    codeList.add('        authController = new AuthControllerReal();');
-    codeList.add('      #else');
-    codeList.add('        controller = new ${class_name}Mock();');
-    codeList.add('        authController = new AuthImplMock();');
-    codeList.add('      #endif');
-    codeList.add('    }');
-    codeList.add('    ');
+    codeList.add('private readonly ILogger<${class_name}> _logger;');
+    codeList.add('public ${class_name}(ILogger<${class_name}> logger)');
+    codeList.add('{');
+    codeList.add('_logger = logger;');
+    codeList.add('#if (Real)');
+    codeList.add('controller = new ${class_name}Real();');
+    codeList.add('authController = new AuthControllerReal();');
+    codeList.add('#else');
+    codeList.add('controller = new ${class_name}Mock();');
+    codeList.add('authController = new AuthImplMock();');
+    codeList.add('#endif');
+    codeList.add('}');
+    codeList.add('');
 
     await Future.forEach<NsgGenMethod>(methods, (element) async {
       await element.generateCode(codeList, nsgGenerator, this, element);
     });
 
-    codeList.add('  }');
     codeList.add('}');
+    codeList.add('}');
+
+    indentCode(codeList);
 
     var fn = '${nsgGenerator.cSharpPath}/${class_name}.cs';
     //if (!File(fn).existsSync()) {
     await File(fn).writeAsString(codeList.join('\n'));
     //}
     await generateInterfaceData(nsgGenerator);
+    await generateRealizations(nsgGenerator);
     await generateCodeDart(nsgGenerator);
+  }
+
+  void indentCode(List<String> codeList) {
+    var indentMultiplier = 0;
+    for (var i = 0; i < codeList.length; i++) {
+      if (codeList[i].startsWith('}')) {
+        indentMultiplier--;
+        codeList[i] = ('    ' * indentMultiplier) + codeList[i];
+      } else {
+        var isComment = codeList[i].startsWith('//');
+        codeList[i] = ('    ' * indentMultiplier) + codeList[i];
+        if (!isComment) {
+          if (codeList[i].contains('{')) indentMultiplier++;
+          if (codeList[i].contains('}')) indentMultiplier--;
+        }
+      }
+    }
+  }
+
+  void generateRealizations(NsgGenerator nsgGenerator) async {
+    var fn = '${nsgGenerator.cSharpPath}/${class_name}Real.cs';
+    if (!File(fn).existsSync()) {
+      await File(fn).writeAsString('using System;\n\n'
+          'namespace ${nsgGenerator.cSharpNamespace}\n'
+          '{\n'
+          '    public class ${class_name}Real : ${class_name}Interface\n'
+          '    {\n'
+          '    }\n'
+          '}');
+    }
+    fn = '${nsgGenerator.cSharpPath}/${class_name}Mock.cs';
+    if (!File(fn).existsSync()) {
+      await File(fn).writeAsString('using System;\n\n'
+          'namespace ${nsgGenerator.cSharpNamespace}\n'
+          '{\n'
+          '    public class ${class_name}Mock : ${class_name}Interface\n'
+          '    {\n'
+          '    }\n'
+          '}');
+    }
+    fn = '${nsgGenerator.cSharpPath}/AuthControllerReal.cs';
+    if (!File(fn).existsSync()) {
+      await File(fn).writeAsString('using System;\n\n'
+          'namespace NsgServerClasses\n'
+          '{\n'
+          '    public class AuthControllerReal : AuthImplInterface\n'
+          '    {\n'
+          '    }\n'
+          '}');
+    }
   }
 
   void generateInterfaceData(NsgGenerator nsgGenerator) async {
@@ -102,38 +155,40 @@ class NsgGenController {
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
     codeList.add('{');
-    codeList.add('  public interface ${class_name}Interface');
-    codeList.add('  {');
+    codeList.add('public interface ${class_name}Interface');
+    codeList.add('{');
 
     methods.forEach((_) {
       if (_.authorize != 'none') {
         codeList.add(
-            '    public Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user);');
+            'public Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user);');
         if (_.allowPost) {
           codeList.add(
-              '    public Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
+              'public Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
         }
       } else {
         codeList.add(
-            '    public Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user);');
+            'public Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user);');
         if (_.allowPost) {
           codeList.add(
-              '    public Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
+              'public Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
         }
       }
       _.imageFieldList.forEach((el) {
         if (_.authorize != 'none') {
           codeList.add(
-              '    public Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
+              'public Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
         } else {
           codeList.add(
-              '    public Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
+              'public Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
         }
       });
     });
 
-    codeList.add('  }');
     codeList.add('}');
+    codeList.add('}');
+
+    indentCode(codeList);
 
     var fn = '${nsgGenerator.cSharpPath}/${class_name}Interface.cs';
     //if (!File(fn).existsSync()) {

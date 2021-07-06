@@ -40,15 +40,15 @@ class NsgGenMethod {
 
   Future generateCode(List<String> codeList, NsgGenerator nsgGenerator,
       NsgGenController controller, NsgGenMethod method) async {
-    codeList.add('    /// <summary>');
-    codeList.add('    /// $description');
-    codeList.add('    /// </summary>');
-    codeList.add('    [Route("$apiPrefix")]');
+    codeList.add('/// <summary>');
+    codeList.add('/// $description');
+    codeList.add('/// </summary>');
+    codeList.add('[Route("$apiPrefix")]');
     //Authorization
     if (authorize == 'anonymous') {
-      codeList.add('    [Authorize]');
+      codeList.add('[Authorize]');
     } else if (authorize == 'user') {
-      codeList.add('    [Authorize(Roles = UserRoles.User)]');
+      codeList.add('[Authorize(Roles = UserRoles.User)]');
     } else if (authorize != 'none') {
       throw Exception('Wrong authorization type in method ${method.name}()');
     }
@@ -56,48 +56,47 @@ class NsgGenMethod {
     var apiType = '';
     if (type == 'get') apiType = 'HttpGet';
     if (type == 'post') apiType = 'HttpPost';
-    codeList.add('    [$apiType]');
+    codeList.add('[$apiType]');
 
     //Generation get gata method
     codeList.add(
-        '    public async Task<IEnumerable<${method.genDataItem.typeName}>> ${method.name}()');
-    codeList.add('    {');
+        'public async Task<IEnumerable<${method.genDataItem.typeName}>> ${method.name}()');
+    codeList.add('{');
     if (authorize != 'none') {
-      codeList.add(
-          '      var user = await authController.GetUserByToken(Request);');
-      codeList.add('      return await controller.${method.name}(user);');
+      codeList.add('var user = await authController.GetUserByToken(Request);');
+      codeList.add('return await controller.${method.name}(user);');
     } else {
-      codeList.add('      return await controller.${method.name}(null);');
+      codeList.add('return await controller.${method.name}(null);');
     }
-    codeList.add('    }');
+    codeList.add('}');
     codeList.add('');
 
     //Generation post data method
     if (allowPost) {
-      codeList.add('    [Route("$apiPrefix/Post")]');
+      codeList.add('[Route("$apiPrefix/Post")]');
       //Authorization
       if (authorize == 'anonymous') {
-        codeList.add('    [Authorize]');
+        codeList.add('[Authorize]');
       } else if (authorize == 'user') {
-        codeList.add('    [Authorize(Roles = UserRoles.User)]');
+        codeList.add('[Authorize(Roles = UserRoles.User)]');
       } else if (authorize != 'none') {
         throw Exception(
             'Wrong authorization type in method ${method.name}([FromBody] ${method.genDataItem.typeName} items)');
       }
-      codeList.add('    [HttpPost]');
+      codeList.add('[HttpPost]');
       codeList.add(
-          '    public async Task<IEnumerable<${method.genDataItem.typeName}>> ${method.name}Post([FromBody] IEnumerable<${method.genDataItem.typeName}> items)');
-      codeList.add('    {');
+          'public async Task<IEnumerable<${method.genDataItem.typeName}>> ${method.name}Post([FromBody] IEnumerable<${method.genDataItem.typeName}> items)');
+      codeList.add('{');
       if (authorize != 'none') {
-        codeList.add(
-            '      var user = await authController.GetUserByToken(Request);');
-        codeList.add(
-            '      return await controller.${method.name}Post(user, items);');
+        codeList
+            .add('var user = await authController.GetUserByToken(Request);');
+        codeList
+            .add('return await controller.${method.name}Post(user, items);');
       } else {
-        codeList.add(
-            '      return await controller.${method.name}Post(null, items);');
+        codeList
+            .add('return await controller.${method.name}Post(null, items);');
       }
-      codeList.add('    }');
+      codeList.add('}');
       codeList.add('');
     }
     //Generation data class
@@ -106,8 +105,8 @@ class NsgGenMethod {
     }
     //Generation image tranfer methods
     imageFieldList.forEach((element) {
-      codeList.add('    [Route("${element.apiPrefix}/{file}")]');
-      codeList.add('    [HttpGet]');
+      codeList.add('[Route("${element.apiPrefix}/{file}")]');
+      codeList.add('[HttpGet]');
       //for images authentification temporary??? disabled
       // if (authorize == 'anonymous') {
       //   codeList.add('    [Authorize]');
@@ -115,18 +114,18 @@ class NsgGenMethod {
       //   codeList.add('    [Authorize(Roles = UserRoles.User)]');
       // }
       codeList.add(
-          '    public async Task<FileStreamResult> ${method.name}${element.apiPrefix}([FromRoute] string file)');
-      codeList.add('    {');
+          'public async Task<FileStreamResult> ${method.name}${element.apiPrefix}([FromRoute] string file)');
+      codeList.add('{');
       if (authorize != 'none') {
+        codeList
+            .add('var user = await authController.GetUserByToken(Request);');
         codeList.add(
-            '      var user = await authController.GetUserByToken(Request);');
-        codeList.add(
-            '      return await controller.${method.name}${element.apiPrefix}(user, file);');
+            'return await controller.${method.name}${element.apiPrefix}(user, file);');
       } else {
         codeList.add(
-            '      return await controller.${method.name}${element.apiPrefix}(null, file);');
+            'return await controller.${method.name}${element.apiPrefix}(null, file);');
       }
-      codeList.add('    }');
+      codeList.add('}');
       codeList.add('');
     });
   }

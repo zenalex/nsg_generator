@@ -4,6 +4,7 @@ import 'nsgGenerator.dart';
 class NsgGenDataItemField {
   final String name;
   final String type;
+  final String description;
   final String apiPrefix;
   final bool isPrimary;
   final String referenceName;
@@ -12,6 +13,7 @@ class NsgGenDataItemField {
   NsgGenDataItemField(
       {this.name,
       this.type,
+      this.description,
       this.apiPrefix,
       this.isPrimary,
       this.referenceName,
@@ -21,6 +23,7 @@ class NsgGenDataItemField {
     return NsgGenDataItemField(
         name: parsedJson['name'],
         type: parsedJson['type'],
+        description: parsedJson['description'],
         apiPrefix: parsedJson['api_prefix'],
         isPrimary: parsedJson['isPrimary'] == 'true',
         referenceName: parsedJson['referenceName'],
@@ -52,12 +55,17 @@ class NsgGenDataItemField {
     } else if (type == 'Reference') {
       return 'NsgDataReferenceField<${referenceType}>';
     } else {
-      print("get nsgDataType for field type $type doesn't found");
+      print("get nsgDataType for field type $type couldn't be found");
       throw Exception();
     }
   }
 
   void writeGetter(NsgGenController nsgGenController, List<String> codeList) {
+    if (description != null && description.isNotEmpty) {
+      description.split('\n').forEach((descLine) {
+        codeList.add('/// $descLine');
+      });
+    }
     if (type == 'String') {
       codeList.add(
           '$dartType get $dartName => getFieldValue($fieldNameVar).toString();');
@@ -93,12 +101,18 @@ class NsgGenDataItemField {
           ' return await getReferentAsync<$referenceType>($fieldNameVar);');
       codeList.add('}');
     } else {
-      print("write getter for field type $type doesn't found");
+      print("write getter for field type $type couldn't be found");
       throw Exception();
     }
+    codeList.add('');
   }
 
   void writeSetter(NsgGenController nsgGenController, List<String> codeList) {
+    if (description != null && description.isNotEmpty) {
+      description.split('\n').forEach((descLine) {
+        codeList.add('/// $descLine');
+      });
+    }
     if (type == 'Image') {
       codeList.add(
           'set $dartName(String value) => setFieldValue($fieldNameVar, value);');
@@ -109,5 +123,6 @@ class NsgGenDataItemField {
       codeList.add(
           'set $dartName($dartType value) => setFieldValue($fieldNameVar, value);');
     }
+    codeList.add('');
   }
 }

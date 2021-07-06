@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'nsgGenDataItemField.dart';
+import 'nsgGenDataItemMethod.dart';
 import 'nsgGenMethod.dart';
 import 'nsgGenController.dart';
 import 'nsgGenerator.dart';
@@ -8,15 +9,18 @@ import 'nsgGenerator.dart';
 class NsgGenDataItem {
   final String typeName;
   final List<NsgGenDataItemField> fields;
+  final List<NsgGenDataItemMethod> methods;
 
-  NsgGenDataItem({this.typeName, this.fields});
+  NsgGenDataItem({this.typeName, this.fields, this.methods});
 
   factory NsgGenDataItem.fromJson(Map<String, dynamic> parsedJson) {
+    var methods = parsedJson['methods'] as List ?? List.empty();
     return NsgGenDataItem(
         typeName: parsedJson['typeName'],
         fields: (parsedJson['fields'] as List)
             .map((i) => NsgGenDataItemField.fromJson(i))
-            .toList());
+            .toList(),
+        methods: methods.map((i) => NsgGenDataItemMethod.fromJson(i)).toList());
   }
 
   void writeCode(NsgGenerator nsgGenerator, NsgGenMethod nsgMethod) async {
@@ -24,31 +28,80 @@ class NsgGenDataItem {
     codeList.add('using System;');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
     codeList.add('{');
-    codeList.add('  public class $typeName');
-    codeList.add('');
-    codeList.add('  {');
+    codeList.add('public class $typeName');
+    codeList.add('{');
 
     fields.forEach((element) {
+      if (element.description != null && element.description.isNotEmpty) {
+        codeList.add('/// <summary>');
+        element.description.split('\n').forEach((descLine) {
+          codeList.add('/// $descLine');
+        });
+        codeList.add('/// </summary>');
+      }
       if (element.dartType == 'int') {
-        codeList.add('    public int ${element.name} { get; set; }');
+        codeList.add('public int ${element.name} { get; set; }');
       } else if (element.dartType == 'double') {
-        codeList.add('    public double ${element.name} { get; set; }');
+        codeList.add('public double ${element.name} { get; set; }');
       } else if (element.dartType == 'bool') {
-        codeList.add('    public bool ${element.name} { get; set; }');
+        codeList.add('public bool ${element.name} { get; set; }');
       } else if (element.dartType == 'DateTime') {
-        codeList.add('    public DateTime ${element.name} { get; set; }');
+        codeList.add('public DateTime ${element.name} { get; set; }');
       } else {
-        codeList.add('    public string ${element.name} { get; set; }');
+        codeList.add('public string ${element.name} { get; set; }');
       }
       if (element.type == 'Image') nsgMethod.addImageMethod(element);
+      codeList.add('');
     });
-    codeList.add('  }');
+
+    methods.forEach((element) {
+      if (element.description != null && element.description.isNotEmpty) {
+        codeList.add('/// <summary>');
+        element.description.split('\n').forEach((descLine) {
+          codeList.add('/// $descLine');
+        });
+        codeList.add('/// </summary>');
+      }
+      if (element.dartType == null) {
+        codeList.add('public void ${element.name}() { }');
+      } else if (['int', 'double', 'bool', 'DateTime']
+          .contains(element.dartType)) {
+        codeList
+            .add('public ${element.dartType} ${element.name}() => default;');
+      } else if (element.dartType == 'Duration') {
+        codeList.add('public TimeSpan ${element.name}() => default;');
+      } else {
+        codeList.add('public string ${element.name}() => string.Empty;');
+      }
+      //if (element.type == 'Image') nsgMethod.addImageMethod(element);
+      codeList.add('');
+    });
+
+    codeList.add('}');
     codeList.add('}');
 
     var fn = '${nsgGenerator.cSharpPath}/${typeName}.cs';
     //if (!File(fn).existsSync()) {
+    indentCode(codeList);
     await File(fn).writeAsString(codeList.join('\n'));
     //}
+  }
+
+  void indentCode(List<String> codeList) {
+    var indentMultiplier = 0;
+    for (var i = 0; i < codeList.length; i++) {
+      if (codeList[i].startsWith('}')) {
+        indentMultiplier--;
+        codeList[i] = ('    ' * indentMultiplier) + codeList[i];
+      } else {
+        var isComment = codeList[i].startsWith('//');
+        codeList[i] = ('    ' * indentMultiplier) + codeList[i];
+        if (!isComment) {
+          if (codeList[i].contains('{')) indentMultiplier++;
+          if (codeList[i].contains('}')) indentMultiplier--;
+        }
+      }
+    }
   }
 
   Future generateCodeDart(NsgGenerator nsgGenerator,
@@ -84,6 +137,9 @@ class NsgGenDataItem {
     fields.forEach((_) {
       _.writeGetter(nsgGenController, codeList);
       _.writeSetter(nsgGenController, codeList);
+    });
+    methods.forEach((_) {
+      _.writeMethod(nsgGenController, codeList);
     });
     codeList.add('');
     codeList.add('  @override');
