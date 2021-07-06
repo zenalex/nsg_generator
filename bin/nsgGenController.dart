@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 
+import 'nsgGenCSProject.dart';
 import 'nsgGenMethod.dart';
 import 'nsgGenerator.dart';
 
@@ -81,9 +82,9 @@ class NsgGenController {
     codeList.add('}');
     codeList.add('}');
 
-    indentCode(codeList);
+    NsgGenCSProject.indentCode(codeList);
 
-    var fn = '${nsgGenerator.cSharpPath}/${class_name}.cs';
+    var fn = '${nsgGenerator.cSharpPath}/Controllers/${class_name}.cs';
     //if (!File(fn).existsSync()) {
     await File(fn).writeAsString(codeList.join('\n'));
     //}
@@ -92,25 +93,8 @@ class NsgGenController {
     await generateCodeDart(nsgGenerator);
   }
 
-  void indentCode(List<String> codeList) {
-    var indentMultiplier = 0;
-    for (var i = 0; i < codeList.length; i++) {
-      if (codeList[i].startsWith('}')) {
-        indentMultiplier--;
-        codeList[i] = ('    ' * indentMultiplier) + codeList[i];
-      } else {
-        var isComment = codeList[i].startsWith('//');
-        codeList[i] = ('    ' * indentMultiplier) + codeList[i];
-        if (!isComment) {
-          if (codeList[i].contains('{')) indentMultiplier++;
-          if (codeList[i].contains('}')) indentMultiplier--;
-        }
-      }
-    }
-  }
-
   void generateRealizations(NsgGenerator nsgGenerator) async {
-    var fn = '${nsgGenerator.cSharpPath}/${class_name}Real.cs';
+    var fn = '${nsgGenerator.cSharpPath}/Controllers/${class_name}Real.cs';
     if (!File(fn).existsSync()) {
       await File(fn).writeAsString('using System;\n\n'
           'namespace ${nsgGenerator.cSharpNamespace}\n'
@@ -120,7 +104,7 @@ class NsgGenController {
           '    }\n'
           '}');
     }
-    fn = '${nsgGenerator.cSharpPath}/${class_name}Mock.cs';
+    fn = '${nsgGenerator.cSharpPath}/Controllers/${class_name}Mock.cs';
     if (!File(fn).existsSync()) {
       await File(fn).writeAsString('using System;\n\n'
           'namespace ${nsgGenerator.cSharpNamespace}\n'
@@ -130,7 +114,7 @@ class NsgGenController {
           '    }\n'
           '}');
     }
-    fn = '${nsgGenerator.cSharpPath}/AuthControllerReal.cs';
+    fn = '${nsgGenerator.cSharpPath}/Controllers/AuthControllerReal.cs';
     if (!File(fn).existsSync()) {
       await File(fn).writeAsString('using System;\n\n'
           'namespace NsgServerClasses\n'
@@ -188,9 +172,9 @@ class NsgGenController {
     codeList.add('}');
     codeList.add('}');
 
-    indentCode(codeList);
+    NsgGenCSProject.indentCode(codeList);
 
-    var fn = '${nsgGenerator.cSharpPath}/${class_name}Interface.cs';
+    var fn = '${nsgGenerator.cSharpPath}/Controllers/${class_name}Interface.cs';
     //if (!File(fn).existsSync()) {
     await File(fn).writeAsString(codeList.join('\n'));
     //}
