@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'nsgGenCSProject.dart';
 import 'nsgGenController.dart';
 
 class NsgGenerator {
@@ -31,6 +32,11 @@ class NsgGenerator {
   Future writeCode(String path) async {
     jsonPath = path;
     var dir = Directory(cSharpPath);
+    await dir.create();
+    NsgGenCSProject.generateProject(this);
+    dir = Directory(cSharpPath + '/Controllers/');
+    await dir.create();
+    dir = Directory(cSharpPath + '/Models/');
     await dir.create();
     dir = Directory(dartPath);
     await dir.create();
