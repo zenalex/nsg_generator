@@ -3,12 +3,14 @@ import 'dart:io';
 
 import 'nsgGenerator.dart';
 
-void main() async {
-  print('Enter path: ');
-  var scPath = stdin.readLineSync(encoding: utf8);
-  //'C:/Users/pro5/source/repos/scif_wms/lib/serviceConfig';
-  //'bin/serviceConfig/'
-
+void main(List<String> args) async {
+  var scPath = '';
+  if (args.length == 1) {
+    scPath = args[0];
+  } else {
+    print('Enter path: ');
+    scPath = stdin.readLineSync(encoding: utf8);
+  }
   startGenerator(scPath);
 }
 

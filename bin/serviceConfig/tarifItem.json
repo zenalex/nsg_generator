@@ -17,6 +17,10 @@
       {
         "name": "Description",
         "type": "String"
+      },
+      {
+        "name": "Advantages",
+        "type": "String"
       }
     ]
 }

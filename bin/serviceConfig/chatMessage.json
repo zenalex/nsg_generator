@@ -13,6 +13,14 @@
       {
         "name": "Message",
         "type": "String"
+      },
+      {
+        "name": "Sender",
+        "type": "String"
+      },
+      {
+        "name": "Time",
+        "type": "Date"
       }
     ]
 }

@@ -182,27 +182,23 @@ class NsgGenController {
         .add("import '../${nsgGenerator.getDartName(class_name)}Model.dart';");
     codeList.add('');
     codeList.add('class ${class_name}Generated extends NsgBaseController {');
-    codeList.add('  NsgDataProvider provider;');
+    codeList.add('  NsgDataProvider? provider;');
     codeList.add('  @override');
     codeList.add('  Future onInit() async {');
     codeList.add('    if (provider == null) {');
     codeList.add('      provider = NsgDataProvider();');
     codeList.add('    }');
-    codeList.add("      provider.serverUri = '${serverUri}';");
+    codeList.add("  provider!.serverUri = '$serverUri';");
+    codeList.add('  ');
     addRegisterDataItems(nsgGenerator, codeList);
-    codeList.add('      provider.useNsgAuthorization = ${useAuthorization};');
-    codeList.add('      await provider.connect(this);');
-    if (useAuthorization) {
-      codeList.add('      if (provider.isAnonymous) {');
-      codeList.add(
-          '        await Get.to(provider.loginPage).then((value) => loadData());');
-      codeList.add('      } else {');
-
-      codeList.add('        await loadData();');
-      codeList.add('      }');
-    } else {
-      codeList.add('        await loadData();');
-    }
+    codeList.add('    provider!.useNsgAuthorization = ${useAuthorization};');
+    codeList.add('    await provider!.connect(this);');
+    codeList.add('    if (provider!.isAnonymous) {');
+    codeList.add(
+        '      await Get.to(provider!.loginPage)?.then((value) => loadData());');
+    codeList.add('    } else {');
+    codeList.add('      await loadData();');
+    codeList.add('    }');
     codeList.add('    ');
     codeList.add('    super.onInit();');
     codeList.add('  }');
@@ -226,6 +222,10 @@ class NsgGenController {
     codeList.add("import '${nsgGenerator.genPathName}/${class_name}.g.dart';");
     codeList.add('');
     codeList.add('class ${class_name} extends ${class_name}Generated {');
+    codeList.add('');
+    codeList
+        .add('  ${class_name}(NsgDataProvider provider) : super(provider);');
+    codeList.add('');
     codeList.add('  @override');
     codeList.add('  Future loadData() async {');
     codeList.add('    super.loadData();');
