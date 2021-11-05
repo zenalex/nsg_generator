@@ -38,7 +38,7 @@ NET namespace для генерации классов
 "dataType": "NsgDataItem",
 
 Uri сервера
-"serverUri": "http://alex.nsgsoft.ru:5074",
+"serverUri": "http://server.name:5000",
 
 Массив классов данных
 "method": []
