@@ -1,4 +1,70 @@
-A simple command-line application.
-
-Created from templates made available by Stagehand under a BSD-style
+Создание клиент-серверной модели данных для обмена данными между клиентами, написанными на FLUTTER и сервером NET5.
 [license](https://github.com/dart-lang/stagehand/blob/master/LICENSE).
+
+Порядок действий для генерации модели обмена данных
+
+1.	Непосредственно генерацию осуществляет данный проект (nsg_generator https://github.com/zenalex/nsg_generator.git)
+2.	Создайте или подготовьте следующие проекты: Flutter  - для генерации клиента, NET5 – для генерации сервера
+3.	В проекте Flutter создаем папку сonfig (название любое) вне попки lib (для того, чтобы файлы в ней не были включены в конечный проект). В этой папке (будем называеть её config) будем создавать файлы-описатели классов и вызываемых функций в формате json
+
+Создание конфигурационных файлов 
+Все данные файлы создаются в папке config и имеют формат json.
+generation_config.json  - Основной файл, содержащий описание всех генерируемых типов данных.
+Описание структуры generation_config:
+Путь к папке проекта NET для генерации классов
+"cSharpPath": "X:/Path/",
+
+NET namespace для генерации классов
+"cSharpNamespace": "namespace",
+
+Путь к папке проекта FLUTTER для генерации классов
+"dartPath": "X:/Path"
+
+Массив генерируемых контроллеров
+"controller":[]
+
+Описание структуры контроллеров controller
+
+Префикс для вызова web-api
+"api_prefix": "Api",
+
+Имя класса контроллера
+"class_name": "DataController",
+
+Использует ли контроллер проверку пользователей
+"useAuthorization": "true",
+
+Тип контроллера (пока единственный из доступных)
+"dataType": "NsgDataItem",
+
+Uri сервера
+"serverUri": "http://server.name:5000",
+
+Массив классов данных
+"method": []
+
+Описание структуры классов данный (method)
+
+Имя класса данных
+"name": "UserData",
+
+Описание класса данных
+"description" : "Get user data",
+
+Префикс web-api для запроса операций чтения и записи с данным классом
+"api_prefix": "UserData",
+
+Уровень прав, требуемый для обращения к данным: 
+- anonymous
+-user
+"authorize": "user",
+
+Тип запроса (GET или POST)
+"type": "get",
+
+Имя файла описания структуры полей данного класса
+"dataTypeFile": "userItem.json",
+
+Генерировать методы не только для чтения, но и для записи
+"allowPost": "true"
+
