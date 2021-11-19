@@ -22,6 +22,10 @@
         "type": "String"
       },
       {
+        "name": "DocumentType",
+        "type": "int"
+      },
+      {
         "name": "PassportSeries",
         "type": "String"
       },
@@ -40,6 +44,10 @@
       {
         "name": "PassportIssueByCode",
         "type": "String"
+      },
+      {
+        "name": "PassportHasValidUntilDate",
+        "type": "bool"
       },
       {
         "name": "PassportValidUntil",

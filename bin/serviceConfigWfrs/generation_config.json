@@ -1,5 +1,5 @@
 {
-  "cSharpPath": "f:/Projects2010/flutterServer/WFRS.serverCore/WFRS.serverCore/Models",
+  "cSharpPath": "f:/Projects2010/flutterServer/WFRS.serverCore/WFRS.serverCore/",
   "cSharpNamespace": "Wfrs.Server",
   "dartPath": "f:/Projects2010/flutter1/codogeneration_test/lib/model",
   "controller":[
