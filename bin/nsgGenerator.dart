@@ -4,6 +4,7 @@ import 'nsgGenCSProject.dart';
 import 'nsgGenController.dart';
 
 class NsgGenerator {
+  final String targetFramework;
   final String cSharpPath;
   final String cSharpNamespace;
   final String dartPath;
@@ -13,10 +14,15 @@ class NsgGenerator {
   static NsgGenerator generator;
 
   NsgGenerator(
-      {this.cSharpPath, this.cSharpNamespace, this.dartPath, this.controllers});
+      {this.targetFramework,
+      this.cSharpPath,
+      this.cSharpNamespace,
+      this.dartPath,
+      this.controllers});
 
   factory NsgGenerator.fromJson(Map<String, dynamic> parsedJson) {
     generator = NsgGenerator(
+        targetFramework: parsedJson['targetFramework'],
         cSharpPath: parsedJson['cSharpPath'],
         cSharpNamespace: parsedJson['cSharpNamespace'],
         dartPath: parsedJson['dartPath'],

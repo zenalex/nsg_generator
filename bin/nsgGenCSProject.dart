@@ -13,13 +13,15 @@ class NsgGenCSProject {
     var file = File(
         nsgGenerator.cSharpPath + '/${nsgGenerator.cSharpNamespace}.csproj');
     if (file.existsSync()) return;
+    var targetFramework = nsgGenerator.targetFramework ?? 'net5.0';
+    if (targetFramework.isEmpty) targetFramework = 'net5.0';
     print('generating .csproj');
     // TODO: store .csproj in the target /serviceConfig
     var codeList = <String>[];
     codeList.add('<Project Sdk="Microsoft.NET.Sdk.Web">');
     codeList.add('');
     codeList.add('  <PropertyGroup>');
-    codeList.add('    <TargetFramework>net5.0</TargetFramework>');
+    codeList.add('    <TargetFramework>${targetFramework}</TargetFramework>');
     codeList.add('  </PropertyGroup>');
     codeList.add('');
     codeList.add(
@@ -30,7 +32,7 @@ class NsgGenCSProject {
     codeList.add('  <ItemGroup>');
     codeList.add('    <Reference Include="NsgServerClasses">');
     codeList.add(
-        '      <HintPath>..\\..\\NsgServerClasses\\bin\\Debug\\net5.0\\NsgServerClasses.dll</HintPath>');
+        '      <HintPath>..\\..\\NsgServerClasses\\bin\\Debug\\${targetFramework}\\NsgServerClasses.dll</HintPath>');
     codeList.add('    </Reference>');
     codeList.add('  </ItemGroup>');
     codeList.add('');
@@ -41,7 +43,9 @@ class NsgGenCSProject {
     codeList.add('');
     codeList.add('  <ItemGroup>');
     codeList.add(
-        '    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.7" />');
+        '    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="' +
+            (targetFramework == 'net5.0' ? '5.0.7' : '3.1.21') +
+            '" />');
     codeList.add(
         '    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.11.1" />');
     codeList.add('  </ItemGroup>');
