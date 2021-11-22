@@ -43,14 +43,19 @@ class NsgGenMethod {
     codeList.add('/// <summary>');
     codeList.add('/// $description');
     codeList.add('/// </summary>');
-    codeList.add('[Route("$apiPrefix")]');
-    //Authorization
-    if (authorize == 'anonymous') {
-      codeList.add('[Authorize]');
-    } else if (authorize == 'user') {
-      codeList.add('[Authorize(Roles = UserRoles.User)]');
-    } else if (authorize != 'none') {
-      throw Exception('Wrong authorization type in method ${method.name}()');
+    if (nsgGenerator.targetFramework == 'net5.0') {
+      codeList.add('[Route("$apiPrefix")]');
+
+      //Authorization
+      if (authorize == 'anonymous') {
+        codeList.add('[Authorize]');
+      } else if (authorize == 'user') {
+        codeList.add('[Authorize(Roles = UserRoles.User)]');
+      } else if (authorize != 'none') {
+        throw Exception('Wrong authorization type in method ${method.name}()');
+      }
+    } else {
+      codeList.add('[Route("api/${controller.api_prefix}/$apiPrefix")]');
     }
     //POST or GET
     var apiType = '';
@@ -73,15 +78,19 @@ class NsgGenMethod {
 
     //Generation post data method
     if (allowPost) {
-      codeList.add('[Route("$apiPrefix/Post")]');
-      //Authorization
-      if (authorize == 'anonymous') {
-        codeList.add('[Authorize]');
-      } else if (authorize == 'user') {
-        codeList.add('[Authorize(Roles = UserRoles.User)]');
-      } else if (authorize != 'none') {
-        throw Exception(
-            'Wrong authorization type in method ${method.name}([FromBody] ${method.genDataItem.typeName} items)');
+      if (nsgGenerator.targetFramework == 'net5.0') {
+        codeList.add('[Route("$apiPrefix/Post")]');
+        //Authorization
+        if (authorize == 'anonymous') {
+          codeList.add('[Authorize]');
+        } else if (authorize == 'user') {
+          codeList.add('[Authorize(Roles = UserRoles.User)]');
+        } else if (authorize != 'none') {
+          throw Exception(
+              'Wrong authorization type in method ${method.name}([FromBody] ${method.genDataItem.typeName} items)');
+        }
+      } else {
+        codeList.add('[Route("api/${controller.api_prefix}/$apiPrefix/Post")]');
       }
       codeList.add('[HttpPost]');
       codeList.add(
@@ -105,7 +114,12 @@ class NsgGenMethod {
     }
     //Generation image tranfer methods
     imageFieldList.forEach((element) {
-      codeList.add('[Route("${element.apiPrefix}/{file}")]');
+      if (nsgGenerator.targetFramework == 'net5.0') {
+        codeList.add('[Route("${element.apiPrefix}/{file}")]');
+      } else {
+        codeList
+            .add('[Route("api/${controller.api_prefix}/$apiPrefix/{file}")]');
+      }
       codeList.add('[HttpGet]');
       //for images authentification temporary??? disabled
       // if (authorize == 'anonymous') {

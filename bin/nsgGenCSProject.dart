@@ -42,6 +42,16 @@ class NsgGenCSProject {
     codeList.add('  </ItemGroup>');
     codeList.add('');
     codeList.add('  <ItemGroup>');
+    if (targetFramework != 'net5.0') {
+      codeList.add(
+          '    <PackageReference Include="Microsoft.AspNetCore.HttpsPolicy" Version="2.2.0" />');
+      codeList.add(
+          '    <PackageReference Include="Microsoft.Owin.Diagnostics" Version="4.2.0" />');
+      codeList.add(
+          '    <PackageReference Include="Microsoft.Owin.Host.SystemWeb" Version="4.2.0" />');
+    }
+    codeList.add(
+        '    <PackageReference Include="Microsoft.AspNet.WebApi.OwinSelfHost" Version="5.2.7" />');
     codeList.add(
         '    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="' +
             (targetFramework == 'net5.0' ? '5.0.7' : '3.1.21') +
@@ -61,33 +71,53 @@ class NsgGenCSProject {
     print('generating Program.cs');
     // TODO: store Program.cs in the target /serviceConfig
     var codeList = <String>[];
-    codeList.add('using Microsoft.AspNetCore.Hosting;');
-    codeList.add('using Microsoft.Extensions.Configuration;');
-    codeList.add('using Microsoft.Extensions.Hosting;');
-    codeList.add('using Microsoft.Extensions.Logging;');
-    codeList.add('using System;');
-    codeList.add('using System.Collections.Generic;');
-    codeList.add('using System.Linq;');
-    codeList.add('using System.Threading.Tasks;');
-    codeList.add('');
-    codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
-    codeList.add('{');
-    codeList.add('public class Program');
-    codeList.add('{');
-    codeList.add('public static void Main(string[] args)');
-    codeList.add('{');
-    codeList.add('CreateHostBuilder(args).Build().Run();');
-    codeList.add('}');
-    codeList.add('');
-    codeList
-        .add('public static IHostBuilder CreateHostBuilder(string[] args) =>');
-    codeList.add('    Host.CreateDefaultBuilder(args)');
-    codeList.add('        .ConfigureWebHostDefaults(webBuilder =>');
-    codeList.add('        {');
-    codeList.add('        webBuilder.UseStartup<Startup>();');
-    codeList.add('        });');
-    codeList.add('}');
-    codeList.add('}');
+    if (nsgGenerator.targetFramework == 'net5.0') {
+      codeList.add('using Microsoft.AspNetCore.Hosting;');
+      codeList.add('using Microsoft.Extensions.Configuration;');
+      codeList.add('using Microsoft.Extensions.Hosting;');
+      codeList.add('using Microsoft.Extensions.Logging;');
+      codeList.add('using System;');
+      codeList.add('using System.Collections.Generic;');
+      codeList.add('using System.Linq;');
+      codeList.add('using System.Threading.Tasks;');
+      codeList.add('');
+      codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
+      codeList.add('{');
+      codeList.add('public class Program');
+      codeList.add('{');
+      codeList.add('public static void Main(string[] args)');
+      codeList.add('{');
+      codeList.add('CreateHostBuilder(args).Build().Run();');
+      codeList.add('}');
+      codeList.add('');
+      codeList.add(
+          'public static IHostBuilder CreateHostBuilder(string[] args) =>');
+      codeList.add('    Host.CreateDefaultBuilder(args)');
+      codeList.add('        .ConfigureWebHostDefaults(webBuilder =>');
+      codeList.add('        {');
+      codeList.add('        webBuilder.UseStartup<Startup>();');
+      codeList.add('        });');
+      codeList.add('}');
+      codeList.add('}');
+    } else {
+      codeList.add('using Microsoft.Owin.Hosting;');
+      codeList.add('using System;');
+      codeList.add('');
+      codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
+      codeList.add('{');
+      codeList.add('class Program');
+      codeList.add('{');
+      codeList.add('public static void Main(string[] args)');
+      codeList.add('{');
+      codeList.add('string baseAddress = "http://127.0.0.1:5000/";');
+      codeList.add('using (WebApp.Start<Startup>(url: baseAddress))');
+      codeList.add('{');
+      codeList.add('Console.ReadLine();');
+      codeList.add('}');
+      codeList.add('}');
+      codeList.add('}');
+      codeList.add('}');
+    }
     indentCode(codeList);
     file.writeAsString(codeList.join('\n'));
   }
@@ -98,60 +128,86 @@ class NsgGenCSProject {
     print('generating Startup.cs');
     // TODO: store Startup.cs in the target /serviceConfig
     var codeList = <String>[];
-    codeList.add('using Microsoft.AspNetCore.Builder;');
-    codeList.add('using Microsoft.AspNetCore.Hosting;');
-    codeList.add('using Microsoft.AspNetCore.HttpsPolicy;');
-    codeList.add('using Microsoft.AspNetCore.Mvc;');
-    codeList.add('using Microsoft.Extensions.Configuration;');
-    codeList.add('using Microsoft.Extensions.DependencyInjection;');
-    codeList.add('using Microsoft.Extensions.Hosting;');
-    codeList.add('using Microsoft.Extensions.Logging;');
-    codeList.add('using System;');
-    codeList.add('using System.Collections.Generic;');
-    codeList.add('using System.Linq;');
-    codeList.add('using System.Threading.Tasks;');
-    codeList.add('');
-    codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
-    codeList.add('{');
-    codeList.add('public class Startup');
-    codeList.add('{');
-    codeList.add('public Startup(IConfiguration configuration)');
-    codeList.add('{');
-    codeList.add('Configuration = configuration;');
-    codeList.add('}');
-    codeList.add('');
-    codeList.add('public IConfiguration Configuration { get; }');
-    codeList.add('');
-    codeList.add(
-        '// This method gets called by the runtime. Use this method to add services to the container.');
-    codeList.add('public void ConfigureServices(IServiceCollection services)');
-    codeList.add('{');
-    codeList.add('services.AddControllers();');
-    codeList.add('}');
-    codeList.add('');
-    codeList.add(
-        '// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.');
-    codeList.add(
-        'public void Configure(IApplicationBuilder app, IWebHostEnvironment env)');
-    codeList.add('{');
-    codeList.add('if (env.IsDevelopment())');
-    codeList.add('{');
-    codeList.add('app.UseDeveloperExceptionPage();');
-    codeList.add('}');
-    codeList.add('');
-    codeList.add('app.UseHttpsRedirection();');
-    codeList.add('');
-    codeList.add('app.UseRouting();');
-    codeList.add('');
-    codeList.add('app.UseAuthorization();');
-    codeList.add('');
-    codeList.add('app.UseEndpoints(endpoints =>');
-    codeList.add('{');
-    codeList.add('endpoints.MapControllers();');
-    codeList.add('});');
-    codeList.add('}');
-    codeList.add('}');
-    codeList.add('}');
+    if (nsgGenerator.targetFramework == 'net5.0') {
+      codeList.add('using Microsoft.AspNetCore.Builder;');
+      codeList.add('using Microsoft.AspNetCore.Hosting;');
+      codeList.add('using Microsoft.AspNetCore.HttpsPolicy;');
+      codeList.add('using Microsoft.AspNetCore.Mvc;');
+      codeList.add('using Microsoft.Extensions.Configuration;');
+      codeList.add('using Microsoft.Extensions.DependencyInjection;');
+      codeList.add('using Microsoft.Extensions.Hosting;');
+      codeList.add('using Microsoft.Extensions.Logging;');
+      codeList.add('using System;');
+      codeList.add('using System.Collections.Generic;');
+      codeList.add('using System.Linq;');
+      codeList.add('using System.Threading.Tasks;');
+      codeList.add('');
+      codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
+      codeList.add('{');
+      codeList.add('public class Startup');
+      codeList.add('{');
+      codeList.add('public Startup(IConfiguration configuration)');
+      codeList.add('{');
+      codeList.add('Configuration = configuration;');
+      codeList.add('}');
+      codeList.add('');
+      codeList.add('public IConfiguration Configuration { get; }');
+      codeList.add('');
+      codeList.add(
+          '// This method gets called by the runtime. Use this method to add services to the container.');
+      codeList
+          .add('public void ConfigureServices(IServiceCollection services)');
+      codeList.add('{');
+      codeList.add('services.AddControllers();');
+      codeList.add('}');
+      codeList.add('');
+      codeList.add(
+          '// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.');
+      codeList.add(
+          'public void Configure(IApplicationBuilder app, IWebHostEnvironment env)');
+      codeList.add('{');
+      codeList.add('if (env.IsDevelopment())');
+      codeList.add('{');
+      codeList.add('app.UseDeveloperExceptionPage();');
+      codeList.add('}');
+      codeList.add('');
+      codeList.add('app.UseHttpsRedirection();');
+      codeList.add('');
+      codeList.add('app.UseRouting();');
+      codeList.add('');
+      codeList.add('app.UseAuthorization();');
+      codeList.add('');
+      codeList.add('app.UseEndpoints(endpoints =>');
+      codeList.add('{');
+      codeList.add('endpoints.MapControllers();');
+      codeList.add('});');
+      codeList.add('}');
+      codeList.add('}');
+      codeList.add('}');
+    } else {
+      codeList.add('using Microsoft.Owin;');
+      codeList.add('using Owin;');
+      codeList.add('using System.Web.Http;');
+      codeList.add('');
+      codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
+      codeList.add('{');
+      codeList.add('public class Startup');
+      codeList.add('{');
+      codeList.add('public void Configuration(IAppBuilder app)');
+      codeList.add('{');
+      codeList.add('app.UseErrorPage();');
+      codeList.add('HttpConfiguration config = new HttpConfiguration();');
+      codeList.add('config.MapHttpAttributeRoutes();');
+      codeList.add('config.Routes.MapHttpRoute(');
+      codeList.add('    name: "DefaultApi",');
+      codeList.add('    routeTemplate: "api/{controller}/{action}/{id}",');
+      codeList.add('    defaults: new { id = RouteParameter.Optional }');
+      codeList.add(');');
+      codeList.add('app.UseWebApi(config);');
+      codeList.add('}');
+      codeList.add('}');
+      codeList.add('}');
+    }
     indentCode(codeList);
     file.writeAsString(codeList.join('\n'));
   }

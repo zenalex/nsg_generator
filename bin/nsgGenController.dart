@@ -7,6 +7,8 @@ import 'nsgGenerator.dart';
 class NsgGenController {
   final String api_prefix;
   final String class_name;
+  final String impl_controller_name;
+  final String impl_auth_controller_name;
   final String dataType;
   final String serverUri;
   final bool useAuthorization;
@@ -16,6 +18,8 @@ class NsgGenController {
   NsgGenController(
       {this.api_prefix,
       this.class_name,
+      this.impl_controller_name,
+      this.impl_auth_controller_name,
       this.dataType,
       this.serverUri,
       this.useAuthorization,
@@ -26,6 +30,14 @@ class NsgGenController {
     return NsgGenController(
         api_prefix: parsedJson['api_prefix'],
         class_name: parsedJson['class_name'],
+        impl_controller_name:
+            (parsedJson['impl_controller_name']?.isNotEmpty ?? false)
+                ? parsedJson['impl_controller_name']
+                : parsedJson['class_name'],
+        impl_auth_controller_name:
+            (parsedJson['impl_auth_controller_name']?.isNotEmpty ?? false)
+                ? parsedJson['impl_auth_controller_name']
+                : 'AuthController',
         dataType: parsedJson['dataType'],
         serverUri: parsedJson['serverUri'],
         useAuthorization: parsedJson['useAuthorization'] == 'true',
@@ -43,6 +55,20 @@ class NsgGenController {
     codeList.add('using System.Collections.Generic;');
     codeList.add('using System.Linq;');
     codeList.add('using System.Threading.Tasks;');
+    if (nsgGenerator.targetFramework != 'net5.0') {
+      codeList.add('using System.Web.Http;');
+      codeList
+          .add('using HttpGetAttribute = System.Web.Http.HttpGetAttribute;');
+      codeList
+          .add('using HttpPostAttribute = System.Web.Http.HttpPostAttribute;');
+      codeList.add('using RouteAttribute = System.Web.Http.RouteAttribute;');
+      codeList
+          .add('using FromBodyAttribute = System.Web.Http.FromBodyAttribute;');
+      codeList.add(
+          'using AuthorizeAttribute = System.Web.Http.AuthorizeAttribute;');
+      codeList.add(
+          'using ActionNameAttribute = System.Web.Http.ActionNameAttribute;');
+    }
     codeList.add('using Microsoft.AspNetCore.Authorization;');
     codeList.add('using ${nsgGenerator.cSharpNamespace};');
     codeList.add('using NsgServerClasses;');
@@ -52,9 +78,14 @@ class NsgGenController {
     codeList.add('  /// <summary>');
     codeList.add('  ///${dataType}Interface Controller');
     codeList.add('  /// </summary>');
-    codeList.add('  [ApiController]');
-    codeList.add('  [Route("${api_prefix}")]');
-    codeList.add('  public class ${class_name} : ControllerBase');
+    if (nsgGenerator.targetFramework == 'net5.0') {
+      codeList.add('  [ApiController]');
+      codeList.add('  [Route("${api_prefix}")]');
+    }
+    codeList.add('  public class ${class_name} : ' +
+        (nsgGenerator.targetFramework == 'net5.0'
+            ? 'ControllerBase'
+            : 'ApiController'));
     codeList.add('  {');
 
     codeList.add('    ${class_name}Interface controller;');
@@ -65,14 +96,20 @@ class NsgGenController {
     codeList.add('    {');
     codeList.add('      _logger = logger;');
     codeList.add('      #if (Real)');
-    codeList.add('        controller = new ${class_name}();');
-    codeList.add('        authController = new AuthController();');
+    codeList.add('        controller = new ${impl_controller_name}();');
+    codeList
+        .add('        authController = new ${impl_auth_controller_name}();');
     codeList.add('      #else');
-    codeList.add('        controller = new ${class_name}Mock();');
-    codeList.add('        authController = new AuthImplMock();');
+    codeList.add('        controller = new ${impl_controller_name}Mock();');
+    codeList.add(
+        '        authController = new ${impl_auth_controller_name}Mock();');
     codeList.add('      #endif');
     codeList.add('    }');
     codeList.add('    ');
+    if (nsgGenerator.targetFramework != 'net5.0') {
+      codeList.add('    public ${class_name}() : this(null) { }');
+      codeList.add('    ');
+    }
 
     await Future.forEach<NsgGenMethod>(methods, (element) async {
       await element.generateCode(codeList, nsgGenerator, this, element);
@@ -105,29 +142,30 @@ class NsgGenController {
     codeList.add('  public interface ${class_name}Interface');
     codeList.add('  {');
 
+    var publicMdf = (nsgGenerator.targetFramework == 'net5.0' ? 'public ' : '');
     methods.forEach((_) {
       if (_.authorize != 'none') {
         codeList.add(
-            '    public Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user);');
+            '    ${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user);');
         if (_.allowPost) {
           codeList.add(
-              '    public Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
+              '    ${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
         }
       } else {
         codeList.add(
-            '    public Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user);');
+            '    ${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user);');
         if (_.allowPost) {
           codeList.add(
-              '    public Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
+              '    ${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
         }
       }
       _.imageFieldList.forEach((el) {
         if (_.authorize != 'none') {
           codeList.add(
-              '    public Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
+              '    ${publicMdf}Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
         } else {
           codeList.add(
-              '    public Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
+              '    ${publicMdf}Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
         }
       });
     });
