@@ -146,14 +146,14 @@ class NsgGenController {
     methods.forEach((_) {
       if (_.authorize != 'none') {
         codeList.add(
-            '    ${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user);');
+            '    ${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams);');
         if (_.allowPost) {
           codeList.add(
               '    ${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
         }
       } else {
         codeList.add(
-            '    ${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user);');
+            '    ${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams);');
         if (_.allowPost) {
           codeList.add(
               '    ${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');

@@ -65,13 +65,13 @@ class NsgGenMethod {
 
     //Generation get gata method
     codeList.add(
-        'public async Task<IEnumerable<${method.genDataItem.typeName}>> ${method.name}()');
+        'public async Task<IEnumerable<${method.genDataItem.typeName}>> ${method.name}([FromBody] NsgFindParams findParams)');
     codeList.add('{');
     if (authorize != 'none') {
       codeList.add('var user = await authController.GetUserByToken(Request);');
-      codeList.add('return await controller.${method.name}(user);');
+      codeList.add('return await controller.${method.name}(user, findParams);');
     } else {
-      codeList.add('return await controller.${method.name}(null);');
+      codeList.add('return await controller.${method.name}(null, findParams);');
     }
     codeList.add('}');
     codeList.add('');
