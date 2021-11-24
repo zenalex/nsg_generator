@@ -49,6 +49,14 @@ class NsgGenCSProject {
           '    <PackageReference Include="Microsoft.Owin.Diagnostics" Version="4.2.0" />');
       codeList.add(
           '    <PackageReference Include="Microsoft.Owin.Host.SystemWeb" Version="4.2.0" />');
+      codeList.add(
+          '    <PackageReference Include="Microsoft.AspNet.Cors" Version="5.2.7" />');
+      codeList.add(
+          '    <PackageReference Include="Microsoft.AspNet.WebApi.Cors" Version="5.2.7" />');
+      codeList.add(
+          '    <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.2.0" />');
+      codeList.add(
+          '    <PackageReference Include="Microsoft.Owin.Cors" Version="4.2.0" />');
     }
     codeList.add(
         '    <PackageReference Include="Microsoft.AspNet.WebApi.OwinSelfHost" Version="5.2.7" />');
@@ -159,6 +167,16 @@ class NsgGenCSProject {
           .add('public void ConfigureServices(IServiceCollection services)');
       codeList.add('{');
       codeList.add('services.AddControllers();');
+      codeList.add('services.AddCors(options =>');
+      codeList.add('{');
+      codeList.add('options.AddPolicy(name: "AllowAll",');
+      codeList.add('    builder =>');
+      codeList.add('    {');
+      codeList.add('    builder.AllowAnyOrigin().AllowAnyHeader()');
+      codeList.add(
+          '           .WithMethods("GET", "POST", "OPTIONS", "PUT", "DELETE");');
+      codeList.add('    });');
+      codeList.add('});');
       codeList.add('}');
       codeList.add('');
       codeList.add(
@@ -175,6 +193,8 @@ class NsgGenCSProject {
       codeList.add('');
       codeList.add('app.UseRouting();');
       codeList.add('');
+      codeList.add('app.UseCors("AllowAll");');
+      codeList.add('');
       codeList.add('app.UseAuthorization();');
       codeList.add('');
       codeList.add('app.UseEndpoints(endpoints =>');
@@ -188,6 +208,7 @@ class NsgGenCSProject {
       codeList.add('using Microsoft.Owin;');
       codeList.add('using Owin;');
       codeList.add('using System.Web.Http;');
+      codeList.add('using System.Web.Http.Cors;');
       codeList.add('');
       codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
       codeList.add('{');
@@ -197,6 +218,11 @@ class NsgGenCSProject {
       codeList.add('{');
       codeList.add('app.UseErrorPage();');
       codeList.add('HttpConfiguration config = new HttpConfiguration();');
+      codeList.add('');
+      codeList.add(
+          'config.EnableCors(new EnableCorsAttribute("*", "*", "GET, POST, OPTIONS, PUT, DELETE"));');
+      codeList.add('app.UseCors(Microsoft.Owin.Cors.CorsOptions.AllowAll);');
+      codeList.add('');
       codeList.add('config.MapHttpAttributeRoutes();');
       codeList.add('config.Routes.MapHttpRoute(');
       codeList.add('    name: "DefaultApi",');
