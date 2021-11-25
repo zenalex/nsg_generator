@@ -166,7 +166,9 @@ class NsgGenCSProject {
       codeList
           .add('public void ConfigureServices(IServiceCollection services)');
       codeList.add('{');
-      codeList.add('services.AddControllers();');
+      codeList.add('services.AddControllers()');
+      codeList.add(
+          '    .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);');
       codeList.add('services.AddCors(options =>');
       codeList.add('{');
       codeList.add('options.AddPolicy(name: "AllowAll",');
@@ -229,6 +231,9 @@ class NsgGenCSProject {
       codeList.add('    routeTemplate: "api/{controller}/{action}/{id}",');
       codeList.add('    defaults: new { id = RouteParameter.Optional }');
       codeList.add(');');
+      codeList.add(
+          'config.Formatters.JsonFormatter.SerializerSettings.ContractResolver =');
+      codeList.add('    new CamelCasePropertyNamesContractResolver();');
       codeList.add('app.UseWebApi(config);');
       codeList.add('}');
       codeList.add('}');
