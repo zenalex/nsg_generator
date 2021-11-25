@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 
+import 'nsgGenCSProject.dart';
 import 'nsgGenMethod.dart';
 import 'nsgGenerator.dart';
 
@@ -75,48 +76,47 @@ class NsgGenController {
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
     codeList.add('{');
-    codeList.add('  /// <summary>');
-    codeList.add('  ///${dataType}Interface Controller');
-    codeList.add('  /// </summary>');
+    codeList.add('/// <summary>');
+    codeList.add('///${dataType}Interface Controller');
+    codeList.add('/// </summary>');
     if (nsgGenerator.targetFramework == 'net5.0') {
-      codeList.add('  [ApiController]');
-      codeList.add('  [Route("${api_prefix}")]');
+      codeList.add('[ApiController]');
+      codeList.add('[Route("${api_prefix}")]');
     }
-    codeList.add('  public class ${class_name} : ' +
+    codeList.add('public class ${class_name} : ' +
         (nsgGenerator.targetFramework == 'net5.0'
             ? 'ControllerBase'
             : 'ApiController'));
-    codeList.add('  {');
+    codeList.add('{');
 
-    codeList.add('    ${class_name}Interface controller;');
-    codeList.add('    AuthImplInterface authController;');
+    codeList.add('${class_name}Interface controller;');
+    codeList.add('AuthImplInterface authController;');
 
-    codeList.add('    private readonly ILogger<${class_name}> _logger;');
-    codeList.add('    public ${class_name}(ILogger<${class_name}> logger)');
-    codeList.add('    {');
-    codeList.add('      _logger = logger;');
-    codeList.add('      #if (Real)');
-    codeList.add('        controller = new ${impl_controller_name}();');
-    codeList
-        .add('        authController = new ${impl_auth_controller_name}();');
-    codeList.add('      #else');
-    codeList.add('        controller = new ${impl_controller_name}Mock();');
-    codeList.add(
-        '        authController = new ${impl_auth_controller_name}Mock();');
-    codeList.add('      #endif');
-    codeList.add('    }');
-    codeList.add('    ');
+    codeList.add('private readonly ILogger<${class_name}> _logger;');
+    codeList.add('public ${class_name}(ILogger<${class_name}> logger)');
+    codeList.add('{');
+    codeList.add('_logger = logger;');
+    codeList.add('#if (Real)');
+    codeList.add('controller = new ${impl_controller_name}();');
+    codeList.add('authController = new ${impl_auth_controller_name}();');
+    codeList.add('#else');
+    codeList.add('controller = new ${impl_controller_name}Mock();');
+    codeList.add('authController = new ${impl_auth_controller_name}Mock();');
+    codeList.add('#endif');
+    codeList.add('}');
+    codeList.add('');
     if (nsgGenerator.targetFramework != 'net5.0') {
-      codeList.add('    public ${class_name}() : this(null) { }');
-      codeList.add('    ');
+      codeList.add('public ${class_name}() : this(null) { }');
+      codeList.add('');
     }
 
     await Future.forEach<NsgGenMethod>(methods, (element) async {
       await element.generateCode(codeList, nsgGenerator, this, element);
     });
 
-    codeList.add('  }');
     codeList.add('}');
+    codeList.add('}');
+    NsgGenCSProject.indentCode(codeList);
 
     var fn = '${nsgGenerator.cSharpPath}/${class_name}.cs';
     //if (!File(fn).existsSync()) {
@@ -139,40 +139,40 @@ class NsgGenController {
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
     codeList.add('{');
-    codeList.add('  public interface ${class_name}Interface');
-    codeList.add('  {');
+    codeList.add('public interface ${class_name}Interface');
+    codeList.add('{');
 
     var publicMdf = (nsgGenerator.targetFramework == 'net5.0' ? 'public ' : '');
     methods.forEach((_) {
       if (_.authorize != 'none') {
         codeList.add(
-            '    ${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams);');
+            '${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams);');
         if (_.allowPost) {
           codeList.add(
-              '    ${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
+              '${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
         }
       } else {
         codeList.add(
-            '    ${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams);');
+            '${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams);');
         if (_.allowPost) {
           codeList.add(
-              '    ${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
+              '${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
         }
       }
       _.imageFieldList.forEach((el) {
         if (_.authorize != 'none') {
           codeList.add(
-              '    ${publicMdf}Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
+              '${publicMdf}Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
         } else {
           codeList.add(
-              '    ${publicMdf}Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
+              '${publicMdf}Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
         }
       });
     });
 
-    codeList.add('  }');
     codeList.add('}');
-
+    codeList.add('}');
+    NsgGenCSProject.indentCode(codeList);
     var fn = '${nsgGenerator.cSharpPath}/${class_name}Interface.cs';
     //if (!File(fn).existsSync()) {
     await File(fn).writeAsString(codeList.join('\n'));
