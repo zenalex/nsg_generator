@@ -9,15 +9,17 @@ import 'nsgGenerator.dart';
 
 class NsgGenDataItem {
   final String typeName;
+  final String dbTypeName;
   final List<NsgGenDataItemField> fields;
   final List<NsgGenDataItemMethod> methods;
 
-  NsgGenDataItem({this.typeName, this.fields, this.methods});
+  NsgGenDataItem({this.typeName, this.dbTypeName, this.fields, this.methods});
 
   factory NsgGenDataItem.fromJson(Map<String, dynamic> parsedJson) {
     var methods = parsedJson['methods'] as List ?? List.empty();
     return NsgGenDataItem(
         typeName: parsedJson['typeName'],
+        dbTypeName: parsedJson['databaseType'],
         fields: (parsedJson['fields'] as List)
             .map((i) => NsgGenDataItemField.fromJson(i))
             .toList(),
@@ -31,6 +33,32 @@ class NsgGenDataItem {
     codeList.add('{');
     codeList.add('public class $typeName');
     codeList.add('{');
+
+    if (dbTypeName != null && dbTypeName.isNotEmpty) {
+      //FromData
+      codeList.add('public $typeName() { }');
+      codeList.add('');
+      codeList.add('public $typeName($dbTypeName dataObject)');
+      codeList.add('{');
+      codeList.add('if (dataObject == null) return;');
+      fields.forEach((el) {
+        if (el.dartType == 'int') {
+          codeList.add('${el.name} = (int)dataObject.${el.dbName};');
+        } else if (el.dartType == 'double') {
+          codeList.add('${el.name} = (double)dataObject.${el.dbName};');
+        } else if (['String', 'string'].contains(el.dartType)) {
+          codeList.add('${el.name} = dataObject.${el.dbName}.ToString();');
+        } else if (el.dartType == 'Reference') {
+          codeList.add(
+              '${el.name} = new ${el.referenceType}(dataObject.${el.dbName} as ${el.dbType});');
+        } else {
+          codeList.add('${el.name} = dataObject.${el.dbName};');
+        }
+      });
+      codeList.add('}');
+      codeList.add('');
+      //ToData
+    }
 
     fields.forEach((element) {
       if (element.description != null && element.description.isNotEmpty) {
@@ -48,6 +76,9 @@ class NsgGenDataItem {
         codeList.add('public bool ${element.name} { get; set; }');
       } else if (element.dartType == 'DateTime') {
         codeList.add('public DateTime ${element.name} { get; set; }');
+      } else if (element.dartType == 'Reference') {
+        codeList.add(
+            'public ${element.referenceType} ${element.name} { get; set; }');
       } else {
         codeList.add('public string ${element.name} { get; set; }');
       }
@@ -71,6 +102,9 @@ class NsgGenDataItem {
             .add('public ${element.dartType} ${element.name}() => default;');
       } else if (element.dartType == 'Duration') {
         codeList.add('public TimeSpan ${element.name}() => default;');
+      } else if (element.dartType == 'Reference') {
+        codeList.add(
+            'public ${element.referenceType} ${element.name}() => default;');
       } else {
         codeList.add('public string ${element.name}() => string.Empty;');
       }

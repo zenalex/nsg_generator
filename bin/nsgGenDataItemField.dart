@@ -4,6 +4,8 @@ import 'nsgGenerator.dart';
 class NsgGenDataItemField {
   final String name;
   final String type;
+  final String dbName;
+  final String dbType;
   final String description;
   final String apiPrefix;
   final bool isPrimary;
@@ -13,6 +15,8 @@ class NsgGenDataItemField {
   NsgGenDataItemField(
       {this.name,
       this.type,
+      this.dbName,
+      this.dbType,
       this.description,
       this.apiPrefix,
       this.isPrimary,
@@ -23,6 +27,8 @@ class NsgGenDataItemField {
     return NsgGenDataItemField(
         name: parsedJson['name'],
         type: parsedJson['type'],
+        dbName: parsedJson['databaseName'],
+        dbType: parsedJson['databaseType'],
         description: parsedJson['description'],
         apiPrefix: parsedJson['api_prefix'],
         isPrimary: parsedJson['isPrimary'] == 'true',
