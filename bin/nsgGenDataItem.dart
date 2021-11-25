@@ -49,8 +49,8 @@ class NsgGenDataItem {
         } else if (['String', 'string'].contains(el.dartType)) {
           codeList.add('${el.name} = dataObject.${el.dbName}.ToString();');
         } else if (el.dartType == 'Reference') {
-          codeList.add(
-              '${el.name} = new ${el.referenceType}(dataObject.${el.dbName} as ${el.dbType});');
+          codeList
+              .add('${el.name} = dataObject.${el.dbName}?.Value.ToString();');
         } else {
           codeList.add('${el.name} = dataObject.${el.dbName};');
         }
@@ -76,9 +76,6 @@ class NsgGenDataItem {
         codeList.add('public bool ${element.name} { get; set; }');
       } else if (element.dartType == 'DateTime') {
         codeList.add('public DateTime ${element.name} { get; set; }');
-      } else if (element.dartType == 'Reference') {
-        codeList.add(
-            'public ${element.referenceType} ${element.name} { get; set; }');
       } else {
         codeList.add('public string ${element.name} { get; set; }');
       }
@@ -102,9 +99,6 @@ class NsgGenDataItem {
             .add('public ${element.dartType} ${element.name}() => default;');
       } else if (element.dartType == 'Duration') {
         codeList.add('public TimeSpan ${element.name}() => default;');
-      } else if (element.dartType == 'Reference') {
-        codeList.add(
-            'public ${element.referenceType} ${element.name}() => default;');
       } else {
         codeList.add('public string ${element.name}() => string.Empty;');
       }
