@@ -26,35 +26,94 @@ class NsgGenDataItem {
         methods: methods.map((i) => NsgGenDataItemMethod.fromJson(i)).toList());
   }
 
+  static void generateScifObject(NsgGenerator nsgGenerator) async {
+    var codeList = <String>[];
+    codeList.add('using System;');
+    codeList.add('using System.Collections.Generic;');
+    codeList.add('using System.Linq;');
+    codeList.add('using System.Threading.Tasks;');
+    codeList.add('using Newtonsoft.Json;');
+    codeList.add('using NsgSoft.DataObjects;');
+    codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
+    codeList.add('{');
+    codeList.add('public abstract class ScifObject');
+    codeList.add('{');
+    codeList.add('public ScifObject(NsgMultipleObject obj)');
+    codeList.add('{');
+    codeList.add('NSGObject = obj;');
+    codeList.add('}');
+    codeList.add('');
+    codeList.add('[JsonIgnore]');
+    codeList.add('public virtual NsgMultipleObject NSGObject { get; set; }');
+    codeList.add('');
+    codeList.add(
+        'public static IEnumerable<T> FindAll<T>(NsgMultipleObject obj, NsgCompare cmp, NsgSorting sorting, int count = 0)');
+    codeList.add('    where T : ScifObject, new()');
+    codeList.add('{');
+    codeList.add('Func<NsgMultipleObject[]> findAll;');
+    codeList.add('int _count = count;');
+    codeList.add('var dataObj = obj;');
+    codeList.add('if (_count == 0)');
+    codeList.add('{');
+    codeList.add('if (sorting == null) findAll = () => dataObj.FindAll(cmp);');
+    codeList.add('else findAll = () => dataObj.FindAll(cmp, sorting);');
+    codeList.add('}');
+    codeList.add(
+        'else findAll = () => dataObj.FindAll(ref _count, 0, sorting, cmp);');
+    codeList.add('foreach (var i in findAll())');
+    codeList.add('{');
+    codeList.add('yield return new T { NSGObject = i };');
+    codeList.add('}');
+    codeList.add('}');
+    codeList.add('}');
+    codeList.add('}');
+    NsgGenCSProject.indentCode(codeList);
+    var fn = '${nsgGenerator.cSharpPath}/Models/ScifObject.cs';
+    //if (!File(fn).existsSync()) {
+    await File(fn).writeAsString(codeList.join('\n'));
+  }
+
   void writeCode(NsgGenerator nsgGenerator, NsgGenMethod nsgMethod) async {
     var codeList = <String>[];
     codeList.add('using System;');
+    codeList.add('using System.Collections.Generic;');
+    codeList.add('using NsgSoft.DataObjects;');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
     codeList.add('{');
-    codeList.add('public class $typeName');
+    codeList.add('public class $typeName : ScifObject');
     codeList.add('{');
 
     if (dbTypeName != null && dbTypeName.isNotEmpty) {
       //FromData
-      codeList.add('public $typeName() { }');
+      codeList.add('public $typeName() : this(null) { }');
       codeList.add('');
-      codeList.add('public $typeName($dbTypeName dataObject)');
+      codeList.add(
+          'public $typeName($dbTypeName dataObject) : base(dataObject) { }');
+      codeList.add('');
+      codeList.add('private $dbTypeName nsgObject;');
+      codeList.add('');
+      codeList.add('public override NsgMultipleObject NSGObject');
       codeList.add('{');
-      codeList.add('if (dataObject == null) return;');
+      codeList.add('get => nsgObject;');
+      codeList.add('set');
+      codeList.add('{');
+      codeList.add('nsgObject = value as $dbTypeName;');
+      codeList.add('if (value == null) return;');
       fields.forEach((el) {
         if (el.dartType == 'int') {
-          codeList.add('${el.name} = (int)dataObject.${el.dbName};');
+          codeList.add('${el.name} = (int)nsgObject.${el.dbName};');
         } else if (el.dartType == 'double') {
-          codeList.add('${el.name} = (double)dataObject.${el.dbName};');
+          codeList.add('${el.name} = (double)nsgObject.${el.dbName};');
         } else if (['String', 'string'].contains(el.dartType)) {
-          codeList.add('${el.name} = dataObject.${el.dbName}.ToString();');
+          codeList.add('${el.name} = nsgObject.${el.dbName}.ToString();');
         } else if (el.dartType == 'Reference') {
           codeList
-              .add('${el.name} = dataObject.${el.dbName}?.Value.ToString();');
+              .add('${el.name} = nsgObject.${el.dbName}?.Value.ToString();');
         } else {
-          codeList.add('${el.name} = dataObject.${el.dbName};');
+          codeList.add('${el.name} = nsgObject.${el.dbName};');
         }
       });
+      codeList.add('}');
       codeList.add('}');
       codeList.add('');
       //ToData
