@@ -11,12 +11,19 @@ class NsgGenCSProject {
 
   static void _generateCsproj(NsgGenerator nsgGenerator) {
     var file = File(
+        '${nsgGenerator.jsonPath}\\${nsgGenerator.cSharpNamespace}.csproj');
+    if (file.existsSync()) {
+      print('copying .csproj');
+      file.copy(
+          nsgGenerator.cSharpPath + '/${nsgGenerator.cSharpNamespace}.csproj');
+      return;
+    }
+    file = File(
         nsgGenerator.cSharpPath + '/${nsgGenerator.cSharpNamespace}.csproj');
     if (file.existsSync()) return;
     var targetFramework = nsgGenerator.targetFramework ?? 'net5.0';
     if (targetFramework.isEmpty) targetFramework = 'net5.0';
     print('generating .csproj');
-    // TODO: store .csproj in the target /serviceConfig
     var codeList = <String>[];
     codeList.add('<Project Sdk="Microsoft.NET.Sdk.Web">');
     codeList.add('');
