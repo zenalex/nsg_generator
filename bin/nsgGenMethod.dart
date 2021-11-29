@@ -64,8 +64,10 @@ class NsgGenMethod {
     codeList.add('[$apiType]');
 
     //Generation get gata method
+    // codeList.add(
+    //     'public async Task<IEnumerable<${method.genDataItem.typeName}>> ${method.name}([FromBody] NsgFindParams findParams)');
     codeList.add(
-        'public async Task<IEnumerable<${method.genDataItem.typeName}>> ${method.name}([FromBody] NsgFindParams findParams)');
+        'public async Task<Dictionary<string, IEnumerable<object>>> ${method.name}([FromBody] NsgFindParams findParams)');
     codeList.add('{');
     if (authorize != 'none') {
       codeList.add('var user = await authController.GetUserByToken(Request);');
@@ -93,8 +95,10 @@ class NsgGenMethod {
         codeList.add('[Route("api/${controller.api_prefix}/$apiPrefix/Post")]');
       }
       codeList.add('[HttpPost]');
+      // codeList.add(
+      //     'public async Task<IEnumerable<${method.genDataItem.typeName}>> ${method.name}Post([FromBody] IEnumerable<${method.genDataItem.typeName}> items)');
       codeList.add(
-          'public async Task<IEnumerable<${method.genDataItem.typeName}>> ${method.name}Post([FromBody] IEnumerable<${method.genDataItem.typeName}> items)');
+          'public async Task<Dictionary<string, IEnumerable<object>>> ${method.name}Post([FromBody] IEnumerable<${method.genDataItem.typeName}> items)');
       codeList.add('{');
       if (authorize != 'none') {
         codeList

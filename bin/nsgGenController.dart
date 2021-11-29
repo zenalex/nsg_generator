@@ -72,6 +72,7 @@ class NsgGenController {
     }
     codeList.add('using Microsoft.AspNetCore.Authorization;');
     codeList.add('using ${nsgGenerator.cSharpNamespace};');
+    codeList.add('using ${nsgGenerator.cSharpNamespace}.Controllers;');
     codeList.add('using NsgServerClasses;');
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
@@ -123,6 +124,8 @@ class NsgGenController {
     await File(fn).writeAsString(codeList.join('\n'));
     //}
     await generateInterfaceData(nsgGenerator);
+    await generateImplController(nsgGenerator);
+    await generateImplAuthController(nsgGenerator);
     await generateCodeDart(nsgGenerator);
   }
 
@@ -145,18 +148,26 @@ class NsgGenController {
     var publicMdf = (nsgGenerator.targetFramework == 'net5.0' ? 'public ' : '');
     methods.forEach((_) {
       if (_.authorize != 'none') {
+        // codeList.add(
+        //     '${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams);');
         codeList.add(
-            '${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams);');
+            '${publicMdf}Task<Dictionary<string, IEnumerable<object>>> ${_.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams);');
         if (_.allowPost) {
+          // codeList.add(
+          //     '${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
           codeList.add(
-              '${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
+              '${publicMdf}Task<Dictionary<string, IEnumerable<object>>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
         }
       } else {
+        // codeList.add(
+        //     '${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams);');
         codeList.add(
-            '${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams);');
+            '${publicMdf}Task<Dictionary<string, IEnumerable<object>>> ${_.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams);');
         if (_.allowPost) {
+          // codeList.add(
+          //     '${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
           codeList.add(
-              '${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
+              '${publicMdf}Task<Dictionary<string, IEnumerable<object>>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
         }
       }
       _.imageFieldList.forEach((el) {
@@ -177,6 +188,174 @@ class NsgGenController {
     //if (!File(fn).existsSync()) {
     await File(fn).writeAsString(codeList.join('\n'));
     //}
+  }
+
+  void generateImplController(NsgGenerator nsgGenerator) async {
+    // Designer
+    var codeList = <String>[];
+    codeList.add('using System;');
+    codeList.add('using System.Collections.Generic;');
+    codeList.add('using System.IO;');
+    codeList.add('using System.Linq;');
+    codeList.add('using System.Net;');
+    codeList.add('using Microsoft.AspNetCore.Mvc;');
+    codeList.add('using ${nsgGenerator.cSharpNamespace};');
+    codeList.add('using NsgServerClasses;');
+    codeList.add('using System.Threading.Tasks;');
+    codeList.add('');
+    codeList.add('namespace ${nsgGenerator.cSharpNamespace}.Controllers');
+    codeList.add('{');
+    codeList.add(
+        'public partial class ${impl_controller_name} : ${class_name}Interface');
+    codeList.add('{');
+
+    methods.forEach((m) {
+      if (m.authorize != 'none') {
+        codeList.add(
+            'public Task<Dictionary<string, IEnumerable<object>>> ${m.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams)');
+        codeList.add('    => On${m.name}(user, findParams);');
+        codeList.add('');
+        if (m.allowPost) {
+          codeList.add(
+              'public Task<Dictionary<string, IEnumerable<object>>> ${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${m.genDataItem.typeName}> items)');
+          codeList.add('    => On${m.name}Post(user, items);');
+          codeList.add('');
+        }
+      } else {
+        codeList.add(
+            'public Task<Dictionary<string, IEnumerable<object>>> ${m.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams)');
+        codeList.add('    => On${m.name}(user, findParams);');
+        codeList.add('');
+        if (m.allowPost) {
+          codeList.add(
+              'public Task<Dictionary<string, IEnumerable<object>>> ${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${m.genDataItem.typeName}> items)');
+          codeList.add('    => On${m.name}Post(user, items);');
+          codeList.add('');
+        }
+      }
+      m.imageFieldList.forEach((el) {
+        if (m.authorize != 'none') {
+          codeList.add(
+              'public Task<FileStreamResult> ${m.name}${el.apiPrefix}(INsgTokenExtension user, String file)');
+          codeList.add('    => On${m.name}${el.apiPrefix}(user, file);');
+          codeList.add('');
+        } else {
+          codeList.add(
+              'public Task<FileStreamResult> ${m.name}${el.apiPrefix}(INsgTokenExtension user, String file)');
+          codeList.add('    => On${m.name}${el.apiPrefix}(user, file);');
+          codeList.add('');
+        }
+      });
+    });
+
+    codeList.add('}');
+    codeList.add('}');
+    NsgGenCSProject.indentCode(codeList);
+    var fn =
+        '${nsgGenerator.cSharpPath}/Controllers/${impl_controller_name}.Designer.cs';
+    await File(fn).writeAsString(codeList.join('\n'));
+
+    // Editable
+    codeList.clear();
+    codeList.add('using System;');
+    codeList.add('using System.Collections.Generic;');
+    codeList.add('using System.IO;');
+    codeList.add('using System.Linq;');
+    codeList.add('using System.Net;');
+    codeList.add('using Microsoft.AspNetCore.Mvc;');
+    codeList.add('using ${nsgGenerator.cSharpNamespace};');
+    codeList.add('using NsgServerClasses;');
+    codeList.add('using System.Threading.Tasks;');
+    codeList.add('');
+    codeList.add('namespace ${nsgGenerator.cSharpNamespace}.Controllers');
+    codeList.add('{');
+    codeList.add('public partial class ${impl_controller_name}');
+    codeList.add('{');
+
+    methods.forEach((m) {
+      if (m.authorize != 'none') {
+        codeList.add(
+            'private Task<Dictionary<string, IEnumerable<object>>> On${m.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams)');
+        codeList.add('{');
+        codeList.add('throw new NotImplementedException();');
+        codeList.add('}');
+        codeList.add('');
+        if (m.allowPost) {
+          codeList.add(
+              'private Task<Dictionary<string, IEnumerable<object>>> On${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${m.genDataItem.typeName}> items)');
+          codeList.add('{');
+          codeList.add('throw new NotImplementedException();');
+          codeList.add('}');
+          codeList.add('');
+        }
+      } else {
+        codeList.add(
+            'private Task<Dictionary<string, IEnumerable<object>>> On${m.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams)');
+        codeList.add('{');
+        codeList.add('throw new NotImplementedException();');
+        codeList.add('}');
+        codeList.add('');
+        if (m.allowPost) {
+          codeList.add(
+              'private Task<Dictionary<string, IEnumerable<object>>> On${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${m.genDataItem.typeName}> items)');
+          codeList.add('{');
+          codeList.add('throw new NotImplementedException();');
+          codeList.add('}');
+          codeList.add('');
+        }
+      }
+      m.imageFieldList.forEach((el) {
+        if (m.authorize != 'none') {
+          codeList.add(
+              'private Task<FileStreamResult> On${m.name}${el.apiPrefix}(INsgTokenExtension user, String file)');
+          codeList.add('{');
+          codeList.add('throw new NotImplementedException();');
+          codeList.add('}');
+          codeList.add('');
+        } else {
+          codeList.add(
+              'private Task<FileStreamResult> On${m.name}${el.apiPrefix}(INsgTokenExtension user, String file)');
+          codeList.add('{');
+          codeList.add('throw new NotImplementedException();');
+          codeList.add('}');
+          codeList.add('');
+        }
+      });
+    });
+
+    codeList.add('}');
+    codeList.add('}');
+    NsgGenCSProject.indentCode(codeList);
+    fn = '${nsgGenerator.cSharpPath}/Controllers/${impl_controller_name}.cs';
+    if (!File(fn).existsSync()) {
+      await File(fn).writeAsString(codeList.join('\n'));
+    }
+  }
+
+  void generateImplAuthController(NsgGenerator nsgGenerator) async {
+    var codeList = <String>[];
+    codeList.add('using Microsoft.AspNetCore.Http;');
+    codeList.add('using Microsoft.AspNetCore.Mvc;');
+    codeList.add('using NsgServerClasses;');
+    codeList.add('using System;');
+    codeList.add('using System.Collections.Generic;');
+    codeList.add('using System.Linq;');
+    codeList.add('using System.Net.Http;');
+    codeList.add('using System.Threading.Tasks;');
+    codeList.add('');
+    codeList.add('namespace ScifWebApi.Controllers');
+    codeList.add('{');
+    codeList
+        .add('public class ${impl_auth_controller_name} : AuthImplInterface');
+    codeList.add('{');
+    codeList.add('}');
+    codeList.add('}');
+    NsgGenCSProject.indentCode(codeList);
+    var fn =
+        '${nsgGenerator.cSharpPath}/Controllers/${impl_auth_controller_name}.cs';
+    if (!File(fn).existsSync()) {
+      await File(fn).writeAsString(codeList.join('\n'));
+    }
   }
 
   void load(NsgGenerator nsgGenerator) async {
