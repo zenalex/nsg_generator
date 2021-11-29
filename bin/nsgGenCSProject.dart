@@ -208,6 +208,7 @@ class NsgGenCSProject {
       codeList.add('}');
     } else {
       codeList.add('using Microsoft.Owin;');
+      codeList.add('using Newtonsoft.Json.Serialization;');
       codeList.add('using Owin;');
       codeList.add('using System.Web.Http;');
       codeList.add('using System.Web.Http.Cors;');
