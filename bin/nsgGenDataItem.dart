@@ -26,7 +26,9 @@ class NsgGenDataItem {
         methods: methods.map((i) => NsgGenDataItemMethod.fromJson(i)).toList());
   }
 
-  static void generateScifObject(NsgGenerator nsgGenerator) async {
+  static void generateDataObject(NsgGenerator nsgGenerator) async {
+    var fn = '${nsgGenerator.cSharpPath}/Models/DataObject.cs';
+    if (File(fn).existsSync()) return;
     var codeList = <String>[];
     codeList.add('using System;');
     codeList.add('using System.Collections.Generic;');
@@ -36,9 +38,9 @@ class NsgGenDataItem {
     codeList.add('using NsgSoft.DataObjects;');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
     codeList.add('{');
-    codeList.add('public abstract class ScifObject');
+    codeList.add('public abstract class DataObject');
     codeList.add('{');
-    codeList.add('public ScifObject(NsgMultipleObject obj)');
+    codeList.add('public DataObject(NsgMultipleObject obj)');
     codeList.add('{');
     codeList.add('NSGObject = obj;');
     codeList.add('}');
@@ -48,7 +50,7 @@ class NsgGenDataItem {
     codeList.add('');
     codeList.add(
         'public static IEnumerable<T> FindAll<T>(NsgMultipleObject obj, NsgCompare cmp, NsgSorting sorting, int count = 0)');
-    codeList.add('    where T : ScifObject, new()');
+    codeList.add('    where T : DataObject, new()');
     codeList.add('{');
     codeList.add('Func<NsgMultipleObject[]> findAll;');
     codeList.add('int _count = count;');
@@ -68,8 +70,6 @@ class NsgGenDataItem {
     codeList.add('}');
     codeList.add('}');
     NsgGenCSProject.indentCode(codeList);
-    var fn = '${nsgGenerator.cSharpPath}/Models/ScifObject.cs';
-    //if (!File(fn).existsSync()) {
     await File(fn).writeAsString(codeList.join('\n'));
   }
 
@@ -77,13 +77,15 @@ class NsgGenDataItem {
     var codeList = <String>[];
     codeList.add('using System;');
     codeList.add('using System.Collections.Generic;');
-    codeList.add('using NsgSoft.DataObjects;');
-    codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
-    codeList.add('{');
-    codeList.add('public class $typeName : ScifObject');
-    codeList.add('{');
-
     if (dbTypeName != null && dbTypeName.isNotEmpty) {
+      await NsgGenDataItem.generateDataObject(nsgGenerator);
+      codeList.add('using NsgSoft.DataObjects;');
+      codeList.add('');
+      codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
+      codeList.add('{');
+      codeList.add('public class $typeName : DataObject');
+      codeList.add('{');
+
       //FromData
       codeList.add('public $typeName() : this(null) { }');
       codeList.add('');
@@ -117,6 +119,12 @@ class NsgGenDataItem {
       codeList.add('}');
       codeList.add('');
       //ToData
+    } else {
+      codeList.add('');
+      codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
+      codeList.add('{');
+      codeList.add('public class $typeName');
+      codeList.add('{');
     }
 
     fields.forEach((element) {

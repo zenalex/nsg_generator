@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:async';
 
 import 'nsgGenCSProject.dart';
-import 'nsgGenDataItem.dart';
 import 'nsgGenMethod.dart';
 import 'nsgGenerator.dart';
 
@@ -111,14 +110,9 @@ class NsgGenController {
       codeList.add('public ${class_name}() : this(null) { }');
       codeList.add('');
     }
-    var dataItemCount = 0;
     await Future.forEach<NsgGenMethod>(methods, (element) async {
       await element.generateCode(codeList, nsgGenerator, this, element);
-      if (element.genDataItem != null) dataItemCount++;
     });
-    if (dataItemCount > 0) {
-      await NsgGenDataItem.generateScifObject(nsgGenerator);
-    }
 
     codeList.add('}');
     codeList.add('}');
@@ -348,7 +342,7 @@ class NsgGenController {
     codeList.add('using System.Net.Http;');
     codeList.add('using System.Threading.Tasks;');
     codeList.add('');
-    codeList.add('namespace ScifWebApi.Controllers');
+    codeList.add('namespace ${nsgGenerator.cSharpNamespace}.Controllers');
     codeList.add('{');
     codeList
         .add('public class ${impl_auth_controller_name} : AuthImplInterface');
