@@ -186,7 +186,7 @@ class NsgGenDataItem {
   Future generateCodeDart(NsgGenerator nsgGenerator,
       NsgGenController nsgGenController, NsgGenMethod nsgGenMethod) async {
     //----------------------------------------------------------
-    //generate service class for DataItem DataItem.g.dart
+    //generate service class for DataItem dataItem.g.dart
     //----------------------------------------------------------
 
     var codeList = <String>[];
@@ -229,18 +229,21 @@ class NsgGenDataItem {
 
     codeList.add('}');
 
-    await File('${nsgGenerator.dartPathGen}/${typeName}.g.dart')
+    await File(
+            '${nsgGenerator.dartPathGen}/${nsgGenerator.getDartName(typeName)}.g.dart')
         .writeAsString(codeList.join('\n'));
     //----------------------------------------------------------
     //generate main item class DataItem.dart
     //----------------------------------------------------------
     codeList = <String>[];
-    codeList.add("import '${nsgGenerator.genPathName}/${typeName}.g.dart';");
+    codeList.add(
+        "import '${nsgGenerator.genPathName}/${nsgGenerator.getDartName(typeName)}.g.dart';");
     codeList.add('');
     codeList.add('class ${typeName} extends ${typeName}Generated {');
     codeList.add('}');
 
-    var fn = '${nsgGenerator.dartPath}/${typeName}.dart';
+    var fn =
+        '${nsgGenerator.dartPath}/${nsgGenerator.getDartName(typeName)}.dart';
     if (!File(fn).existsSync()) {
       await File(fn).writeAsString(codeList.join('\n'));
     }

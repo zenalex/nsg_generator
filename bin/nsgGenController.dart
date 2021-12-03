@@ -377,9 +377,10 @@ class NsgGenController {
   Future generateExportFile(NsgGenerator nsgGenerator) async {
     var codeList = <String>[];
     methods.forEach((_) {
-      codeList.add("export '${_.genDataItem.typeName}.dart';");
       codeList.add(
-          "export '${nsgGenerator.genPathName}/${_.genDataItem.typeName}.g.dart';");
+          "export '${nsgGenerator.getDartName(_.genDataItem.typeName)}.dart';");
+      codeList.add(
+          "export '${nsgGenerator.genPathName}/${nsgGenerator.getDartName(_.genDataItem.typeName)}.g.dart';");
     });
 
     await File(
@@ -389,7 +390,7 @@ class NsgGenController {
 
   Future generateInitController(NsgGenerator nsgGenerator) async {
     //----------------------------------------------------------
-    //generate service class ControllerName.g.dart
+    //generate service class controllerName.g.dart
     //----------------------------------------------------------
     var codeList = <String>[];
     codeList.add("import 'package:get/get.dart';");
@@ -401,9 +402,7 @@ class NsgGenController {
     codeList.add('  NsgDataProvider? provider;');
     codeList.add('  @override');
     codeList.add('  Future onInit() async {');
-    codeList.add('    if (provider == null) {');
-    codeList.add('      provider = NsgDataProvider();');
-    codeList.add('    }');
+    codeList.add('    provider ??= NsgDataProvider();');
     codeList.add("  provider!.serverUri = '$serverUri';");
     codeList.add('  ');
     addRegisterDataItems(nsgGenerator, codeList);
@@ -427,7 +426,8 @@ class NsgGenController {
 
     codeList.add('}');
 
-    await File('${nsgGenerator.dartPathGen}/${class_name}.g.dart')
+    await File(
+            '${nsgGenerator.dartPathGen}/${nsgGenerator.getDartName(class_name)}.g.dart')
         .writeAsString(codeList.join('\n'));
 
     //----------------------------------------------------------
@@ -435,21 +435,24 @@ class NsgGenController {
     //----------------------------------------------------------
     codeList = <String>[];
     //codeList.add("import '${nsgGenerator.getDartName(class_name)}Model.dart';");
-    codeList.add("import '${nsgGenerator.genPathName}/${class_name}.g.dart';");
+    codeList.add(
+        "import '${nsgGenerator.genPathName}/${nsgGenerator.getDartName(class_name)}.g.dart';");
     codeList.add('');
     codeList.add('class ${class_name} extends ${class_name}Generated {');
-    codeList.add('');
-    codeList
-        .add('  ${class_name}(NsgDataProvider provider) : super(provider);');
-    codeList.add('');
-    codeList.add('  @override');
-    codeList.add('  Future loadData() async {');
-    codeList.add('    super.loadData();');
-    codeList.add('  }');
+    // codeList.add('');
+    // codeList
+    //     .add('  ${class_name}(NsgDataProvider provider) : super(provider);');
+    // codeList.add('');
+    // codeList.add('  @override');
+    // codeList.add('  Future loadData() async {');
+    // codeList.add('    super.loadData();');
+    // codeList.add('  }');
+    codeList.add('  DataController() : super();');
 
     codeList.add('}');
 
-    var fn = '${nsgGenerator.dartPath}/${class_name}.dart';
+    var fn =
+        '${nsgGenerator.dartPath}/${nsgGenerator.getDartName(class_name)}.dart';
     if (!File(fn).existsSync()) {
       await File(fn).writeAsString(codeList.join('\n'));
     }
