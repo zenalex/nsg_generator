@@ -11,6 +11,8 @@ class NsgGenDataItemField {
   final bool isPrimary;
   final String referenceName;
   final String referenceType;
+  final bool userVisibility;
+  final String userName;
 
   NsgGenDataItemField(
       {this.name,
@@ -21,7 +23,9 @@ class NsgGenDataItemField {
       this.apiPrefix,
       this.isPrimary,
       this.referenceName,
-      this.referenceType});
+      this.referenceType,
+      this.userVisibility,
+      this.userName});
 
   factory NsgGenDataItemField.fromJson(Map<String, dynamic> parsedJson) {
     return NsgGenDataItemField(
@@ -33,7 +37,9 @@ class NsgGenDataItemField {
         apiPrefix: parsedJson['api_prefix'],
         isPrimary: parsedJson['isPrimary'] == 'true',
         referenceName: parsedJson['referenceName'],
-        referenceType: parsedJson['referenceType']);
+        referenceType: parsedJson['referenceType'],
+        userVisibility: parsedJson['userVisibility'] == 'true',
+        userName: parsedJson['userName']);
   }
 
   String get dartName => NsgGenerator.generator.getDartName(name);

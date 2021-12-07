@@ -201,6 +201,14 @@ class NsgGenDataItem {
           " static const ${_.fieldNameVar} = '${nsgGenerator.getDartName(_.name)}';");
     });
     codeList.add('');
+    codeList.add(' static final Map fieldNameDict = {');
+    fields.forEach((_) {
+      if (_.userVisibility) {
+        codeList.add("   ${_.fieldNameVar}: '${_.userName}',");
+      }
+    });
+    codeList.add(' };');
+    codeList.add('');
     codeList.add('  @override');
     codeList.add('  void initialize() {');
     fields.forEach((_) {
