@@ -131,8 +131,13 @@ class NsgGenMethod {
       // } else if (authorize == 'user') {
       //   codeList.add('    [Authorize(Roles = UserRoles.User)]');
       // }
-      codeList.add(
-          'public async Task<FileStreamResult> ${method.name}${element.apiPrefix}([FromRoute] string file)');
+      if (nsgGenerator.targetFramework == 'net5.0') {
+        codeList.add(
+            'public async Task<FileStreamResult> ${method.name}${element.apiPrefix}([FromRoute] string file)');
+      } else {
+        codeList.add(
+            'public async Task<FileStreamResult> ${method.name}${element.apiPrefix}(string file)');
+      }
       codeList.add('{');
       if (authorize != 'none') {
         codeList

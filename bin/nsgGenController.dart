@@ -50,13 +50,15 @@ class NsgGenController {
 
   void generateCode(NsgGenerator nsgGenerator) async {
     var codeList = <String>[];
-    codeList.add('using Microsoft.AspNetCore.Mvc;');
     codeList.add('using Microsoft.Extensions.Logging;');
     codeList.add('using System;');
     codeList.add('using System.Collections.Generic;');
     codeList.add('using System.Linq;');
     codeList.add('using System.Threading.Tasks;');
-    if (nsgGenerator.targetFramework != 'net5.0') {
+    if (nsgGenerator.targetFramework == 'net5.0') {
+      codeList.add('using Microsoft.AspNetCore.Mvc;');
+      codeList.add('using Microsoft.AspNetCore.Authorization;');
+    } else {
       codeList.add('using System.Web.Http;');
       codeList
           .add('using HttpGetAttribute = System.Web.Http.HttpGetAttribute;');
@@ -70,7 +72,6 @@ class NsgGenController {
       codeList.add(
           'using ActionNameAttribute = System.Web.Http.ActionNameAttribute;');
     }
-    codeList.add('using Microsoft.AspNetCore.Authorization;');
     codeList.add('using ${nsgGenerator.cSharpNamespace};');
     codeList.add('using ${nsgGenerator.cSharpNamespace}.Controllers;');
     codeList.add('using NsgServerClasses;');
@@ -134,10 +135,15 @@ class NsgGenController {
     codeList.add('using System.Collections.Generic;');
     codeList.add('using System.IO;');
     codeList.add('using System.Net;');
-    codeList.add('using Microsoft.AspNetCore.Mvc;');
     codeList.add('using ${nsgGenerator.cSharpNamespace};');
     codeList.add('using NsgServerClasses;');
     codeList.add('using System.Threading.Tasks;');
+    if (nsgGenerator.targetFramework == 'net5.0') {
+      codeList.add('using Microsoft.AspNetCore.Mvc;');
+    } else {
+      codeList.add('using System.Web.Http;');
+      codeList.add('using System.Web.Mvc;');
+    }
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
     codeList.add('{');
@@ -197,10 +203,15 @@ class NsgGenController {
     codeList.add('using System.IO;');
     codeList.add('using System.Linq;');
     codeList.add('using System.Net;');
-    codeList.add('using Microsoft.AspNetCore.Mvc;');
     codeList.add('using ${nsgGenerator.cSharpNamespace};');
     codeList.add('using NsgServerClasses;');
     codeList.add('using System.Threading.Tasks;');
+    if (nsgGenerator.targetFramework == 'net5.0') {
+      codeList.add('using Microsoft.AspNetCore.Mvc;');
+    } else {
+      codeList.add('using System.Web.Http;');
+      codeList.add('using System.Web.Mvc;');
+    }
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}.Controllers');
     codeList.add('{');
@@ -261,10 +272,15 @@ class NsgGenController {
     codeList.add('using System.IO;');
     codeList.add('using System.Linq;');
     codeList.add('using System.Net;');
-    codeList.add('using Microsoft.AspNetCore.Mvc;');
     codeList.add('using ${nsgGenerator.cSharpNamespace};');
     codeList.add('using NsgServerClasses;');
     codeList.add('using System.Threading.Tasks;');
+    if (nsgGenerator.targetFramework == 'net5.0') {
+      codeList.add('using Microsoft.AspNetCore.Mvc;');
+    } else {
+      codeList.add('using System.Web.Http;');
+      codeList.add('using System.Web.Mvc;');
+    }
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}.Controllers');
     codeList.add('{');
@@ -333,14 +349,19 @@ class NsgGenController {
 
   void generateImplAuthController(NsgGenerator nsgGenerator) async {
     var codeList = <String>[];
-    codeList.add('using Microsoft.AspNetCore.Http;');
-    codeList.add('using Microsoft.AspNetCore.Mvc;');
     codeList.add('using NsgServerClasses;');
     codeList.add('using System;');
     codeList.add('using System.Collections.Generic;');
     codeList.add('using System.Linq;');
     codeList.add('using System.Net.Http;');
     codeList.add('using System.Threading.Tasks;');
+    if (nsgGenerator.targetFramework == 'net5.0') {
+      codeList.add('using Microsoft.AspNetCore.Http;');
+      codeList.add('using Microsoft.AspNetCore.Mvc;');
+    } else {
+      codeList.add('using System.Web.Http;');
+      codeList.add('using System.Web.Mvc;');
+    }
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}.Controllers');
     codeList.add('{');
