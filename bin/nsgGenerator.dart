@@ -21,8 +21,10 @@ class NsgGenerator {
       this.controllers});
 
   factory NsgGenerator.fromJson(Map<String, dynamic> parsedJson) {
+    var targetFramework = parsedJson['targetFramework'] ?? 'net5.0';
+    if (targetFramework.isEmpty) targetFramework = 'net5.0';
     generator = NsgGenerator(
-        targetFramework: parsedJson['targetFramework'],
+        targetFramework: targetFramework,
         cSharpPath: parsedJson['cSharpPath'],
         cSharpNamespace: parsedJson['cSharpNamespace'],
         dartPath: parsedJson['dartPath'],
