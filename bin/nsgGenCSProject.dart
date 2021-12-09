@@ -51,8 +51,6 @@ class NsgGenCSProject {
     codeList.add('  <ItemGroup>');
     if (targetFramework != 'net5.0') {
       codeList.add(
-          '    <PackageReference Include="Microsoft.AspNetCore.HttpsPolicy" Version="2.2.0" />');
-      codeList.add(
           '    <PackageReference Include="Microsoft.Owin.Diagnostics" Version="4.2.0" />');
       codeList.add(
           '    <PackageReference Include="Microsoft.Owin.Host.SystemWeb" Version="4.2.0" />');
@@ -61,7 +59,7 @@ class NsgGenCSProject {
       codeList.add(
           '    <PackageReference Include="Microsoft.AspNet.WebApi.Cors" Version="5.2.7" />');
       codeList.add(
-          '    <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.2.0" />');
+          '    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.7" />');
       codeList.add(
           '    <PackageReference Include="Microsoft.Owin.Cors" Version="4.2.0" />');
     }
