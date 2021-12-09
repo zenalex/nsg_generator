@@ -9,17 +9,24 @@ import 'nsgGenerator.dart';
 
 class NsgGenDataItem {
   final String typeName;
-  final String dbTypeName;
+  final String databaseType;
+  final String databaseTypeNamespace;
   final List<NsgGenDataItemField> fields;
   final List<NsgGenDataItemMethod> methods;
 
-  NsgGenDataItem({this.typeName, this.dbTypeName, this.fields, this.methods});
+  NsgGenDataItem(
+      {this.typeName,
+      this.databaseType,
+      this.databaseTypeNamespace,
+      this.fields,
+      this.methods});
 
   factory NsgGenDataItem.fromJson(Map<String, dynamic> parsedJson) {
     var methods = parsedJson['methods'] as List ?? List.empty();
     return NsgGenDataItem(
         typeName: parsedJson['typeName'],
-        dbTypeName: parsedJson['databaseType'],
+        databaseType: parsedJson['databaseType'],
+        databaseTypeNamespace: parsedJson['databaseTypeNamespace'],
         fields: (parsedJson['fields'] as List)
             .map((i) => NsgGenDataItemField.fromJson(i))
             .toList(),
@@ -77,9 +84,12 @@ class NsgGenDataItem {
     var codeList = <String>[];
     codeList.add('using System;');
     codeList.add('using System.Collections.Generic;');
-    if (dbTypeName != null && dbTypeName.isNotEmpty) {
+    if (databaseType != null && databaseType.isNotEmpty) {
       await NsgGenDataItem.generateDataObject(nsgGenerator);
       codeList.add('using NsgSoft.DataObjects;');
+      if (databaseTypeNamespace != null && databaseTypeNamespace.isNotEmpty) {
+        codeList.add('using $databaseTypeNamespace;');
+      }
       codeList.add('');
       codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
       codeList.add('{');
@@ -90,16 +100,16 @@ class NsgGenDataItem {
       codeList.add('public $typeName() : this(null) { }');
       codeList.add('');
       codeList.add(
-          'public $typeName($dbTypeName dataObject) : base(dataObject) { }');
+          'public $typeName($databaseType dataObject) : base(dataObject) { }');
       codeList.add('');
-      codeList.add('private $dbTypeName nsgObject;');
+      codeList.add('private $databaseType nsgObject;');
       codeList.add('');
       codeList.add('public override NsgMultipleObject NSGObject');
       codeList.add('{');
       codeList.add('get => nsgObject;');
       codeList.add('set');
       codeList.add('{');
-      codeList.add('nsgObject = value as $dbTypeName;');
+      codeList.add('nsgObject = value as $databaseType;');
       codeList.add('if (value == null) return;');
       fields.forEach((el) {
         if (el.dartType == 'int') {
