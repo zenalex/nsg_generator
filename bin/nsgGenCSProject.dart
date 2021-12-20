@@ -41,6 +41,9 @@ class NsgGenCSProject {
     codeList.add(
         '      <HintPath>..\\..\\NsgServerClasses\\bin\\Debug\\${targetFramework}\\NsgServerClasses.dll</HintPath>');
     codeList.add('    </Reference>');
+    if (targetFramework != 'net5.0') {
+      codeList.add('    <Reference Include="System.Web" />');
+    }
     codeList.add('  </ItemGroup>');
     codeList.add('');
     codeList.add('  <ItemGroup>');
@@ -62,6 +65,10 @@ class NsgGenCSProject {
           '    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.7" />');
       codeList.add(
           '    <PackageReference Include="Microsoft.Owin.Cors" Version="4.2.0" />');
+      codeList.add(
+          '    <PackageReference Include="Microsoft.Owin.Security.Jwt" Version="4.2.0" />');
+      codeList.add(
+          '    <PackageReference Include="Microsoft.Owin.Security.OAuth" Version="4.2.0" />');
     }
     codeList.add(
         '    <PackageReference Include="Microsoft.AspNet.WebApi.OwinSelfHost" Version="5.2.7" />');
@@ -70,7 +77,7 @@ class NsgGenCSProject {
             (targetFramework == 'net5.0' ? '5.0.7' : '3.1.21') +
             '" />');
     codeList.add(
-        '    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.11.1" />');
+        '    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.15.0" />');
     codeList.add('  </ItemGroup>');
     codeList.add('');
     codeList.add('');
@@ -217,6 +224,10 @@ class NsgGenCSProject {
       codeList.add('using Owin;');
       codeList.add('using System.Web.Http;');
       codeList.add('using System.Web.Http.Cors;');
+      codeList.add('using Microsoft.IdentityModel.Tokens;');
+      codeList.add('using Microsoft.Owin.Security;');
+      codeList.add('using Microsoft.Owin.Security.Jwt;');
+      codeList.add('using Microsoft.Owin.Security.OAuth;');
       codeList.add('');
       codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
       codeList.add('{');
@@ -237,6 +248,30 @@ class NsgGenCSProject {
       codeList.add('    routeTemplate: "api/{controller}/{action}/{id}",');
       codeList.add('    defaults: new { id = RouteParameter.Optional }');
       codeList.add(');');
+
+      codeList.add('app.UseJwtBearerAuthentication(');
+      codeList.add('    new JwtBearerAuthenticationOptions');
+      codeList.add('    {');
+      codeList.add('    AuthenticationMode = AuthenticationMode.Active,');
+      codeList.add(
+          '    TokenValidationParameters = new TokenValidationParameters()');
+      codeList.add('    {');
+      codeList.add('    ValidateIssuer = true,');
+      codeList.add('    ValidateAudience = true,');
+      codeList.add('    ValidateIssuerSigningKey = true,');
+      codeList.add('    ValidIssuer = "http://nsgsoft.ru",');
+      codeList.add('    ValidAudience = "http://nsgsoft.ru",');
+      codeList.add('    IssuerSigningKey = new SymmetricSecurityKey(');
+      codeList.add(
+          '        System.Text.Encoding.UTF8.GetBytes("pole blotting liar absent slater calcite"))');
+      codeList.add('    }');
+      codeList.add('    });');
+      codeList.add('');
+      codeList.add('// Web API configuration and services');
+      codeList.add('config.SuppressDefaultHostAuthentication();');
+      codeList.add(
+          'config.Filters.Add(new HostAuthenticationFilter(OAuthDefaults.AuthenticationType));');
+      codeList.add('');
       codeList.add(
           'config.Formatters.JsonFormatter.SerializerSettings.ContractResolver =');
       codeList.add('    new CamelCasePropertyNamesContractResolver();');

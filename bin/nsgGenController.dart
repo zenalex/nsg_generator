@@ -60,6 +60,7 @@ class NsgGenController {
       codeList.add('using Microsoft.AspNetCore.Authorization;');
     } else {
       codeList.add('using System.Web.Http;');
+      codeList.add('using System.Web.Mvc;');
       codeList
           .add('using HttpGetAttribute = System.Web.Http.HttpGetAttribute;');
       codeList
