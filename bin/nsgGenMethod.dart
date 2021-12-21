@@ -67,7 +67,7 @@ class NsgGenMethod {
     // codeList.add(
     //     'public async Task<IEnumerable<${method.genDataItem.typeName}>> ${method.name}([FromBody] NsgFindParams findParams)');
     codeList.add(
-        'public async Task<Dictionary<string, IEnumerable<object>>> ${method.name}([FromBody] NsgFindParams findParams)');
+        'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${method.name}([FromBody] NsgFindParams findParams)');
     codeList.add('{');
     if (authorize != 'none') {
       codeList.add('var user = await authController.GetUserByToken(Request);');
@@ -98,7 +98,7 @@ class NsgGenMethod {
       // codeList.add(
       //     'public async Task<IEnumerable<${method.genDataItem.typeName}>> ${method.name}Post([FromBody] IEnumerable<${method.genDataItem.typeName}> items)');
       codeList.add(
-          'public async Task<Dictionary<string, IEnumerable<object>>> ${method.name}Post([FromBody] IEnumerable<${method.genDataItem.typeName}> items)');
+          'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${method.name}Post([FromBody] IEnumerable<${method.genDataItem.typeName}> items)');
       codeList.add('{');
       if (authorize != 'none') {
         codeList

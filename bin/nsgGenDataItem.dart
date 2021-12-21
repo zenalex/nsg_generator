@@ -33,8 +33,8 @@ class NsgGenDataItem {
         methods: methods.map((i) => NsgGenDataItemMethod.fromJson(i)).toList());
   }
 
-  static void generateDataObject(NsgGenerator nsgGenerator) async {
-    var fn = '${nsgGenerator.cSharpPath}/Models/DataObject.cs';
+  static void generateNsgServerMetadataItem(NsgGenerator nsgGenerator) async {
+    var fn = '${nsgGenerator.cSharpPath}/Models/NsgServerMetadataItem.cs';
     if (File(fn).existsSync()) return;
     var codeList = <String>[];
     codeList.add('using System;');
@@ -43,11 +43,14 @@ class NsgGenDataItem {
     codeList.add('using System.Threading.Tasks;');
     codeList.add('using Newtonsoft.Json;');
     codeList.add('using NsgSoft.DataObjects;');
+    codeList.add('using NsgServerClasses;');
+    codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
     codeList.add('{');
-    codeList.add('public abstract class DataObject');
+    codeList
+        .add('public abstract class NsgServerMetadataItem : NsgServerDataItem');
     codeList.add('{');
-    codeList.add('public DataObject(NsgMultipleObject obj)');
+    codeList.add('public NsgServerMetadataItem(NsgMultipleObject obj)');
     codeList.add('{');
     codeList.add('NSGObject = obj;');
     codeList.add('}');
@@ -57,7 +60,7 @@ class NsgGenDataItem {
     codeList.add('');
     codeList.add(
         'public static IEnumerable<T> FindAll<T>(NsgMultipleObject obj, NsgCompare cmp, NsgSorting sorting, int count = 0)');
-    codeList.add('    where T : DataObject, new()');
+    codeList.add('    where T : NsgServerMetadataItem, new()');
     codeList.add('{');
     codeList.add('Func<NsgMultipleObject[]> findAll;');
     codeList.add('int _count = count;');
@@ -85,7 +88,7 @@ class NsgGenDataItem {
     codeList.add('using System;');
     codeList.add('using System.Collections.Generic;');
     if (databaseType != null && databaseType.isNotEmpty) {
-      await NsgGenDataItem.generateDataObject(nsgGenerator);
+      await NsgGenDataItem.generateNsgServerMetadataItem(nsgGenerator);
       codeList.add('using NsgSoft.DataObjects;');
       if (databaseTypeNamespace != null && databaseTypeNamespace.isNotEmpty) {
         codeList.add('using $databaseTypeNamespace;');
@@ -93,7 +96,7 @@ class NsgGenDataItem {
       codeList.add('');
       codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
       codeList.add('{');
-      codeList.add('public class $typeName : DataObject');
+      codeList.add('public class $typeName : NsgServerMetadataItem');
       codeList.add('{');
 
       //FromData
@@ -130,10 +133,11 @@ class NsgGenDataItem {
       codeList.add('');
       //ToData
     } else {
+      codeList.add('using NsgServerClasses;');
       codeList.add('');
       codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
       codeList.add('{');
-      codeList.add('public class $typeName');
+      codeList.add('public class $typeName : NsgServerDataItem');
       codeList.add('{');
     }
 

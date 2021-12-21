@@ -157,23 +157,23 @@ class NsgGenController {
         // codeList.add(
         //     '${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams);');
         codeList.add(
-            '${publicMdf}Task<Dictionary<string, IEnumerable<object>>> ${_.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams);');
+            '${publicMdf}Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${_.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams);');
         if (_.allowPost) {
           // codeList.add(
           //     '${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
           codeList.add(
-              '${publicMdf}Task<Dictionary<string, IEnumerable<object>>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
+              '${publicMdf}Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
         }
       } else {
         // codeList.add(
         //     '${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams);');
         codeList.add(
-            '${publicMdf}Task<Dictionary<string, IEnumerable<object>>> ${_.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams);');
+            '${publicMdf}Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${_.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams);');
         if (_.allowPost) {
           // codeList.add(
           //     '${publicMdf}Task<IEnumerable<${_.genDataItem.typeName}>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
           codeList.add(
-              '${publicMdf}Task<Dictionary<string, IEnumerable<object>>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
+              '${publicMdf}Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
         }
       }
       _.imageFieldList.forEach((el) {
@@ -223,23 +223,23 @@ class NsgGenController {
     methods.forEach((m) {
       if (m.authorize != 'none') {
         codeList.add(
-            'public Task<Dictionary<string, IEnumerable<object>>> ${m.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams)');
+            'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${m.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams)');
         codeList.add('    => On${m.name}(user, findParams);');
         codeList.add('');
         if (m.allowPost) {
           codeList.add(
-              'public Task<Dictionary<string, IEnumerable<object>>> ${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${m.genDataItem.typeName}> items)');
+              'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${m.genDataItem.typeName}> items)');
           codeList.add('    => On${m.name}Post(user, items);');
           codeList.add('');
         }
       } else {
         codeList.add(
-            'public Task<Dictionary<string, IEnumerable<object>>> ${m.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams)');
+            'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${m.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams)');
         codeList.add('    => On${m.name}(user, findParams);');
         codeList.add('');
         if (m.allowPost) {
           codeList.add(
-              'public Task<Dictionary<string, IEnumerable<object>>> ${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${m.genDataItem.typeName}> items)');
+              'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${m.genDataItem.typeName}> items)');
           codeList.add('    => On${m.name}Post(user, items);');
           codeList.add('');
         }
@@ -291,14 +291,14 @@ class NsgGenController {
     methods.forEach((m) {
       if (m.authorize != 'none') {
         codeList.add(
-            'private Task<Dictionary<string, IEnumerable<object>>> On${m.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams)');
+            'private Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> On${m.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams)');
         codeList.add('{');
         codeList.add('throw new NotImplementedException();');
         codeList.add('}');
         codeList.add('');
         if (m.allowPost) {
           codeList.add(
-              'private Task<Dictionary<string, IEnumerable<object>>> On${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${m.genDataItem.typeName}> items)');
+              'private Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> On${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${m.genDataItem.typeName}> items)');
           codeList.add('{');
           codeList.add('throw new NotImplementedException();');
           codeList.add('}');
@@ -306,14 +306,14 @@ class NsgGenController {
         }
       } else {
         codeList.add(
-            'private Task<Dictionary<string, IEnumerable<object>>> On${m.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams)');
+            'private Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> On${m.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams)');
         codeList.add('{');
         codeList.add('throw new NotImplementedException();');
         codeList.add('}');
         codeList.add('');
         if (m.allowPost) {
           codeList.add(
-              'private Task<Dictionary<string, IEnumerable<object>>> On${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${m.genDataItem.typeName}> items)');
+              'private Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> On${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${m.genDataItem.typeName}> items)');
           codeList.add('{');
           codeList.add('throw new NotImplementedException();');
           codeList.add('}');
