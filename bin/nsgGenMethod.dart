@@ -45,17 +45,17 @@ class NsgGenMethod {
     codeList.add('/// </summary>');
     if (nsgGenerator.targetFramework == 'net5.0') {
       codeList.add('[Route("$apiPrefix")]');
-
-      //Authorization
-      if (authorize == 'anonymous') {
-        codeList.add('[Authorize]');
-      } else if (authorize == 'user') {
-        codeList.add('[Authorize(Roles = UserRoles.User)]');
-      } else if (authorize != 'none') {
-        throw Exception('Wrong authorization type in method ${method.name}()');
-      }
     } else {
       codeList.add('[Route("api/${controller.api_prefix}/$apiPrefix")]');
+    }
+
+    //Authorization
+    if (authorize == 'anonymous') {
+      codeList.add('[Authorize]');
+    } else if (authorize == 'user') {
+      codeList.add('[Authorize(Roles = UserRoles.User)]');
+    } else if (authorize != 'none') {
+      throw Exception('Wrong authorization type in method ${method.name}()');
     }
     //POST or GET
     var apiType = '';
@@ -82,17 +82,17 @@ class NsgGenMethod {
     if (allowPost) {
       if (nsgGenerator.targetFramework == 'net5.0') {
         codeList.add('[Route("$apiPrefix/Post")]');
-        //Authorization
-        if (authorize == 'anonymous') {
-          codeList.add('[Authorize]');
-        } else if (authorize == 'user') {
-          codeList.add('[Authorize(Roles = UserRoles.User)]');
-        } else if (authorize != 'none') {
-          throw Exception(
-              'Wrong authorization type in method ${method.name}([FromBody] ${method.genDataItem.typeName} items)');
-        }
       } else {
         codeList.add('[Route("api/${controller.api_prefix}/$apiPrefix/Post")]');
+      }
+      //Authorization
+      if (authorize == 'anonymous') {
+        codeList.add('[Authorize]');
+      } else if (authorize == 'user') {
+        codeList.add('[Authorize(Roles = UserRoles.User)]');
+      } else if (authorize != 'none') {
+        throw Exception(
+            'Wrong authorization type in method ${method.name}([FromBody] ${method.genDataItem.typeName} items)');
       }
       codeList.add('[HttpPost]');
       // codeList.add(
