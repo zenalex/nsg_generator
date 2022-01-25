@@ -65,6 +65,10 @@ class NsgGenDataItemField {
       return 'NsgDataBoolField';
     } else if (type == 'Image') {
       return 'NsgDataImageField';
+    } else if (type == 'List<Reference>') {
+      return 'NsgDataField';
+    } else if (type == 'Enum') {
+      return 'NsgDataIntField';
     } else if (type == 'Reference') {
       return 'NsgDataReferenceField<${referenceType}>';
     } else {
@@ -103,6 +107,12 @@ class NsgGenDataItemField {
       codeList.add('  else {');
       codeList.add('    return s;}');
       codeList.add('}');
+    } else if (type == 'List<Reference>') {
+      codeList.add(
+          'List<${referenceType}> get $dartName => getFieldValue($fieldNameVar) as List<${referenceType}>;');
+    } else if (type == 'Enum') {
+      codeList.add(
+          '$referenceType get $dartName => getFieldValue($fieldNameVar) as $referenceType;');
     } else if (type == 'Reference') {
       codeList.add(
           'String get $dartName => getFieldValue($fieldNameVar).toString();');
@@ -132,6 +142,12 @@ class NsgGenDataItemField {
     } else if (type == 'Reference') {
       codeList.add(
           'set $dartName(String value) => setFieldValue($fieldNameVar, value);');
+    } else if (type == 'List<Reference>') {
+      codeList.add(
+          'set $dartName(List<$referenceType> value) => setFieldValue($fieldNameVar, value);');
+    } else if (type == 'Enum') {
+      codeList.add(
+          'set $dartName($referenceType value) => setFieldValue($fieldNameVar, value);');
     } else {
       codeList.add(
           'set $dartName($dartType value) => setFieldValue($fieldNameVar, value);');

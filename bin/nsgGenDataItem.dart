@@ -115,7 +115,9 @@ class NsgGenDataItem {
       codeList.add('nsgObject = value as $databaseType;');
       codeList.add('if (value == null) return;');
       fields.forEach((el) {
-        if (el.dartType == 'int') {
+        if (el.dbName == null || el.dbName.isEmpty) {
+          codeList.add('${el.name} = default;');
+        } else if (el.dartType == 'int') {
           codeList.add('${el.name} = (int)nsgObject.${el.dbName};');
         } else if (el.dartType == 'double') {
           codeList.add('${el.name} = (double)nsgObject.${el.dbName};');
@@ -157,6 +159,13 @@ class NsgGenDataItem {
         codeList.add('public bool ${element.name} { get; set; }');
       } else if (element.dartType == 'DateTime') {
         codeList.add('public DateTime ${element.name} { get; set; }');
+      } else if (element.dartType == 'List<Reference>') {
+        codeList.add(
+            'public List<${element.referenceType}> ${element.name} { get; set; }');
+        codeList.add('    = new List<${element.referenceType}>();');
+      } else if (element.dartType == 'Enum') {
+        codeList.add(
+            'public ${element.referenceType} ${element.name} { get; set; }');
       } else {
         codeList.add('public string ${element.name} { get; set; }');
       }
