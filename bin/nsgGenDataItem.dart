@@ -96,7 +96,7 @@ class NsgGenDataItem {
       codeList.add('');
       codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
       codeList.add('{');
-      codeList.add('public class $typeName : NsgServerMetadataItem');
+      codeList.add('public partial class $typeName : NsgServerMetadataItem');
       codeList.add('{');
 
       //FromData
@@ -139,7 +139,7 @@ class NsgGenDataItem {
       codeList.add('');
       codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
       codeList.add('{');
-      codeList.add('public class $typeName : NsgServerDataItem');
+      codeList.add('public partial class $typeName : NsgServerDataItem');
       codeList.add('{');
     }
 
@@ -182,15 +182,16 @@ class NsgGenDataItem {
         codeList.add('/// </summary>');
       }
       if (element.dartType == null) {
-        codeList.add('public void ${element.name}() { }');
+        codeList.add('public void ${element.name}() => On${element.name}();');
       } else if (['int', 'double', 'bool', 'DateTime']
           .contains(element.dartType)) {
-        codeList
-            .add('public ${element.dartType} ${element.name}() => default;');
+        codeList.add(
+            'public ${element.dartType} ${element.name}() => On${element.name}();');
       } else if (element.dartType == 'Duration') {
-        codeList.add('public TimeSpan ${element.name}() => default;');
+        codeList
+            .add('public TimeSpan ${element.name}() => On${element.name}();');
       } else {
-        codeList.add('public string ${element.name}() => string.Empty;');
+        codeList.add('public string ${element.name}() => On${element.name}();');
       }
       //if (element.type == 'Image') nsgMethod.addImageMethod(element);
       codeList.add('');
@@ -199,11 +200,49 @@ class NsgGenDataItem {
     codeList.add('}');
     codeList.add('}');
 
-    var fn = '${nsgGenerator.cSharpPath}/Models/${typeName}.cs';
+    var fn = '${nsgGenerator.cSharpPath}/Models/${typeName}.Designer.cs';
     //if (!File(fn).existsSync()) {
     NsgGenCSProject.indentCode(codeList);
     await File(fn).writeAsString(codeList.join('\n'));
     //}
+
+    codeList.clear();
+    codeList.add('using System;');
+    codeList.add('using System.Collections.Generic;');
+    codeList.add('');
+    codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
+    codeList.add('{');
+    codeList.add('public partial class $typeName');
+    codeList.add('{');
+    methods.forEach((element) {
+      if (element.description != null && element.description.isNotEmpty) {
+        codeList.add('/// <summary>');
+        element.description.split('\n').forEach((descLine) {
+          codeList.add('/// $descLine');
+        });
+        codeList.add('/// </summary>');
+      }
+      if (element.dartType == null) {
+        codeList.add('public void On${element.name}() { }');
+      } else if (['int', 'double', 'bool', 'DateTime']
+          .contains(element.dartType)) {
+        codeList
+            .add('public ${element.dartType} On${element.name}() => default;');
+      } else if (element.dartType == 'Duration') {
+        codeList.add('public TimeSpan On${element.name}() => default;');
+      } else {
+        codeList.add('public string On${element.name}() => string.Empty;');
+      }
+      //if (element.type == 'Image') nsgMethod.addImageMethod(element);
+      codeList.add('');
+    });
+    codeList.add('}');
+    codeList.add('}');
+    fn = '${nsgGenerator.cSharpPath}/Models/${typeName}.cs';
+    if (!File(fn).existsSync()) {
+      NsgGenCSProject.indentCode(codeList);
+      await File(fn).writeAsString(codeList.join('\n'));
+    }
   }
 
   Future generateCodeDart(NsgGenerator nsgGenerator,
