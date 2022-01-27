@@ -142,5 +142,12 @@
       }
     ]
   }
+  ],
+  "enums": [
+    {
+      "class_name": "EType",
+      "description" : "Enum type description",
+      "dataTypeFile": "enumTestType.json"
+    }
   ]
 }

@@ -1,0 +1,14 @@
+{
+    "values": [
+        {
+            "codeName": "Value0",
+            "name": "value0",
+            "value": "0"
+        },
+        {
+            "codeName": "Value1",
+            "name": "value1",
+            "value": "1"
+        }
+    ]
+}
