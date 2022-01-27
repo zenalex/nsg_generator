@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'nsgGenCSProject.dart';
 import 'nsgGenController.dart';
+import 'nsgGenEnum.dart';
 
 class NsgGenerator {
   final String targetFramework;
@@ -9,6 +10,7 @@ class NsgGenerator {
   final String cSharpNamespace;
   final String dartPath;
   final List<NsgGenController> controllers;
+  final List<NsgGenEnum> enums;
 
   String jsonPath;
   static NsgGenerator generator;
@@ -18,11 +20,18 @@ class NsgGenerator {
       this.cSharpPath,
       this.cSharpNamespace,
       this.dartPath,
-      this.controllers});
+      this.controllers,
+      this.enums});
 
   factory NsgGenerator.fromJson(Map<String, dynamic> parsedJson) {
     var targetFramework = parsedJson['targetFramework'] ?? 'net5.0';
     if (targetFramework.isEmpty) targetFramework = 'net5.0';
+    var enums;
+    if (parsedJson.containsKey('enums')) {
+      enums = (parsedJson['enums'] as List)
+          .map((i) => NsgGenEnum.fromJson(i))
+          .toList();
+    }
     generator = NsgGenerator(
         targetFramework: targetFramework,
         cSharpPath: parsedJson['cSharpPath'],
@@ -30,7 +39,8 @@ class NsgGenerator {
         dartPath: parsedJson['dartPath'],
         controllers: (parsedJson['controller'] as List)
             .map((i) => NsgGenController.fromJson(i))
-            .toList());
+            .toList(),
+        enums: enums);
     return generator;
   }
 
@@ -50,6 +60,12 @@ class NsgGenerator {
     await dir.create();
     dir = Directory(dartPathGen);
     await dir.create();
+    if (enums != null && enums.isNotEmpty) {
+      dir = Directory(cSharpPath + '/Enums/');
+      await dir.create();
+      dir = Directory(dartPath + '/enums/');
+      await dir.create();
+    }
 
     await generateCode();
   }
@@ -63,6 +79,7 @@ class NsgGenerator {
       print('generating ${element.class_name}');
       await element.generateCode(this);
     });
+    await NsgGenEnum.generateEnums(this, enums);
   }
 
   String getDartName(String dn) {

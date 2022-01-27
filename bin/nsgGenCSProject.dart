@@ -49,6 +49,9 @@ class NsgGenCSProject {
     codeList.add('  <ItemGroup>');
     codeList.add('    <Folder Include="Controllers\\" />');
     codeList.add('    <Folder Include="Models\\" />');
+    if (nsgGenerator.enums != null && nsgGenerator.enums.isNotEmpty) {
+      codeList.add('    <Folder Include="Enums\\" />');
+    }
     codeList.add('  </ItemGroup>');
     codeList.add('');
     codeList.add('  <ItemGroup>');
