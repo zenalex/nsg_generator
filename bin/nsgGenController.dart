@@ -34,11 +34,11 @@ class NsgGenController {
         impl_controller_name:
             (parsedJson['impl_controller_name']?.isNotEmpty ?? false)
                 ? parsedJson['impl_controller_name']
-                : parsedJson['class_name'],
+                : parsedJson['class_name'] + 'Implementation',
         impl_auth_controller_name:
             (parsedJson['impl_auth_controller_name']?.isNotEmpty ?? false)
                 ? parsedJson['impl_auth_controller_name']
-                : 'AuthController',
+                : 'AuthControllerImplementation',
         dataType: parsedJson['dataType'],
         serverUri: parsedJson['serverUri'],
         useAuthorization: parsedJson['useAuthorization'] == 'true',
@@ -197,7 +197,7 @@ class NsgGenController {
   }
 
   void generateImplController(NsgGenerator nsgGenerator) async {
-    // Designer
+    // ${impl_controller_name}.Designer.cs
     var codeList = <String>[];
     codeList.add('using System;');
     codeList.add('using System.Collections.Generic;');
@@ -266,7 +266,7 @@ class NsgGenController {
         '${nsgGenerator.cSharpPath}/Controllers/${impl_controller_name}.Designer.cs';
     await File(fn).writeAsString(codeList.join('\n'));
 
-    // Editable
+    // ${impl_controller_name}.cs
     codeList.clear();
     codeList.add('using System;');
     codeList.add('using System.Collections.Generic;');
