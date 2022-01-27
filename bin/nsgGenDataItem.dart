@@ -133,6 +133,9 @@ class NsgGenDataItem {
         } else if (el.dartType == 'Reference') {
           codeList
               .add('${el.name} = nsgObject.${el.dbName}?.Value.ToString();');
+        } else if (el.dartType == 'Enum') {
+          codeList.add(
+              '${el.name} = (${el.referenceType})nsgObject.${el.dbName}.Value;');
         } else {
           codeList.add('${el.name} = nsgObject.${el.dbName};');
         }
