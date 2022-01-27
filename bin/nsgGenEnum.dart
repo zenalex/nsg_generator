@@ -8,14 +8,16 @@ import 'nsgGenerator.dart';
 class NsgGenEnum {
   final String class_name;
   final String dataTypeFile;
+  String description;
   List<NsgGenEnumItem> values;
 
-  NsgGenEnum({this.class_name, this.dataTypeFile});
+  NsgGenEnum({this.class_name, this.dataTypeFile, this.description = ''});
 
   factory NsgGenEnum.fromJson(Map<String, dynamic> parsedJson) {
     return NsgGenEnum(
         class_name: parsedJson['class_name'],
-        dataTypeFile: parsedJson['dataTypeFile']);
+        dataTypeFile: parsedJson['dataTypeFile'],
+        description: parsedJson['description']);
   }
 
   Future load(NsgGenerator nsgGenerator) async {
@@ -39,9 +41,11 @@ class NsgGenEnum {
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
     codeList.add('{');
-    codeList.add('/// <summary>');
-    codeList.add('///${class_name} Enum');
-    codeList.add('/// </summary>');
+    if (description != null && description.isNotEmpty) {
+      codeList.add('/// <summary>');
+      codeList.add('/// ${description}');
+      codeList.add('/// </summary>');
+    }
     codeList.add('public class ${class_name} : NsgServerEnum');
     codeList.add('{');
     values.forEach((i) {
