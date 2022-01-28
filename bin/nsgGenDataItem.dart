@@ -78,7 +78,8 @@ class NsgGenDataItem {
     codeList.add('var dataObj = obj;');
     codeList.add('if (_count == 0)');
     codeList.add('{');
-    codeList.add('if (sorting == null) findAll = () => dataObj.FindAll(cmp);');
+    codeList.add(
+        'if (sorting == null || sorting.Count == 0) findAll = () => dataObj.FindAll(cmp);');
     codeList.add('else findAll = () => dataObj.FindAll(cmp, sorting);');
     codeList.add('}');
     codeList.add(
@@ -145,8 +146,7 @@ class NsgGenDataItem {
           codeList
               .add('${el.name} = nsgObject.${el.dbName}?.Value.ToString();');
         } else if (el.dartType == 'Enum') {
-          codeList.add(
-              '${el.name} = (${el.referenceType})nsgObject.${el.dbName}.Value;');
+          codeList.add('${el.name} = (int)nsgObject.${el.dbName}.Value;');
         } else if (el.dartType == 'List<Reference>') {
           codeList.add(
               '${el.name} = FromTable<${el.referenceType}>(nsgObject.${el.dbName});');
@@ -194,8 +194,15 @@ class NsgGenDataItem {
             'public List<${element.referenceType}> ${element.name} { get; set; }');
         codeList.add('    = new List<${element.referenceType}>();');
       } else if (element.dartType == 'Enum') {
-        codeList.add(
-            'public ${element.referenceType} ${element.name} { get; set; }');
+        codeList.add('/// <remarks>');
+        codeList.add('/// <see cref="${element.referenceType}"/> enum type');
+        codeList.add('/// </remarks>');
+        codeList.add('public int ${element.name} { get; set; }');
+      } else if (element.dartType == 'Reference') {
+        codeList.add('/// <remarks> ');
+        codeList.add('/// <see cref="${element.referenceType}"/> reference');
+        codeList.add('/// </remarks> ');
+        codeList.add('public string ${element.name} { get; set; }');
       } else {
         codeList.add('public string ${element.name} { get; set; }');
       }
