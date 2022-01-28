@@ -59,6 +59,17 @@ class NsgGenDataItem {
     codeList.add('public virtual NsgMultipleObject NSGObject { get; set; }');
     codeList.add('');
     codeList.add(
+        'public static List<T> FromTable<T>(NsgDataTable table) where T : NsgServerMetadataItem, new()');
+    codeList.add('{');
+    codeList.add('List<T> res = new List<T>();');
+    codeList.add('foreach (var i in table.Rows)');
+    codeList.add('{');
+    codeList.add('res.Add(new T { NSGObject = i });');
+    codeList.add('}');
+    codeList.add('return res;');
+    codeList.add('}');
+    codeList.add('');
+    codeList.add(
         'public static IEnumerable<T> FindAll<T>(NsgMultipleObject obj, NsgCompare cmp, NsgSorting sorting, int count = 0)');
     codeList.add('    where T : NsgServerMetadataItem, new()');
     codeList.add('{');
@@ -136,6 +147,9 @@ class NsgGenDataItem {
         } else if (el.dartType == 'Enum') {
           codeList.add(
               '${el.name} = (${el.referenceType})nsgObject.${el.dbName}.Value;');
+        } else if (el.dartType == 'List<Reference>') {
+          codeList.add(
+              '${el.name} = FromTable<${el.referenceType}>(nsgObject.${el.dbName});');
         } else {
           codeList.add('${el.name} = nsgObject.${el.dbName};');
         }

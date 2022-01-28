@@ -21,7 +21,7 @@ class NsgGenEnum {
   }
 
   Future load(NsgGenerator nsgGenerator) async {
-    print('$class_name Enum initializing');
+    //print('$class_name Enum initializing');
     var text =
         await File('${nsgGenerator.jsonPath}/${dataTypeFile}').readAsString();
     var parsedEnumJson = json.decode(text);
@@ -29,7 +29,7 @@ class NsgGenEnum {
         .map((i) => NsgGenEnumItem(
             codeName: i['codeName'], name: i['name'], value: i['value']))
         .toList();
-    print('$class_name Enum initialized');
+    //print('$class_name Enum initialized');
   }
 
   void generateCode(NsgGenerator nsgGenerator) async {
