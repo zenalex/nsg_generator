@@ -1,0 +1,146 @@
+{
+  "cSharpPath": "X:/Projects2/flutterServer/TitanLK5/TitanLK5/",
+  "cSharpNamespace": "Titan112Server",
+  "dartPath": "X:/Projects2/flutter2/titan112/lib",
+  "controller":[
+  {
+    "api_prefix": "Api",
+    "class_name": "DataController",
+    "useAuthorization": "true",
+    "dataType": "NsgDataItem",
+    "serverUri": "http://alex.nsgsoft.ru:5074",
+    "method": [
+      {
+        "name": "UserData",
+        "description" : "Get user data",
+        "api_prefix": "UserData",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "userItem.json",
+        "allowPost": "true"
+      },
+      {
+        "name": "Tarif",
+        "description" : "Get Tarif",
+        "api_prefix": "Tarif",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "tarifItem.json"
+      },
+      {
+        "name": "Coordinate",
+        "description" : "Coordinates",
+        "api_prefix": "Coordinate",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "coordinateItem.json"
+      },
+      {
+        "name": "Car",
+        "description" : "Get Car",
+        "api_prefix": "Car",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "carItem.json"
+      },    
+      {
+        "name": "Guardian",
+        "description" : "Get Guardian",
+        "api_prefix": "Guardian",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "guardianItem.json"
+      },
+      {
+        "name": "Alarm",
+        "description" : "Get Alarm",
+        "api_prefix": "Alarm",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "alarmItem.json"
+      },
+      {
+        "name": "AlarmMark",
+        "description" : "Set Alarm Mark",
+        "api_prefix": "AlarmMark",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "alarmMark.json",
+        "allowPost": "true"  
+      },
+      {
+        "name": "AlarmCancelReason",
+        "description" : "Alarm cancel reason",
+        "api_prefix": "AlarmCancelReason",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "alarmCancelReason.json",
+        "allowPost": "post"  
+      },
+      {
+        "name": "RegistrationData",
+        "description" : "Send registration data",
+        "api_prefix": "RegistrationData",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "registrationData.json",
+        "allowPost": "true"
+      },
+      {
+        "name": "VerificationResult",
+        "description" : "Result of verification",
+        "api_prefix": "VerificationResult",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "VerificationResult.json",
+        "allowPost": "false"
+      },
+      {
+        "name": "InformationItem",
+        "description" : "Information from server",
+        "api_prefix": "InformationItem",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "informationItem.json",
+        "allowPost": "false"
+      },
+      {
+        "name": "SystemItem",
+        "description" : "System Information",
+        "api_prefix": "SystemItem",
+        "authorize": "none",
+        "type": "get",
+        "dataTypeFile": "systemItem.json",
+        "allowPost": "false"  
+      },
+      {
+        "name": "BalanceItem",
+        "description" : "Balance Information",
+        "api_prefix": "BalanceItem",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "balanceItem.json",
+        "allowPost": "true"  
+      },
+      {
+        "name": "ChatMessage",
+        "description" : "Chat with call center",
+        "api_prefix": "Chat",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "chatMessage.json",
+        "allowPost": "true"  
+      },
+      {
+        "name": "TarifPack",
+        "description" : "Tarif packs",
+        "api_prefix": "TarifPack",
+        "authorize": "user",
+        "type": "get",
+        "dataTypeFile": "tarifPack.json",
+        "allowPost": "false"  
+      }
+    ]
+  }
+  ]
+}

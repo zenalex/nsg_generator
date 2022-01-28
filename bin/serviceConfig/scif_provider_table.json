@@ -1,0 +1,55 @@
+{
+    "typeName": "ScifProviderTable",
+    "comment": "Поставщик Таблица",
+    "fields":[
+      {
+        "name": "Id",
+        "comment": "Guid - идентификатор объета",
+        "type": "String",
+        "isPrimary": "true",
+        "userVisibility": "false"
+      },
+      {
+        "name": "OwnerId",
+        "comment": "Guid - идентификатор владельца",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "Владелец"
+      },
+      {
+        "name": "Job",
+        "comment": "Должность",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "Должность"
+      },
+      {
+        "name": "PersonResponsible",
+        "comment": "Ответственное лицо",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "ОтветственноеЛицо"
+      },
+      {
+        "name": "Address",
+        "comment": "Адрес",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "Адрес"
+      },
+      {
+        "name": "IsActual",
+        "comment": "Действующий",
+        "type": "bool",
+        "userVisibility": "true",
+        "userName": "Действующий"
+      },
+      {
+        "name": "Phones",
+        "comment": "Телефоны",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "Телефоны"
+      }
+    ]
+}

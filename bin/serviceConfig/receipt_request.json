@@ -1,0 +1,50 @@
+{
+    "typeName": "ScifReceiptRequest",
+    "comment": "Заявка на приемку",
+    "fields":[
+      {
+        "name": "Id",
+        "comment": "Guid - идентификатор объета",
+        "type": "String",
+        "isPrimary": "true",
+        "userVisibility": "false"
+      },
+      {
+        "name": "DocumentDate",
+        "comment": "Дата и время документа",
+        "type": "Date",
+        "userVisibility": "true",
+        "userName": "Дата"
+      },
+      {
+        "name": "DocumentNumber",
+        "comment": "Номер документа",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "Номер"
+      },
+      {
+        "name": "ScifProviderId",
+        "comment": "Поставщик",
+        "type": "Reference",
+        "referenceName": "Provider",
+        "referenceType": "ScifProvider",
+        "userVisibility": "true",
+        "userName": "Поставщик"
+      },
+      {
+        "name": "ArrivalDate",
+        "comment": "Дата и время прибытия ТС",
+        "type": "Date",
+        "userVisibility": "true",
+        "userName": "Дата прибытия ТС"
+      },
+      {
+        "name": "Comment",
+        "comment": "Комментарий",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "Комментарий"
+      }
+    ]
+}

@@ -1,0 +1,55 @@
+{
+    "typeName": "ScifProvider",
+    "comment": "Поставщик",
+    "fields":[
+      {
+        "name": "Id",
+        "comment": "Guid - идентификатор объета",
+        "type": "String",
+        "isPrimary": "true",
+        "userVisibility": "false"
+      },
+      {
+        "name": "Name",
+        "comment": "Наименование",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "Наименование"
+      },
+      {
+        "name": "INN",
+        "comment": "ИНН",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "ИНН"
+      },
+      {
+        "name": "KPP",
+        "comment": "КПП",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "КПП"
+      },
+      {
+        "name": "Address",
+        "comment": "Юридический адрес",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "Юридический адрес"
+      },
+      {
+        "name": "AddressActual",
+        "comment": "Фактический адрес",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "Фактический адрес"
+      },
+      {
+        "name": "Phones",
+        "comment": "Телефоны",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "Телефоны"
+      }
+    ]
+}

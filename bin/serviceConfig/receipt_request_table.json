@@ -1,0 +1,62 @@
+{
+    "typeName": "ScifReceiptRequestTable",
+    "comment": "Заявка на приемку Таблица",
+    "fields":[
+      {
+        "name": "Id",
+        "comment": "Guid - идентификатор объета",
+        "type": "String",
+        "isPrimary": "true",
+        "userVisibility": "false"
+      },
+      {
+        "name": "OwnerId",
+        "comment": "Guid - идентификатор владельца",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "Владелец"
+      },
+      {
+        "name": "Weight",
+        "comment": "Вес",
+        "type": "double",
+        "userVisibility": "true",
+        "userName": "Вес"
+      },
+      {
+        "name": "Price",
+        "comment": "Цена",
+        "type": "double",
+        "userVisibility": "true",
+        "userName": "Цена"
+      },
+      {
+        "name": "ClientId",
+        "comment": "Идентификатор клиента",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "ИдентификаторКлиента"
+      },
+      {
+        "name": "NomenclatureId",
+        "comment": "Номенклатура",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "Номенклатура"
+      },
+      {
+        "name": "NomenclatureType",
+        "comment": "Вид номенклатуры",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "ВидНоменклатуры"
+      },
+      {
+        "name": "ItemCode",
+        "comment": "Артикул",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "Артикул"
+      }
+    ]
+}

@@ -1,0 +1,41 @@
+{
+    "typeName": "ScifReceiptInvoiceTable",
+    "comment": "Документ Приходная ОХ Таблица",
+    "fields":[
+      {
+        "name": "Id",
+        "comment": "Guid - идентификатор объета",
+        "type": "String",
+        "isPrimary": "true",
+        "userVisibility": "false"
+      },
+      {
+        "name": "OwnerId",
+        "comment": "Guid - идентификатор владельца",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "Владелец"
+      },
+      {
+        "name": "NomenclatureId",
+        "comment": "Номенклатура",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "Номенклатура"
+      },
+      {
+        "name": "TotalSum",
+        "comment": "Сумма",
+        "type": "double",
+        "userVisibility": "true",
+        "userName": "Сумма"
+      },
+      {
+        "name": "Price",
+        "comment": "Цена",
+        "type": "double",
+        "userVisibility": "true",
+        "userName": "Цена"
+      }
+    ]
+}

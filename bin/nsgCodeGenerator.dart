@@ -9,7 +9,8 @@ void main(List<String> args) async {
     scPath = args[0];
   } else {
     print('Enter path: ');
-    scPath = stdin.readLineSync(encoding: utf8);
+    scPath =
+        'X:\\Projects2\\flutter2\\scif_app_server_net\\scif_app_server\\model_config'; //stdin.readLineSync(encoding: utf8);
   }
   startGenerator(scPath);
 }

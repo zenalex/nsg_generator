@@ -1,0 +1,52 @@
+{
+    "typeName": "ScifReceiptInvoice",
+    "comment": "Документ Приходная ОХ",
+    "fields":[
+      {
+        "name": "Id",
+        "comment": "Guid - идентификатор объета",
+        "type": "String",
+        "isPrimary": "true",
+        "userVisibility": "false"
+      },
+      {
+        "name": "DocumentDate",
+        "comment": "Дата и время документа",
+        "type": "Date",
+        "userVisibility": "true",
+        "userName": "Дата"
+      },
+      {
+        "name": "DocumentNumber",
+        "comment": "Номер документа",
+        "type": "String",
+        "userVisibility": "true",
+        "userName": "Номер"
+      },
+      {
+        "name": "ScifProviderId",
+        "comment": "Поставщик",
+        "type": "Reference",
+        "referenceName": "Provider",
+        "referenceType": "ScifProvider",
+        "userVisibility": "true",
+        "userName": "Поставщик"
+      },
+      {
+        "name": "TotalSum",
+        "comment": "Сумма документа",
+        "type": "double",
+        "userVisibility": "true",
+        "userName": "Сумма"
+      },
+      {
+        "name": "BaseDocument",
+        "comment": "ЗаявкаНаПриемку, на основании которой сформирован данный документ",
+        "type": "Reference",
+        "referenceName": "Request",
+        "referenceType": "ScifReceiptRequest",
+        "userVisibility": "true",
+        "userName": "Заявка"
+      }
+    ]
+}
