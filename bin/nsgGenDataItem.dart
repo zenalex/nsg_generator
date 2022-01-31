@@ -89,6 +89,26 @@ class NsgGenDataItem {
     codeList.add('yield return new T { NSGObject = i };');
     codeList.add('}');
     codeList.add('}');
+    codeList.add('');
+    codeList.add(
+        'public sealed override void ApplyServerFilter(INsgTokenExtension user, NsgFindParams findParams)');
+    codeList.add('{');
+    codeList
+        .add('AddNsgCompare(findParams, GetObjectCompare(user, findParams));');
+    codeList.add('base.ApplyServerFilter(user, findParams);');
+    codeList.add('}');
+    codeList.add('');
+    codeList.add(
+        'public virtual NsgCompare GetObjectCompare(INsgTokenExtension user, NsgFindParams findParams) => new NsgCompare();');
+    codeList.add('');
+    codeList.add(
+        'public static void AddNsgCompare(NsgFindParams findParams, NsgCompare cmp)');
+    codeList.add('{');
+    codeList.add(
+        'var inCmp = NsgSoft.DataObjects.NsgCompare.FromXml(findParams.SearchCriteriaXml);');
+    codeList.add('inCmp.Add(cmp);');
+    codeList.add('findParams.SearchCriteriaXml = inCmp.ToXml();');
+    codeList.add('}');
     codeList.add('}');
     codeList.add('}');
     NsgGenCSProject.indentCode(codeList);

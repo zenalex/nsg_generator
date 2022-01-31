@@ -186,6 +186,9 @@ class NsgGenController {
         }
       });
     });
+    codeList.add('');
+    codeList.add(
+        'void ApplyServerFilter<T>(INsgTokenExtension user, NsgFindParams findParams) where T : NsgServerDataItem, new();');
 
     codeList.add('}');
     codeList.add('}');
@@ -225,12 +228,20 @@ class NsgGenController {
     codeList.add(
         'public partial class ${impl_controller_name} : ${class_name}Interface');
     codeList.add('{');
-
+    var hasMetadata = false;
     methods.forEach((m) {
+      if (m.genDataItem.databaseType != null &&
+          m.genDataItem.databaseType.isNotEmpty) {
+        hasMetadata = true;
+      }
       if (m.authorize != 'none') {
         codeList.add(
             'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${m.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams)');
-        codeList.add('    => On${m.name}(user, findParams);');
+        codeList.add('{');
+        codeList.add(
+            'ApplyServerFilter<${m.genDataItem.typeName}>(user, findParams);');
+        codeList.add('return On${m.name}(user, findParams);');
+        codeList.add('}');
         codeList.add('');
         if (m.allowPost) {
           codeList.add(
@@ -241,7 +252,11 @@ class NsgGenController {
       } else {
         codeList.add(
             'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${m.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams)');
-        codeList.add('    => On${m.name}(user, findParams);');
+        codeList.add('{');
+        codeList.add(
+            'ApplyServerFilter<${m.genDataItem.typeName}>(user, findParams);');
+        codeList.add('return On${m.name}(user, findParams);');
+        codeList.add('}');
         codeList.add('');
         if (m.allowPost) {
           codeList.add(
@@ -264,6 +279,19 @@ class NsgGenController {
         }
       });
     });
+
+    codeList.add(
+        'public void ApplyServerFilter<T>(INsgTokenExtension user, NsgFindParams findParams) where T : NsgServerDataItem, new()');
+    codeList.add('{');
+    codeList.add('T obj = new T();');
+    codeList.add('if (findParams == null) findParams = new NsgFindParams();');
+    if (hasMetadata) {
+      codeList.add(
+          'NsgServerMetadataItem.AddNsgCompare(findParams, GetControllerCompare(user, obj as NsgServerMetadataItem, findParams));');
+    }
+    codeList.add('OnApplyServerFilter(user, obj, findParams);');
+    codeList.add('obj.ApplyServerFilter(user, findParams);');
+    codeList.add('}');
 
     codeList.add('}');
     codeList.add('}');
@@ -344,7 +372,19 @@ class NsgGenController {
         }
       });
     });
-
+    if (hasMetadata) {
+      codeList.add('');
+      codeList.add(
+          'public NsgSoft.DataObjects.NsgCompare GetControllerCompare(INsgTokenExtension user, NsgServerMetadataItem obj, NsgFindParams findParams)');
+      codeList.add('{');
+      codeList.add('return new NsgSoft.DataObjects.NsgCompare();');
+      codeList.add('}');
+    }
+    codeList.add('');
+    codeList.add(
+        'public void OnApplyServerFilter(INsgTokenExtension user, NsgServerDataItem obj, NsgFindParams findParams)');
+    codeList.add('{');
+    codeList.add('}');
     codeList.add('}');
     codeList.add('}');
     NsgGenCSProject.indentCode(codeList);
