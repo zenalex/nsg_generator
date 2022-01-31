@@ -248,7 +248,7 @@ class NsgGenCSProject {
       codeList.add('config.MapHttpAttributeRoutes();');
       codeList.add('config.Routes.MapHttpRoute(');
       codeList.add('    name: "DefaultApi",');
-      codeList.add('    routeTemplate: "api/{controller}/{action}/{id}",');
+      codeList.add('    routeTemplate: "{controller}/{action}/{id}",');
       codeList.add('    defaults: new { id = RouteParameter.Optional }');
       codeList.add(');');
 
