@@ -85,7 +85,7 @@ class NsgGenCSProject {
     codeList.add('');
     codeList.add('');
     codeList.add('</Project>');
-    file.writeAsString(codeList.join('\n'));
+    file.writeAsString(codeList.join('\r\n'));
   }
 
   static void _generateProgramCS(NsgGenerator nsgGenerator) {
@@ -142,7 +142,7 @@ class NsgGenCSProject {
       codeList.add('}');
     }
     indentCode(codeList);
-    file.writeAsString(codeList.join('\n'));
+    file.writeAsString(codeList.join('\r\n'));
   }
 
   static void _generateStartupCS(NsgGenerator nsgGenerator) {
@@ -284,7 +284,7 @@ class NsgGenCSProject {
       codeList.add('}');
     }
     indentCode(codeList);
-    file.writeAsString(codeList.join('\n'));
+    file.writeAsString(codeList.join('\r\n'));
   }
 
   static void indentCode(List<String> codeList) {

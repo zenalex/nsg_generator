@@ -88,7 +88,7 @@ class NsgGenEnum {
 
     var fn = '${nsgGenerator.cSharpPath}/Enums/${class_name}.cs';
     //if (!File(fn).existsSync()) {
-    await File(fn).writeAsString(codeList.join('\n'));
+    await File(fn).writeAsString(codeList.join('\r\n'));
     //}
     await generateCodeDart(nsgGenerator);
   }
@@ -120,7 +120,7 @@ class NsgGenEnum {
     });
 
     await File('${nsgGenerator.dartPath}/enums.dart')
-        .writeAsString(codeList.join('\n'));
+        .writeAsString(codeList.join('\r\n'));
   }
 
   Future generateEnumDart(NsgGenerator nsgGenerator) async {
@@ -154,7 +154,7 @@ class NsgGenEnum {
     codeList.add('}');
     await File(
             '${nsgGenerator.dartPath}/enums/${nsgGenerator.getDartName(class_name)}.dart')
-        .writeAsString(codeList.join('\n'));
+        .writeAsString(codeList.join('\r\n'));
   }
 }
 

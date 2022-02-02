@@ -122,7 +122,7 @@ class NsgGenController {
 
     var fn = '${nsgGenerator.cSharpPath}/${class_name}.cs';
     //if (!File(fn).existsSync()) {
-    await File(fn).writeAsString(codeList.join('\n'));
+    await File(fn).writeAsString(codeList.join('\r\n'));
     //}
     await generateInterfaceData(nsgGenerator);
     await generateImplController(nsgGenerator);
@@ -195,7 +195,7 @@ class NsgGenController {
     NsgGenCSProject.indentCode(codeList);
     var fn = '${nsgGenerator.cSharpPath}/${class_name}Interface.cs';
     //if (!File(fn).existsSync()) {
-    await File(fn).writeAsString(codeList.join('\n'));
+    await File(fn).writeAsString(codeList.join('\r\n'));
     //}
   }
 
@@ -298,7 +298,7 @@ class NsgGenController {
     NsgGenCSProject.indentCode(codeList);
     var fn =
         '${nsgGenerator.cSharpPath}/Controllers/${impl_controller_name}.Designer.cs';
-    await File(fn).writeAsString(codeList.join('\n'));
+    await File(fn).writeAsString(codeList.join('\r\n'));
 
     // ${impl_controller_name}.cs
     codeList.clear();
@@ -390,7 +390,7 @@ class NsgGenController {
     NsgGenCSProject.indentCode(codeList);
     fn = '${nsgGenerator.cSharpPath}/Controllers/${impl_controller_name}.cs';
     if (!File(fn).existsSync()) {
-      await File(fn).writeAsString(codeList.join('\n'));
+      await File(fn).writeAsString(codeList.join('\r\n'));
     }
   }
 
@@ -421,7 +421,7 @@ class NsgGenController {
     var fn =
         '${nsgGenerator.cSharpPath}/Controllers/${impl_auth_controller_name}.cs';
     if (!File(fn).existsSync()) {
-      await File(fn).writeAsString(codeList.join('\n'));
+      await File(fn).writeAsString(codeList.join('\r\n'));
     }
   }
 
@@ -453,7 +453,7 @@ class NsgGenController {
 
     await File(
             '${nsgGenerator.dartPath}/${nsgGenerator.getDartName(class_name)}Model.dart')
-        .writeAsString(codeList.join('\n'));
+        .writeAsString(codeList.join('\r\n'));
   }
 
   Future generateInitController(NsgGenerator nsgGenerator) async {
@@ -470,7 +470,7 @@ class NsgGenController {
     codeList.add('  NsgDataProvider? provider;');
     codeList.add('  @override');
     codeList.add('  Future onInit() async {');
-    codeList.add('    provider ??= NsgDataProvider();');
+    codeList.add('    provider ??= NsgDataProvider(firebaseToken: \'\');');
     codeList.add("  provider!.serverUri = '$serverUri';");
     codeList.add('  ');
     addRegisterDataItems(nsgGenerator, codeList);
@@ -487,8 +487,7 @@ class NsgGenController {
     codeList.add('  }');
     codeList.add('  ');
     codeList.add('  Future loadData() async {');
-    codeList.add(
-        '    change(NsgBaseControllerData(), status: RxStatus.success());');
+    codeList.add('    currentStatus = RxStatus.success();');
     codeList.add('    sendNotify();');
     codeList.add('  }');
 
@@ -496,7 +495,7 @@ class NsgGenController {
 
     await File(
             '${nsgGenerator.dartPathGen}/${nsgGenerator.getDartName(class_name)}.g.dart')
-        .writeAsString(codeList.join('\n'));
+        .writeAsString(codeList.join('\r\n'));
 
     //----------------------------------------------------------
     //generate main class ControllerName.dart
@@ -522,7 +521,7 @@ class NsgGenController {
     var fn =
         '${nsgGenerator.dartPath}/${nsgGenerator.getDartName(class_name)}.dart';
     if (!File(fn).existsSync()) {
-      await File(fn).writeAsString(codeList.join('\n'));
+      await File(fn).writeAsString(codeList.join('\r\n'));
     }
   }
 

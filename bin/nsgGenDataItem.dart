@@ -112,7 +112,7 @@ class NsgGenDataItem {
     codeList.add('}');
     codeList.add('}');
     NsgGenCSProject.indentCode(codeList);
-    await File(fn).writeAsString(codeList.join('\n'));
+    await File(fn).writeAsString(codeList.join('\r\n'));
   }
 
   void writeCode(NsgGenerator nsgGenerator, NsgGenMethod nsgMethod) async {
@@ -260,7 +260,7 @@ class NsgGenDataItem {
     var fn = '${nsgGenerator.cSharpPath}/Models/${typeName}.Designer.cs';
     //if (!File(fn).existsSync()) {
     NsgGenCSProject.indentCode(codeList);
-    await File(fn).writeAsString(codeList.join('\n'));
+    await File(fn).writeAsString(codeList.join('\r\n'));
     //}
 
     // ${typeName}.cs
@@ -299,7 +299,7 @@ class NsgGenDataItem {
     fn = '${nsgGenerator.cSharpPath}/Models/${typeName}.cs';
     if (!File(fn).existsSync()) {
       NsgGenCSProject.indentCode(codeList);
-      await File(fn).writeAsString(codeList.join('\n'));
+      await File(fn).writeAsString(codeList.join('\r\n'));
     }
   }
 
@@ -359,7 +359,7 @@ class NsgGenDataItem {
 
     await File(
             '${nsgGenerator.dartPathGen}/${nsgGenerator.getDartName(typeName)}.g.dart')
-        .writeAsString(codeList.join('\n'));
+        .writeAsString(codeList.join('\r\n'));
     //----------------------------------------------------------
     //generate main item class DataItem.dart
     //----------------------------------------------------------
@@ -373,7 +373,7 @@ class NsgGenDataItem {
     var fn =
         '${nsgGenerator.dartPath}/${nsgGenerator.getDartName(typeName)}.dart';
     if (!File(fn).existsSync()) {
-      await File(fn).writeAsString(codeList.join('\n'));
+      await File(fn).writeAsString(codeList.join('\r\n'));
     }
   }
 }
