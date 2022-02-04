@@ -53,7 +53,7 @@ class NsgGenController {
             ? (parsedJson['functions'] as List)
                 .map((i) => NsgGenFunction.fromJson(i))
                 .toList()
-            : null);
+            : []);
   }
 
   void generateCode(NsgGenerator nsgGenerator) async {
