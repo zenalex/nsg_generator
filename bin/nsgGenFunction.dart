@@ -151,7 +151,8 @@ class NsgGenFunction {
         pStr +=
             '${p.type}.Parse(body["${p.name}"].ToString(), System.Globalization.CultureInfo.InvariantCulture)';
       } else {
-        pStr += '(${p.returnType})body["employee"]';
+        pStr +=
+            '(body["${p.name}"] as Newtonsoft.Json.Linq.JObject).ToObject<${p.returnType}>();';
       }
       codeList.add(pStr + ';');
     });
