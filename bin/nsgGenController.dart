@@ -207,7 +207,9 @@ class NsgGenController {
       await element.generateControllerInterfaceMethod(
           codeList, nsgGenerator, this);
     });
-    codeList.add('');
+    if (functions.isNotEmpty) {
+      codeList.add('');
+    }
     codeList.add(
         'void ApplyServerFilter<T>(INsgTokenExtension user, NsgFindParams findParams) where T : NsgServerDataItem, new();');
 
@@ -249,6 +251,11 @@ class NsgGenController {
     codeList.add(
         'public partial class ${impl_controller_name} : ${class_name}Interface');
     codeList.add('{');
+    codeList.add(
+        'private delegate Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> HttpGetEventHandler(INsgTokenExtension user, NsgFindParams findParams);');
+    codeList.add(
+        'private delegate Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> HttpPostEventHandler(INsgTokenExtension user, IEnumerable<NsgServerDataItem> items);');
+
     var hasMetadata = false;
     methods.forEach((m) {
       if (m.genDataItem.databaseType != null &&
@@ -256,33 +263,39 @@ class NsgGenController {
         hasMetadata = true;
       }
       if (m.authorize != 'none') {
+        codeList.add('private event HttpGetEventHandler ${m.name}Event;');
         codeList.add(
             'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${m.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams)');
         codeList.add('{');
         codeList.add(
             'ApplyServerFilter<${m.genDataItem.typeName}>(user, findParams);');
-        codeList.add('return On${m.name}(user, findParams);');
+        codeList.add('return ${m.name}Event(user, findParams);');
         codeList.add('}');
         codeList.add('');
         if (m.allowPost) {
+          codeList
+              .add('private event HttpPostEventHandler ${m.name}PostEvent;');
           codeList.add(
               'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${m.genDataItem.typeName}> items)');
-          codeList.add('    => On${m.name}Post(user, items);');
+          codeList.add('    => ${m.name}PostEvent(user, items);');
           codeList.add('');
         }
       } else {
+        codeList.add('private event HttpGetEventHandler ${m.name}Event;');
         codeList.add(
             'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${m.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams)');
         codeList.add('{');
         codeList.add(
             'ApplyServerFilter<${m.genDataItem.typeName}>(user, findParams);');
-        codeList.add('return On${m.name}(user, findParams);');
+        codeList.add('return ${m.name}Event(user, findParams);');
         codeList.add('}');
         codeList.add('');
         if (m.allowPost) {
+          codeList
+              .add('private event HttpPostEventHandler ${m.name}PostEvent;');
           codeList.add(
               'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${m.genDataItem.typeName}> items)');
-          codeList.add('    => On${m.name}Post(user, items);');
+          codeList.add('    => ${m.name}PostEvent(user, items);');
           codeList.add('');
         }
       }
@@ -347,7 +360,16 @@ class NsgGenController {
     codeList.add('{');
     codeList.add('public partial class ${impl_controller_name}');
     codeList.add('{');
-
+    codeList.add('public ${impl_controller_name}()');
+    codeList.add('{');
+    methods.forEach((m) {
+      codeList.add('${m.name}Event += On${m.name};');
+      if (m.allowPost) {
+        codeList.add('${m.name}PostEvent += On${m.name}Post;');
+      }
+    });
+    codeList.add('}');
+    codeList.add('');
     methods.forEach((m) {
       if (m.authorize != 'none') {
         codeList.add(
@@ -358,7 +380,7 @@ class NsgGenController {
         codeList.add('');
         if (m.allowPost) {
           codeList.add(
-              'private Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> On${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${m.genDataItem.typeName}> items)');
+              'private Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> On${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<NsgServerDataItem> items)');
           codeList.add('{');
           codeList.add('throw new NotImplementedException();');
           codeList.add('}');
@@ -373,7 +395,7 @@ class NsgGenController {
         codeList.add('');
         if (m.allowPost) {
           codeList.add(
-              'private Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> On${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${m.genDataItem.typeName}> items)');
+              'private Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> On${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<NsgServerDataItem> items)');
           codeList.add('{');
           codeList.add('throw new NotImplementedException();');
           codeList.add('}');
