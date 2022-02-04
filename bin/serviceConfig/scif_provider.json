@@ -50,6 +50,16 @@
         "type": "String",
         "userVisibility": "true",
         "userName": "Телефоны"
+      },
+      {
+        "name": "EnumItem",
+        "type": "Enum",
+        "referenceType": "EType"
+      },
+      {
+        "name": "ListOfThings",
+        "type": "List<Reference>",
+        "referenceType": "AlarmItem"
       }
     ]
 }

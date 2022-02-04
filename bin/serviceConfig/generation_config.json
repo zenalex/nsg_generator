@@ -1,4 +1,5 @@
 {
+  "targetFramework": "net472",
   "cSharpPath": "X:/Projects2/flutterServer/TitanLK5/TitanLK5/",
   "cSharpNamespace": "Titan112Server",
   "dartPath": "X:/Projects2/flutter2/titan112/lib",
@@ -139,6 +140,36 @@
         "type": "get",
         "dataTypeFile": "tarifPack.json",
         "allowPost": "false"  
+      }
+    ],
+    "functions": [
+      {
+        "name": "GetTarifPackByXY",
+        "type": "Reference",
+        "description": "Gets TarifPack by x and y",
+        "api_prefix": "TarifPackXY",
+        "authorize":  "user",
+        "referenceName": "Tarif",
+        "referenceType": "TarifPack",
+        "params": [
+          {
+            "name": "x",
+            "type": "double"
+          },
+          {
+            "name": "y",
+            "type": "double"
+          },
+          {
+            "name": "reason",
+            "type": "String"
+          },
+          {
+            "name": "infoItem",
+            "type": "Reference",
+            "referenceType": "InformationItem"
+          }
+        ]
       }
     ]
   }

@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'nsgGenCSProject.dart';
 import 'nsgGenDataItemField.dart';
-import 'nsgGenDataItemMethod.dart';
+import 'nsgGenFunction.dart';
 import 'nsgGenMethod.dart';
 import 'nsgGenController.dart';
 import 'nsgGenerator.dart';
@@ -12,7 +12,7 @@ class NsgGenDataItem {
   final String databaseType;
   final String databaseTypeNamespace;
   final List<NsgGenDataItemField> fields;
-  final List<NsgGenDataItemMethod> methods;
+  final List<NsgGenFunction> methods;
 
   NsgGenDataItem(
       {this.typeName,
@@ -30,7 +30,7 @@ class NsgGenDataItem {
         fields: (parsedJson['fields'] as List)
             .map((i) => NsgGenDataItemField.fromJson(i))
             .toList(),
-        methods: methods.map((i) => NsgGenDataItemMethod.fromJson(i)).toList());
+        methods: methods.map((i) => NsgGenFunction.fromJson(i)).toList());
   }
 
   static void generateNsgServerMetadataItem(NsgGenerator nsgGenerator) async {
@@ -231,6 +231,16 @@ class NsgGenDataItem {
     });
 
     methods.forEach((element) {
+      var paramTNString = '';
+      var paramNString = '';
+      if (element.params != null && element.params.isNotEmpty) {
+        element.params.forEach((p) {
+          paramTNString += p.returnType + ' ' + p.name + ', ';
+          paramNString += p.name + ', ';
+        });
+      }
+      paramTNString = paramTNString.substring(0, paramTNString.length - 2);
+      paramNString = paramNString.substring(0, paramNString.length - 2);
       if (element.description != null && element.description.isNotEmpty) {
         codeList.add('/// <summary>');
         element.description.split('\n').forEach((descLine) {
@@ -239,16 +249,18 @@ class NsgGenDataItem {
         codeList.add('/// </summary>');
       }
       if (element.dartType == null) {
-        codeList.add('public void ${element.name}() => On${element.name}();');
+        codeList.add(
+            'public void ${element.name}($paramTNString) => On${element.name}($paramNString);');
       } else if (['int', 'double', 'bool', 'DateTime']
           .contains(element.dartType)) {
         codeList.add(
-            'public ${element.dartType} ${element.name}() => On${element.name}();');
+            'public ${element.dartType} ${element.name}($paramTNString) => On${element.name}($paramNString);');
       } else if (element.dartType == 'Duration') {
-        codeList
-            .add('public TimeSpan ${element.name}() => On${element.name}();');
+        codeList.add(
+            'public TimeSpan ${element.name}($paramTNString) => On${element.name}($paramNString);');
       } else {
-        codeList.add('public string ${element.name}() => On${element.name}();');
+        codeList.add(
+            'public string ${element.name}($paramTNString) => On${element.name}($paramNString);');
       }
       //if (element.type == 'Image') nsgMethod.addImageMethod(element);
       codeList.add('');
@@ -273,6 +285,13 @@ class NsgGenDataItem {
     codeList.add('public partial class $typeName');
     codeList.add('{');
     methods.forEach((element) {
+      var paramTNString = '';
+      if (element.params != null && element.params.isNotEmpty) {
+        element.params.forEach((p) {
+          paramTNString += p.returnType + ' ' + p.name + ', ';
+        });
+      }
+      paramTNString = paramTNString.substring(0, paramTNString.length - 2);
       if (element.description != null && element.description.isNotEmpty) {
         codeList.add('/// <summary>');
         element.description.split('\n').forEach((descLine) {
@@ -281,15 +300,17 @@ class NsgGenDataItem {
         codeList.add('/// </summary>');
       }
       if (element.dartType == null) {
-        codeList.add('public void On${element.name}() { }');
+        codeList.add('public void On${element.name}($paramTNString) { }');
       } else if (['int', 'double', 'bool', 'DateTime']
           .contains(element.dartType)) {
-        codeList
-            .add('public ${element.dartType} On${element.name}() => default;');
+        codeList.add(
+            'public ${element.dartType} On${element.name}($paramTNString) => default;');
       } else if (element.dartType == 'Duration') {
-        codeList.add('public TimeSpan On${element.name}() => default;');
+        codeList.add(
+            'public TimeSpan On${element.name}($paramTNString) => default;');
       } else {
-        codeList.add('public string On${element.name}() => string.Empty;');
+        codeList.add(
+            'public string On${element.name}($paramTNString) => string.Empty;');
       }
       //if (element.type == 'Image') nsgMethod.addImageMethod(element);
       codeList.add('');

@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'nsgGenCSProject.dart';
 import 'nsgGenMethod.dart';
+import 'nsgGenFunction.dart';
 import 'nsgGenerator.dart';
 
 class NsgGenController {
@@ -15,6 +16,7 @@ class NsgGenController {
   final bool useAuthorization;
   final bool uploadEnabled;
   final List<NsgGenMethod> methods;
+  final List<NsgGenFunction> functions;
 
   NsgGenController(
       {this.api_prefix,
@@ -25,7 +27,8 @@ class NsgGenController {
       this.serverUri,
       this.useAuthorization,
       this.uploadEnabled,
-      this.methods});
+      this.methods,
+      this.functions});
 
   factory NsgGenController.fromJson(Map<String, dynamic> parsedJson) {
     return NsgGenController(
@@ -45,7 +48,12 @@ class NsgGenController {
         uploadEnabled: parsedJson['uploadEnabled'] == 'true',
         methods: (parsedJson['method'] as List)
             .map((i) => NsgGenMethod.fromJson(i))
-            .toList());
+            .toList(),
+        functions: parsedJson.containsKey('functions')
+            ? (parsedJson['functions'] as List)
+                .map((i) => NsgGenFunction.fromJson(i))
+                .toList()
+            : null);
   }
 
   void generateCode(NsgGenerator nsgGenerator) async {
@@ -120,6 +128,10 @@ class NsgGenController {
       await element.generateCode(codeList, nsgGenerator, this, element);
     });
 
+    await Future.forEach<NsgGenFunction>(functions, (element) async {
+      await element.generateControllerMethod(codeList, nsgGenerator, this);
+    });
+
     codeList.add('}');
     codeList.add('}');
     NsgGenCSProject.indentCode(codeList);
@@ -189,6 +201,11 @@ class NsgGenController {
               '${publicMdf}Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
         }
       });
+    });
+    codeList.add('');
+    await Future.forEach<NsgGenFunction>(functions, (element) async {
+      await element.generateControllerInterfaceMethod(
+          codeList, nsgGenerator, this);
     });
     codeList.add('');
     codeList.add(
@@ -283,6 +300,11 @@ class NsgGenController {
         }
       });
     });
+    await Future.forEach<NsgGenFunction>(functions, (element) async {
+      await element.generateControllerImplDesignerMethod(
+          codeList, nsgGenerator, this);
+      codeList.add('');
+    });
 
     codeList.add(
         'public void ApplyServerFilter<T>(INsgTokenExtension user, NsgFindParams findParams) where T : NsgServerDataItem, new()');
@@ -376,15 +398,18 @@ class NsgGenController {
         }
       });
     });
-    if (hasMetadata) {
+    await Future.forEach<NsgGenFunction>(functions, (element) async {
+      await element.generateControllerImplMethod(codeList, nsgGenerator, this);
       codeList.add('');
+    });
+    if (hasMetadata) {
       codeList.add(
           'public NsgSoft.DataObjects.NsgCompare GetControllerCompare(INsgTokenExtension user, NsgServerMetadataItem obj, NsgFindParams findParams)');
       codeList.add('{');
       codeList.add('return new NsgSoft.DataObjects.NsgCompare();');
       codeList.add('}');
+      codeList.add('');
     }
-    codeList.add('');
     codeList.add(
         'public void OnApplyServerFilter(INsgTokenExtension user, NsgServerDataItem obj, NsgFindParams findParams)');
     codeList.add('{');
@@ -489,6 +514,12 @@ class NsgGenController {
     codeList.add('    ');
     codeList.add('    super.onInit();');
     codeList.add('  }');
+
+    await Future.forEach<NsgGenFunction>(functions, (_) async {
+      codeList.add('');
+      await _.generateCodeDart(codeList, nsgGenerator, this);
+    });
+
     codeList.add('  ');
     codeList.add('  Future loadData() async {');
     codeList.add('    currentStatus = RxStatus.success();');
