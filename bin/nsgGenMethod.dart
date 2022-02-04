@@ -43,11 +43,7 @@ class NsgGenMethod {
     codeList.add('/// <summary>');
     codeList.add('/// $description');
     codeList.add('/// </summary>');
-    if (nsgGenerator.targetFramework == 'net5.0') {
-      codeList.add('[Route("$apiPrefix")]');
-    } else {
-      codeList.add('[Route("${controller.api_prefix}/$apiPrefix")]');
-    }
+    codeList.add('[Route("$apiPrefix")]');
 
     //Authorization
     if (authorize == 'anonymous') {
@@ -69,12 +65,7 @@ class NsgGenMethod {
         'return await Task.Run(() => ${method.name}References(findParams).Result["results"]);');
     codeList.add('}');
     codeList.add('');
-
-    if (nsgGenerator.targetFramework == 'net5.0') {
-      codeList.add('[Route("$apiPrefix/References")]');
-    } else {
-      codeList.add('[Route("${controller.api_prefix}/$apiPrefix/References")]');
-    }
+    codeList.add('[Route("$apiPrefix/References")]');
 
     //Authorization
     if (authorize == 'anonymous') {
@@ -108,11 +99,7 @@ class NsgGenMethod {
 
     //Generation post data method
     if (allowPost) {
-      if (nsgGenerator.targetFramework == 'net5.0') {
-        codeList.add('[Route("$apiPrefix/Post")]');
-      } else {
-        codeList.add('[Route("${controller.api_prefix}/$apiPrefix/Post")]');
-      }
+      codeList.add('[Route("$apiPrefix/Post")]');
       //Authorization
       if (authorize == 'anonymous') {
         codeList.add('[Authorize]');
@@ -146,11 +133,7 @@ class NsgGenMethod {
     }
     //Generation image tranfer methods
     imageFieldList.forEach((element) {
-      if (nsgGenerator.targetFramework == 'net5.0') {
-        codeList.add('[Route("${element.apiPrefix}/{file}")]');
-      } else {
-        codeList.add('[Route("${controller.api_prefix}/$apiPrefix/{file}")]');
-      }
+      codeList.add('[Route("${element.apiPrefix}/{file}")]');
       codeList.add('[HttpGet]');
       //for images authentification temporary??? disabled
       // if (authorize == 'anonymous') {

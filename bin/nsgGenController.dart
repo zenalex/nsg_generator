@@ -65,6 +65,8 @@ class NsgGenController {
           .add('using HttpGetAttribute = System.Web.Http.HttpGetAttribute;');
       codeList
           .add('using HttpPostAttribute = System.Web.Http.HttpPostAttribute;');
+      codeList.add(
+          'using RoutePrefixAttribute = System.Web.Http.RoutePrefixAttribute;');
       codeList.add('using RouteAttribute = System.Web.Http.RouteAttribute;');
       codeList
           .add('using FromBodyAttribute = System.Web.Http.FromBodyAttribute;');
@@ -85,6 +87,8 @@ class NsgGenController {
     if (nsgGenerator.targetFramework == 'net5.0') {
       codeList.add('[ApiController]');
       codeList.add('[Route("${api_prefix}")]');
+    } else {
+      codeList.add('[RoutePrefix("${api_prefix}")]');
     }
     codeList.add('public class ${class_name} : ' +
         (nsgGenerator.targetFramework == 'net5.0'
