@@ -65,12 +65,12 @@ class NsgGenDataItemField {
       return 'NsgDataBoolField';
     } else if (type == 'Image') {
       return 'NsgDataImageField';
-    } else if (type == 'List<Reference>') {
-      return 'NsgDataField';
     } else if (type == 'Enum') {
       return 'NsgDataIntField';
     } else if (type == 'Reference') {
       return 'NsgDataReferenceField<${referenceType}>';
+    } else if (type == 'List<Reference>') {
+      return 'NsgDataReferenceListField<${referenceType}>';
     } else {
       print("get nsgDataType for field type $type couldn't be found");
       throw Exception();
