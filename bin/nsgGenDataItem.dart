@@ -91,6 +91,91 @@ class NsgGenDataItem {
     codeList.add('}');
     codeList.add('');
     codeList.add(
+        'public virtual Dictionary<string, string> GetClientServerNames() => new Dictionary<string, string>();');
+    codeList.add('');
+    codeList.add('public NsgCompare GetNsgCompareFromXml(string xml)');
+    codeList.add('{');
+    codeList.add('NsgCompare cmp = NsgCompare.FromXml(xml);');
+    codeList.add('ReplaceCompareParameterNames(cmp);');
+    codeList.add('return cmp;');
+    codeList.add('}');
+    codeList.add('');
+    codeList.add('public NsgSorting GetNsgSorting(string sortingString)');
+    codeList.add('{');
+    codeList.add('NsgSorting sorting = new NsgSorting();');
+    codeList.add('if (!string.IsNullOrWhiteSpace(sortingString))');
+    codeList.add('{');
+    codeList.add('sortingString = PrepareFieldNames(sortingString);');
+    codeList.add(
+        'string[] sortFields = sortingString.Split(\',\').Select(s => s.Trim()).ToArray();');
+    codeList.add('foreach (string field in sortFields)');
+    codeList.add('{');
+    codeList.add('sorting.Add(new NsgSortingParam(field));');
+    codeList.add('}');
+    codeList.add('}');
+    codeList.add('return sorting;');
+    codeList.add('}');
+    codeList.add('');
+    codeList.add('public void ReplaceCompareParameterNames(NsgCompare cmp)');
+    codeList.add('{');
+    codeList.add('var ps = cmp.Parameters;');
+    codeList.add('foreach (var p in ps)');
+    codeList.add('{');
+    codeList.add('if (p.ParameterValue is NsgCompare)');
+    codeList.add('{');
+    codeList
+        .add('ReplaceCompareParameterNames(p.ParameterValue as NsgCompare);');
+    codeList.add('}');
+    codeList
+        .add('else if (GetClientServerNames().ContainsKey(p.ParameterName))');
+    codeList.add('{');
+    codeList.add('string newName = GetClientServerNames()[p.ParameterName];');
+    codeList.add('cmp.ReplaceParametersNames(p.ParameterName, newName);');
+    codeList.add('}');
+    codeList.add('}');
+    codeList.add('}');
+    codeList.add('');
+    codeList.add('public string PrepareFieldNames(string names)');
+    codeList.add('{');
+    codeList.add('if (string.IsNullOrWhiteSpace(names)) return string.Empty;');
+    codeList.add(
+        'string[] sortFields = names.Split(\',\').Select(s => s.Trim()).ToArray();');
+    codeList.add('for (int i = 0; i < sortFields.Length; i++)');
+    codeList.add('{');
+    codeList.add('ref string field = ref sortFields[i];');
+    codeList.add('char lastSymbol = field.Last();');
+    codeList.add('string field_ = field;');
+    codeList.add('if (lastSymbol == \'+\' || lastSymbol == \'-\')');
+    codeList.add('{');
+    codeList.add('field_ = field_.TrimEnd(\'+\', \'-\');');
+    codeList.add('}');
+    codeList.add('if (GetClientServerNames().ContainsKey(field_))');
+    codeList.add('{');
+    codeList.add('field = GetClientServerNames()[field_];');
+    codeList.add('if (lastSymbol == \'+\' || lastSymbol == \'-\')');
+    codeList.add('{');
+    codeList.add('field += lastSymbol;');
+    codeList.add('}');
+    codeList.add('}');
+    codeList.add('}');
+    codeList.add('string res = string.Empty;');
+    codeList.add('foreach (string s in sortFields)');
+    codeList.add('    res += s + \',\';');
+    codeList.add('names = res.TrimEnd(\',\');');
+    codeList.add('return names;');
+    codeList.add('}');
+    codeList.add('');
+    codeList.add(
+        'public override void PrepareFindParams(NsgFindParams findParams)');
+    codeList.add('{');
+    codeList.add(
+        'findParams.SearchCriteriaXml = GetNsgCompareFromXml(findParams.SearchCriteriaXml).ToXml();');
+    codeList.add('findParams.Sorting = PrepareFieldNames(findParams.Sorting);');
+    codeList.add(
+        'findParams.ReadNestedField = PrepareFieldNames(findParams.ReadNestedField);');
+    codeList.add('}');
+    codeList.add('');
+    codeList.add(
         'public sealed override void ApplyServerFilter(INsgTokenExtension user, NsgFindParams findParams)');
     codeList.add('{');
     codeList
@@ -176,6 +261,19 @@ class NsgGenDataItem {
       });
       codeList.add('}');
       codeList.add('}');
+      codeList.add('');
+
+      codeList.add(
+          'public override Dictionary<string, string> GetClientServerNames() => ClientServerNames;');
+      codeList.add(
+          'public static Dictionary<string, string> ClientServerNames = new Dictionary<string, string>');
+      codeList.add('{');
+      fields.forEach((field) {
+        if (field.dbName != null && field.dbName.isNotEmpty) {
+          codeList.add('["${field.dartName}"] = "${field.dbName}",');
+        }
+      });
+      codeList.add('};');
       codeList.add('');
       //ToData
     } else {
