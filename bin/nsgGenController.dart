@@ -406,7 +406,17 @@ class NsgGenController {
           codeList.add(
               'private async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> On${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<NsgServerDataItem> items)');
           codeList.add('{');
-          codeList.add('throw new NotImplementedException();');
+          if (hasMetadata &&
+              m.genDataItem.databaseType != null &&
+              m.genDataItem.databaseType.isNotEmpty) {
+            codeList.add(
+                'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
+            codeList.add(
+                'RES["results"] = NsgServerMetadataItem.PostAll<${m.genDataItem.typeName}>(items);');
+            codeList.add('return RES;');
+          } else {
+            codeList.add('throw new NotImplementedException();');
+          }
           codeList.add('}');
           codeList.add('');
         }
@@ -427,7 +437,17 @@ class NsgGenController {
           codeList.add(
               'private async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> On${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<NsgServerDataItem> items)');
           codeList.add('{');
-          codeList.add('throw new NotImplementedException();');
+          if (hasMetadata &&
+              m.genDataItem.databaseType != null &&
+              m.genDataItem.databaseType.isNotEmpty) {
+            codeList.add(
+                'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
+            codeList.add(
+                'RES["results"] = NsgServerMetadataItem.PostAll<ScifProvider>(items);');
+            codeList.add('return RES;');
+          } else {
+            codeList.add('throw new NotImplementedException();');
+          }
           codeList.add('}');
           codeList.add('');
         }

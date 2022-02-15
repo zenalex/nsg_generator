@@ -90,6 +90,21 @@ class NsgGenDataItem {
     codeList.add('}');
     codeList.add('}');
     codeList.add('');
+
+    codeList.add('public virtual NsgMultipleObject ToNsgObject() => default;');
+    codeList.add('');
+    codeList.add(
+        'public static IEnumerable<NsgServerDataItem> PostAll<T>(IEnumerable<NsgServerDataItem> objs) where T : NsgServerMetadataItem');
+    codeList.add('{');
+    codeList.add('foreach (T i in objs)');
+    codeList.add('{');
+    codeList.add('var o = i?.ToNsgObject();');
+    codeList.add('if (o == null) continue;');
+    codeList.add('o.Post();');
+    codeList.add('yield return i;');
+    codeList.add('}');
+    codeList.add('}');
+    codeList.add('');
     codeList.add(
         'public virtual Dictionary<string, string> GetClientServerNames() => new Dictionary<string, string>();');
     codeList.add('');
@@ -263,6 +278,44 @@ class NsgGenDataItem {
       codeList.add('}');
       codeList.add('');
 
+      codeList.add('public override NsgMultipleObject ToNsgObject()');
+      codeList.add('{');
+      codeList.add('var nsgObject = $databaseType.Новый();');
+      fields.forEach((el) {
+        if (el.dbName == null || el.dbName.isEmpty) {
+          //codeList.add('${el.name} = default;');
+        } else if (el.dartType == 'int') {
+          codeList.add('nsgObject.${el.dbName} = (int)${el.name};');
+        } else if (el.dartType == 'double') {
+          codeList.add('nsgObject.${el.dbName} = (decimal)${el.name};');
+        } else if (['String', 'string'].contains(el.dartType)) {
+          if (el.dbType != null && el.dbType.isNotEmpty) {
+            codeList
+                .add('nsgObject.${el.dbName}.Value = Guid.Parse(${el.name});');
+          } else if (el.isPrimary) {
+            codeList.add('nsgObject.${el.dbName} = Guid.Parse(${el.name});');
+          } else {
+            codeList.add('nsgObject.${el.dbName} = ${el.name};');
+          }
+        } else if (el.dartType == 'Reference') {
+          codeList
+              .add('nsgObject.${el.dbName}.Value = Guid.Parse(${el.name});');
+        } else if (el.dartType == 'Enum') {
+          codeList.add('nsgObject.${el.dbName}.Value = ${el.name};');
+        } else if (el.dartType == 'List<Reference>') {
+          codeList.add('foreach (var t in ${el.name})');
+          codeList.add('{');
+          codeList.add(
+              'nsgObject.${el.dbName}.NewRow(t.ToNsgObject() as NsgDataTableRow);');
+          codeList.add('}');
+        } else {
+          codeList.add('nsgObject.${el.dbName} = ${el.name};');
+        }
+      });
+      codeList.add('return nsgObject;');
+      codeList.add('}');
+
+      codeList.add('');
       codeList.add(
           'public override Dictionary<string, string> GetClientServerNames() => ClientServerNames;');
       codeList.add(
