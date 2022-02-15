@@ -281,7 +281,15 @@ class NsgGenDataItem {
       codeList.add('public override NsgMultipleObject ToNsgObject()');
       codeList.add('{');
       codeList.add('var nsgObject = $databaseType.Новый();');
-      fields.forEach((el) {
+      var pkField = fields.firstWhere(
+          (f) => f.name.toLowerCase().contains('id') && f.isPrimary);
+      codeList.add(
+          'nsgObject.Value = Guid.TryParse(${pkField.name}, out Guid ${pkField.name}Guid) ? ${pkField.name}Guid : Guid.Empty;');
+      codeList.add('try');
+      codeList.add('{ nsgObject.Edit(); }');
+      codeList.add('catch (Exception e)');
+      codeList.add('{ nsgObject.New(); }');
+      fields.where((f) => f != pkField).forEach((el) {
         if (el.dbName == null || el.dbName.isEmpty) {
           //codeList.add('${el.name} = default;');
         } else if (el.dartType == 'int') {
@@ -290,16 +298,17 @@ class NsgGenDataItem {
           codeList.add('nsgObject.${el.dbName} = (decimal)${el.name};');
         } else if (['String', 'string'].contains(el.dartType)) {
           if (el.dbType != null && el.dbType.isNotEmpty) {
-            codeList
-                .add('nsgObject.${el.dbName}.Value = Guid.Parse(${el.name});');
+            codeList.add(
+                'nsgObject.${el.dbName}.Value = Guid.TryParse(${el.name}, out Guid ${el.name}Guid) ? ${el.name}Guid : Guid.Empty;');
           } else if (el.isPrimary) {
-            codeList.add('nsgObject.${el.dbName} = Guid.Parse(${el.name});');
+            codeList.add(
+                'nsgObject.${el.dbName} = Guid.TryParse(${el.name}, out Guid ${el.name}Guid) ? ${el.name}Guid : Guid.Empty;');
           } else {
             codeList.add('nsgObject.${el.dbName} = ${el.name};');
           }
         } else if (el.dartType == 'Reference') {
-          codeList
-              .add('nsgObject.${el.dbName}.Value = Guid.Parse(${el.name});');
+          codeList.add(
+              'nsgObject.${el.dbName}.Value = Guid.TryParse(${el.name}, out Guid ${el.name}Guid) ? ${el.name}Guid : Guid.Empty;');
         } else if (el.dartType == 'Enum') {
           codeList.add('nsgObject.${el.dbName}.Value = ${el.name};');
         } else if (el.dartType == 'List<Reference>') {
