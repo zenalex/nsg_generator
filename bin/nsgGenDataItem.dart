@@ -254,7 +254,9 @@ class NsgGenDataItem {
       codeList.add('nsgObject = value as $databaseType;');
       codeList.add('if (value == null) return;');
       fields.forEach((el) {
-        if (el.dbName == null || el.dbName.isEmpty) {
+        if (el.dartType == 'List<Enum>') {
+          codeList.add('${el.name} = ${el.referenceType}.List();');
+        } else if (el.dbName == null || el.dbName.isEmpty) {
           codeList.add('${el.name} = default;');
         } else if (el.dartType == 'int') {
           codeList.add('${el.name} = (int)nsgObject.${el.dbName};');
@@ -266,7 +268,8 @@ class NsgGenDataItem {
           codeList
               .add('${el.name} = nsgObject.${el.dbName}?.Value.ToString();');
         } else if (el.dartType == 'Enum') {
-          codeList.add('${el.name} = (int)nsgObject.${el.dbName}.Value;');
+          codeList.add(
+              '${el.name} = (${el.referenceType})nsgObject.${el.dbName}.Value;');
         } else if (el.dartType == 'List<Reference>') {
           codeList.add(
               '${el.name} = FromTable<${el.referenceType}>(nsgObject.${el.dbName});');
@@ -310,7 +313,7 @@ class NsgGenDataItem {
           codeList.add(
               'nsgObject.${el.dbName}.Value = Guid.TryParse(${el.name}, out Guid ${el.name}Guid) ? ${el.name}Guid : Guid.Empty;');
         } else if (el.dartType == 'Enum') {
-          codeList.add('nsgObject.${el.dbName}.Value = ${el.name};');
+          codeList.add('nsgObject.${el.dbName}.Value = ${el.name}.Value;');
         } else if (el.dartType == 'List<Reference>') {
           codeList.add('foreach (var t in ${el.name})');
           codeList.add('{');
@@ -373,11 +376,13 @@ class NsgGenDataItem {
         codeList.add(
             'public List<${element.referenceType}> ${element.name} { get; set; }');
         codeList.add('    = new List<${element.referenceType}>();');
+      } else if (element.dartType == 'List<Enum>') {
+        codeList.add(
+            'public IEnumerable<${element.referenceType}> ${element.name} { get; set; }');
+        codeList.add('    = ${element.referenceType}.List();');
       } else if (element.dartType == 'Enum') {
-        codeList.add('/// <remarks>');
-        codeList.add('/// <see cref="${element.referenceType}"/> enum type');
-        codeList.add('/// </remarks>');
-        codeList.add('public int ${element.name} { get; set; }');
+        codeList.add(
+            'public ${element.referenceType} ${element.name} { get; set; }');
       } else if (element.dartType == 'Reference') {
         codeList.add('/// <remarks> ');
         codeList.add('/// <see cref="${element.referenceType}"/> reference');
