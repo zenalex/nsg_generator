@@ -72,7 +72,7 @@ class NsgGenDataItemField {
     } else if (type == 'List<Reference>') {
       return 'NsgDataReferenceListField<${referenceType}>';
     } else if (type == 'List<Enum>') {
-      return 'List<${referenceType}>';
+      return 'NsgDataListLield<${referenceType}>';
     } else {
       print("get nsgDataType for field type $type couldn't be found");
       throw Exception();
