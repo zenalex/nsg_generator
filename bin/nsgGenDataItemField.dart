@@ -116,8 +116,7 @@ class NsgGenDataItemField {
       codeList.add(
           'List<${referenceType}> get $dartName => getFieldValue($fieldNameVar) as List<${referenceType}>;');
     } else if (type == 'Enum') {
-      codeList.add(
-          '$referenceType get $dartName => getFieldValue($fieldNameVar) as $referenceType;');
+      codeList.add('int get $dartName => getFieldValue($fieldNameVar) as int;');
     } else if (type == 'Reference') {
       codeList.add(
           'String get $dartName => getFieldValue($fieldNameVar).toString();');
@@ -152,7 +151,7 @@ class NsgGenDataItemField {
           'set $dartName(List<$referenceType> value) => setFieldValue($fieldNameVar, value);');
     } else if (type == 'Enum') {
       codeList.add(
-          'set $dartName($referenceType value) => setFieldValue($fieldNameVar, value);');
+          'set $dartName(int value) => setFieldValue($fieldNameVar, value);');
     } else if (type == 'List<Enum>') {
       codeList.add(
           'set $dartName(List<$referenceType> value) => setFieldValue($fieldNameVar, value);');

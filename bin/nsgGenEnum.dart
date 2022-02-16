@@ -135,21 +135,20 @@ class NsgGenEnum {
     codeList.add(
         '  $class_name(dynamic value, String name) : super(value: value, name: name);');
     codeList.add('');
-    codeList.add('  static List<$class_name> listAll() {');
-    codeList.add('    return List<$class_name>.from(');
+    codeList
+        .add('  static List<$class_name> listAll = List<$class_name>.from(');
     codeList.add(
         '        {${values.map((e) => nsgGenerator.getDartName(e.codeName)).join(', ')}},');
     codeList.add('        growable: false);');
-    codeList.add('  }');
     codeList.add('');
     codeList.add('  static $class_name fromValue(dynamic v) {');
-    codeList.add('    return listAll()');
-    codeList.add('        .firstWhere((element) => element.value == v);');
+    codeList
+        .add('    return listAll.firstWhere((element) => element.value == v);');
     codeList.add('  }');
     codeList.add('');
     codeList.add('  static $class_name fromString(String v) {');
-    codeList.add('    return listAll()');
-    codeList.add('        .firstWhere((element) => element.name == v);');
+    codeList
+        .add('    return listAll.firstWhere((element) => element.name == v);');
     codeList.add('  }');
     codeList.add('}');
     await File(
