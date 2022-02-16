@@ -124,6 +124,35 @@ class NsgGenController {
       codeList.add('public ${class_name}() : this(null) { }');
       codeList.add('');
     }
+    codeList.add('private static ${class_name} currentController;');
+    codeList.add('public static ${class_name} getController');
+    codeList.add('{');
+    codeList.add('get');
+    codeList.add('{');
+    codeList.add(
+        'if (currentController == null) currentController = new ${class_name}();');
+    codeList.add('return currentController;');
+    codeList.add('}');
+    codeList.add('}');
+    codeList.add('public static AuthImplInterface getAuthController');
+    codeList.add('{');
+    codeList.add('get');
+    codeList.add('{');
+    codeList.add('return getController.authController;');
+    codeList.add('}');
+    codeList.add('}');
+    codeList.add('');
+    codeList.add('public void Init()');
+    codeList.add('{');
+    codeList
+        .add('if (NsgServerClasses.AuthController.currentController == null)');
+    codeList.add('{');
+    codeList.add('authController = new ${impl_auth_controller_name}();');
+    codeList.add(
+        'NsgServerClasses.AuthController.currentController = authController;');
+    codeList.add('}');
+    codeList.add('}');
+    codeList.add('');
     await Future.forEach<NsgGenMethod>(methods, (element) async {
       await element.generateCode(codeList, nsgGenerator, this, element);
     });

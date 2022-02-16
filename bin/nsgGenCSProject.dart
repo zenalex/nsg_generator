@@ -218,6 +218,10 @@ class NsgGenCSProject {
       codeList.add('{');
       codeList.add('endpoints.MapControllers();');
       codeList.add('});');
+      codeList.add('');
+      nsgGenerator.controllers.forEach((controller) {
+        codeList.add('${controller.class_name}.getController.Init();');
+      });
       codeList.add('}');
       codeList.add('}');
       codeList.add('}');
@@ -279,6 +283,10 @@ class NsgGenCSProject {
           'config.Formatters.JsonFormatter.SerializerSettings.ContractResolver =');
       codeList.add('    new CamelCasePropertyNamesContractResolver();');
       codeList.add('app.UseWebApi(config);');
+      codeList.add('');
+      nsgGenerator.controllers.forEach((controller) {
+        codeList.add('${controller.class_name}.getController.Init();');
+      });
       codeList.add('}');
       codeList.add('}');
       codeList.add('}');
