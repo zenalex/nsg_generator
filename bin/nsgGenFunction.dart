@@ -56,7 +56,7 @@ class NsgGenFunction {
   String get nsgDataType {
     if (type == 'String') {
       return 'NsgDataStringField';
-    } else if (type == 'Date') {
+    } else if (type == 'Date' || type == 'DateTime') {
       return 'NsgDataDateField';
     } else if (type == 'int') {
       return 'NsgDataIntField';
@@ -94,7 +94,7 @@ class NsgGenFunction {
       codeList.add('void $dartName($paramTNString) { }');
     } else if (type == 'String') {
       codeList.add('$dartType $dartName($paramTNString) { }');
-    } else if (type == 'Date') {
+    } else if (type == 'Date' || type == 'DateTime') {
       codeList.add('$dartType $dartName($paramTNString) { }');
     } else if (type == 'Duration') {
       codeList.add('$dartType $dartName($paramTNString) { }');

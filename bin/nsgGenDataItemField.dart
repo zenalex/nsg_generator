@@ -55,7 +55,7 @@ class NsgGenDataItemField {
   String get nsgDataType {
     if (type == 'String') {
       return 'NsgDataStringField';
-    } else if (type == 'Date') {
+    } else if (type == 'Date' || type == 'DateTime') {
       return 'NsgDataDateField';
     } else if (type == 'int') {
       return 'NsgDataIntField';
@@ -88,7 +88,7 @@ class NsgGenDataItemField {
     if (type == 'String') {
       codeList.add(
           '$dartType get $dartName => getFieldValue($fieldNameVar).toString();');
-    } else if (type == 'Date') {
+    } else if (type == 'Date' || type == 'DateTime') {
       codeList.add(
           '$dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
     } else if (type == 'int') {

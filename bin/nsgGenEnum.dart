@@ -116,7 +116,7 @@ class NsgGenEnum {
     var codeList = <String>[];
     enums.forEach((_) {
       codeList.add(
-          "export 'enums/${nsgGenerator.getDartName(_.class_name)}.dart';");
+          "export 'enums/${nsgGenerator.getDartUnderscoreName(_.class_name)}.dart';");
     });
 
     await File('${nsgGenerator.dartPath}/enums.dart')
@@ -152,7 +152,7 @@ class NsgGenEnum {
     codeList.add('  }');
     codeList.add('}');
     await File(
-            '${nsgGenerator.dartPath}/enums/${nsgGenerator.getDartName(class_name)}.dart')
+            '${nsgGenerator.dartPath}/enums/${nsgGenerator.getDartUnderscoreName(class_name)}.dart')
         .writeAsString(codeList.join('\r\n'));
   }
 }

@@ -643,13 +643,13 @@ class NsgGenController {
     var codeList = <String>[];
     methods.forEach((_) {
       codeList.add(
-          "export '${nsgGenerator.getDartName(_.genDataItem.typeName)}.dart';");
+          "export '${nsgGenerator.getDartUnderscoreName(_.genDataItem.typeName)}.dart';");
       codeList.add(
-          "export '${nsgGenerator.genPathName}/${nsgGenerator.getDartName(_.genDataItem.typeName)}.g.dart';");
+          "export '${nsgGenerator.genPathName}/${nsgGenerator.getDartUnderscoreName(_.genDataItem.typeName)}.g.dart';");
     });
 
     await File(
-            '${nsgGenerator.dartPath}/${nsgGenerator.getDartName(class_name)}Model.dart')
+            '${nsgGenerator.dartPath}/${nsgGenerator.getDartUnderscoreName(class_name)}_model.dart')
         .writeAsString(codeList.join('\r\n'));
   }
 
@@ -660,8 +660,8 @@ class NsgGenController {
     var codeList = <String>[];
     codeList.add("import 'package:get/get.dart';");
     codeList.add("import 'package:nsg_data/nsg_data.dart';");
-    codeList
-        .add("import '../${nsgGenerator.getDartName(class_name)}Model.dart';");
+    codeList.add(
+        "import '../${nsgGenerator.getDartUnderscoreName(class_name)}_model.dart';");
     codeList.add('');
     codeList.add('class ${class_name}Generated extends NsgBaseController {');
     codeList.add('  NsgDataProvider? provider;');
@@ -697,7 +697,7 @@ class NsgGenController {
     codeList.add('}');
 
     await File(
-            '${nsgGenerator.dartPathGen}/${nsgGenerator.getDartName(class_name)}.g.dart')
+            '${nsgGenerator.dartPathGen}/${nsgGenerator.getDartUnderscoreName(class_name)}.g.dart')
         .writeAsString(codeList.join('\r\n'));
 
     //----------------------------------------------------------
@@ -706,7 +706,7 @@ class NsgGenController {
     codeList = <String>[];
     //codeList.add("import '${nsgGenerator.getDartName(class_name)}Model.dart';");
     codeList.add(
-        "import '${nsgGenerator.genPathName}/${nsgGenerator.getDartName(class_name)}.g.dart';");
+        "import '${nsgGenerator.genPathName}/${nsgGenerator.getDartUnderscoreName(class_name)}.g.dart';");
     codeList.add('');
     codeList.add('class ${class_name} extends ${class_name}Generated {');
     // codeList.add('');
@@ -722,7 +722,7 @@ class NsgGenController {
     codeList.add('}');
 
     var fn =
-        '${nsgGenerator.dartPath}/${nsgGenerator.getDartName(class_name)}.dart';
+        '${nsgGenerator.dartPath}/${nsgGenerator.getDartUnderscoreName(class_name)}.dart';
     if (!File(fn).existsSync()) {
       await File(fn).writeAsString(codeList.join('\r\n'));
     }
