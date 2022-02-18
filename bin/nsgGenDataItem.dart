@@ -91,17 +91,15 @@ class NsgGenDataItem {
     codeList.add('}');
     codeList.add('');
 
-    codeList.add('public virtual NsgMultipleObject ToNsgObject() => default;');
+    codeList.add('public virtual bool PostNsgObject() => false;');
     codeList.add('');
     codeList.add(
         'public static IEnumerable<NsgServerDataItem> PostAll<T>(IEnumerable<NsgServerDataItem> objs) where T : NsgServerMetadataItem');
     codeList.add('{');
     codeList.add('foreach (T i in objs)');
     codeList.add('{');
-    codeList.add('var o = i?.ToNsgObject();');
-    codeList.add('if (o == null) continue;');
-    codeList.add('o.Post();');
-    codeList.add('yield return i;');
+    codeList.add('var o = i.PostNsgObject();');
+    codeList.add('if (o) yield return i;');
     codeList.add('}');
     codeList.add('}');
     codeList.add('');
@@ -280,7 +278,7 @@ class NsgGenDataItem {
       codeList.add('}');
       codeList.add('');
 
-      codeList.add('public override NsgMultipleObject ToNsgObject()');
+      codeList.add('public override bool PostNsgObject()');
       codeList.add('{');
       codeList.add('var nsgObject = $databaseType.Новый();');
       var pkField = fields.firstWhere(
@@ -316,14 +314,15 @@ class NsgGenDataItem {
         } else if (el.dartType == 'List<Reference>') {
           codeList.add('foreach (var t in ${el.name})');
           codeList.add('{');
+          codeList.add('t.PostNsgObject();');
           codeList.add(
-              'nsgObject.${el.dbName}.NewRow(t.ToNsgObject() as NsgDataTableRow);');
+              'nsgObject.${el.dbName}.NewRow(t.NSGObject as NsgDataTableRow);');
           codeList.add('}');
         } else {
           codeList.add('nsgObject.${el.dbName} = ${el.name};');
         }
       });
-      codeList.add('return nsgObject;');
+      codeList.add('return nsgObject.Post();');
       codeList.add('}');
 
       codeList.add('');
