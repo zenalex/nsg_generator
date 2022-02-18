@@ -221,7 +221,7 @@ class NsgGenDataItem {
     codeList.add('using System;');
     codeList.add('using System.Collections.Generic;');
     if (databaseType != null && databaseType.isNotEmpty) {
-      await NsgGenDataItem.generateNsgServerMetadataItem(nsgGenerator);
+      NsgGenDataItem.generateNsgServerMetadataItem(nsgGenerator);
       codeList.add('using NsgSoft.DataObjects;');
       if (databaseTypeNamespace != null && databaseTypeNamespace.isNotEmpty) {
         codeList.add('using $databaseTypeNamespace;');
@@ -264,7 +264,7 @@ class NsgGenDataItem {
           codeList.add('${el.name} = (double)nsgObject.${el.dbName};');
         } else if (['String', 'string'].contains(el.dartType)) {
           codeList.add('${el.name} = nsgObject.${el.dbName}.ToString();');
-        } else if (el.dartType == 'Reference') {
+        } else if (el.dartType == 'Reference' || el.dartType == 'Image') {
           codeList
               .add('${el.name} = nsgObject.${el.dbName}?.Value.ToString();');
         } else if (el.dartType == 'Enum') {
@@ -308,7 +308,7 @@ class NsgGenDataItem {
           } else {
             codeList.add('nsgObject.${el.dbName} = ${el.name};');
           }
-        } else if (el.dartType == 'Reference') {
+        } else if (el.dartType == 'Reference' || el.dartType == 'Image') {
           codeList.add(
               'nsgObject.${el.dbName}.Value = Guid.TryParse(${el.name}, out Guid ${el.name}Guid) ? ${el.name}Guid : Guid.Empty;');
         } else if (el.dartType == 'Enum') {
