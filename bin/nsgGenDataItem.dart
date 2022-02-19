@@ -333,7 +333,9 @@ class NsgGenDataItem {
           codeList.add('nsgObject.${el.dbName} = ${el.name};');
         }
       });
-      codeList.add('return nsgObject.Post();');
+      codeList.add('bool posted = nsgObject.Post();');
+      codeList.add('if (posted) this.NSGObject = nsgObject;');
+      codeList.add('return posted;');
       codeList.add('}');
       codeList.add('finally');
       codeList.add('{');
