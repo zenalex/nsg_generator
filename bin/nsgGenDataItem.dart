@@ -284,11 +284,22 @@ class NsgGenDataItem {
       var pkField = fields.firstWhere(
           (f) => f.name.toLowerCase().contains('id') && f.isPrimary);
       codeList.add(
-          'nsgObject.Value = Guid.TryParse(${pkField.name}, out Guid ${pkField.name}Guid) ? ${pkField.name}Guid : Guid.Empty;');
+          'Guid g = Guid.TryParse(${pkField.name}, out Guid ${pkField.name}Guid) ? ${pkField.name}Guid : Guid.Empty;');
       codeList.add('try');
-      codeList.add('{ nsgObject.Edit(); }');
-      codeList.add('catch (Exception e)');
-      codeList.add('{ nsgObject.New(); }');
+      codeList.add('{');
+      codeList.add('if (Guid.Empty.Equals(g))');
+      codeList.add('{');
+      codeList.add('nsgObject.New();');
+      codeList.add('}');
+      codeList.add('else');
+      codeList.add('{');
+      codeList.add(
+          'if (!nsgObject.Find(NsgSoft.Common.NsgDataFixedFields._ID, g))');
+      codeList.add('{');
+      codeList.add('throw new Exception("ERROR: WOI45");');
+      codeList.add('}');
+      codeList.add('nsgObject.Edit();');
+      codeList.add('}');
       fields.where((f) => f != pkField).forEach((el) {
         if (el.dbName == null || el.dbName.isEmpty) {
           //codeList.add('${el.name} = default;');
@@ -323,6 +334,12 @@ class NsgGenDataItem {
         }
       });
       codeList.add('return nsgObject.Post();');
+      codeList.add('}');
+      codeList.add('finally');
+      codeList.add('{');
+      codeList.add(
+          'if (nsgObject.ObjectState == NsgObjectStates.Edit) nsgObject.Cancel();');
+      codeList.add('}');
       codeList.add('}');
 
       codeList.add('');
