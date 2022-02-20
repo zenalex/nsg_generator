@@ -57,122 +57,126 @@ class NsgGenController {
   }
 
   void generateCode(NsgGenerator nsgGenerator) async {
-    var codeList = <String>[];
-    codeList.add('using Microsoft.Extensions.Logging;');
-    codeList.add('using System;');
-    codeList.add('using System.Collections.Generic;');
-    codeList.add('using System.Linq;');
-    codeList.add('using System.Threading.Tasks;');
-    if (nsgGenerator.targetFramework == 'net5.0') {
-      codeList.add('using Microsoft.AspNetCore.Mvc;');
-      codeList.add('using Microsoft.AspNetCore.Authorization;');
-    } else {
-      codeList.add('using System.Web.Http;');
-      codeList.add('using System.Web.Mvc;');
-      codeList
-          .add('using HttpGetAttribute = System.Web.Http.HttpGetAttribute;');
-      codeList
-          .add('using HttpPostAttribute = System.Web.Http.HttpPostAttribute;');
-      codeList.add(
-          'using RoutePrefixAttribute = System.Web.Http.RoutePrefixAttribute;');
-      codeList.add('using RouteAttribute = System.Web.Http.RouteAttribute;');
-      codeList
-          .add('using FromBodyAttribute = System.Web.Http.FromBodyAttribute;');
-      codeList.add(
-          'using AuthorizeAttribute = System.Web.Http.AuthorizeAttribute;');
-      codeList.add(
-          'using ActionNameAttribute = System.Web.Http.ActionNameAttribute;');
-    }
-    codeList.add('using ${nsgGenerator.cSharpNamespace};');
-    codeList.add('using ${nsgGenerator.cSharpNamespace}.Controllers;');
-    codeList.add('using NsgServerClasses;');
-    codeList.add('');
-    codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
-    codeList.add('{');
-    codeList.add('/// <summary>');
-    codeList.add('///${dataType}Interface Controller');
-    codeList.add('/// </summary>');
-    if (nsgGenerator.targetFramework == 'net5.0') {
-      codeList.add('[ApiController]');
-      codeList.add('[Route("${api_prefix}")]');
-    } else {
-      codeList.add('[RoutePrefix("${api_prefix}")]');
-    }
-    codeList.add('public class ${class_name} : ' +
-        (nsgGenerator.targetFramework == 'net5.0'
-            ? 'ControllerBase'
-            : 'ApiController'));
-    codeList.add('{');
-
-    codeList.add('${class_name}Interface controller;');
-    codeList.add('AuthImplInterface authController;');
-
-    codeList.add('private readonly ILogger<${class_name}> _logger;');
-    codeList.add('public ${class_name}(ILogger<${class_name}> logger)');
-    codeList.add('{');
-    codeList.add('_logger = logger;');
-    codeList.add('#if (Real)');
-    codeList.add('controller = new ${impl_controller_name}();');
-    codeList.add('authController = new ${impl_auth_controller_name}();');
-    codeList.add('#else');
-    codeList.add('controller = new ${impl_controller_name}Mock();');
-    codeList.add('authController = new ${impl_auth_controller_name}Mock();');
-    codeList.add('#endif');
-    codeList.add('}');
-    codeList.add('');
-    if (nsgGenerator.targetFramework != 'net5.0') {
-      codeList.add('public ${class_name}() : this(null) { }');
+    if (nsgGenerator.doCSharp) {
+      var codeList = <String>[];
+      codeList.add('using Microsoft.Extensions.Logging;');
+      codeList.add('using System;');
+      codeList.add('using System.Collections.Generic;');
+      codeList.add('using System.Linq;');
+      codeList.add('using System.Threading.Tasks;');
+      if (nsgGenerator.targetFramework == 'net5.0') {
+        codeList.add('using Microsoft.AspNetCore.Mvc;');
+        codeList.add('using Microsoft.AspNetCore.Authorization;');
+      } else {
+        codeList.add('using System.Web.Http;');
+        codeList.add('using System.Web.Mvc;');
+        codeList
+            .add('using HttpGetAttribute = System.Web.Http.HttpGetAttribute;');
+        codeList.add(
+            'using HttpPostAttribute = System.Web.Http.HttpPostAttribute;');
+        codeList.add(
+            'using RoutePrefixAttribute = System.Web.Http.RoutePrefixAttribute;');
+        codeList.add('using RouteAttribute = System.Web.Http.RouteAttribute;');
+        codeList.add(
+            'using FromBodyAttribute = System.Web.Http.FromBodyAttribute;');
+        codeList.add(
+            'using AuthorizeAttribute = System.Web.Http.AuthorizeAttribute;');
+        codeList.add(
+            'using ActionNameAttribute = System.Web.Http.ActionNameAttribute;');
+      }
+      codeList.add('using ${nsgGenerator.cSharpNamespace};');
+      codeList.add('using ${nsgGenerator.cSharpNamespace}.Controllers;');
+      codeList.add('using NsgServerClasses;');
       codeList.add('');
+      codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
+      codeList.add('{');
+      codeList.add('/// <summary>');
+      codeList.add('///${dataType}Interface Controller');
+      codeList.add('/// </summary>');
+      if (nsgGenerator.targetFramework == 'net5.0') {
+        codeList.add('[ApiController]');
+        codeList.add('[Route("${api_prefix}")]');
+      } else {
+        codeList.add('[RoutePrefix("${api_prefix}")]');
+      }
+      codeList.add('public class ${class_name} : ' +
+          (nsgGenerator.targetFramework == 'net5.0'
+              ? 'ControllerBase'
+              : 'ApiController'));
+      codeList.add('{');
+
+      codeList.add('${class_name}Interface controller;');
+      codeList.add('AuthImplInterface authController;');
+
+      codeList.add('private readonly ILogger<${class_name}> _logger;');
+      codeList.add('public ${class_name}(ILogger<${class_name}> logger)');
+      codeList.add('{');
+      codeList.add('_logger = logger;');
+      codeList.add('#if (Real)');
+      codeList.add('controller = new ${impl_controller_name}();');
+      codeList.add('authController = new ${impl_auth_controller_name}();');
+      codeList.add('#else');
+      codeList.add('controller = new ${impl_controller_name}Mock();');
+      codeList.add('authController = new ${impl_auth_controller_name}Mock();');
+      codeList.add('#endif');
+      codeList.add('}');
+      codeList.add('');
+      if (nsgGenerator.targetFramework != 'net5.0') {
+        codeList.add('public ${class_name}() : this(null) { }');
+        codeList.add('');
+      }
+      codeList.add('private static ${class_name} currentController;');
+      codeList.add('public static ${class_name} getController');
+      codeList.add('{');
+      codeList.add('get');
+      codeList.add('{');
+      codeList.add(
+          'if (currentController == null) currentController = new ${class_name}();');
+      codeList.add('return currentController;');
+      codeList.add('}');
+      codeList.add('}');
+      codeList.add('public static AuthImplInterface getAuthController');
+      codeList.add('{');
+      codeList.add('get');
+      codeList.add('{');
+      codeList.add('return getController.authController;');
+      codeList.add('}');
+      codeList.add('}');
+      codeList.add('');
+      codeList.add('public void Init()');
+      codeList.add('{');
+      codeList.add(
+          'if (NsgServerClasses.AuthController.currentController == null)');
+      codeList.add('{');
+      codeList.add('authController = new ${impl_auth_controller_name}();');
+      codeList.add(
+          'NsgServerClasses.AuthController.currentController = authController;');
+      codeList.add('}');
+      codeList.add('}');
+      codeList.add('');
+      await Future.forEach<NsgGenMethod>(methods, (element) async {
+        await element.generateCode(codeList, nsgGenerator, this, element);
+      });
+
+      await Future.forEach<NsgGenFunction>(functions, (element) async {
+        await element.generateControllerMethod(codeList, nsgGenerator, this);
+      });
+
+      codeList.add('}');
+      codeList.add('}');
+      NsgGenCSProject.indentCode(codeList);
+
+      var fn = '${nsgGenerator.cSharpPath}/${class_name}.cs';
+      //if (!File(fn).existsSync()) {
+      await File(fn).writeAsString(codeList.join('\r\n'));
+      //}
+      await generateInterfaceData(nsgGenerator);
+      await generateImplController(nsgGenerator);
+      await generateImplAuthController(nsgGenerator);
     }
-    codeList.add('private static ${class_name} currentController;');
-    codeList.add('public static ${class_name} getController');
-    codeList.add('{');
-    codeList.add('get');
-    codeList.add('{');
-    codeList.add(
-        'if (currentController == null) currentController = new ${class_name}();');
-    codeList.add('return currentController;');
-    codeList.add('}');
-    codeList.add('}');
-    codeList.add('public static AuthImplInterface getAuthController');
-    codeList.add('{');
-    codeList.add('get');
-    codeList.add('{');
-    codeList.add('return getController.authController;');
-    codeList.add('}');
-    codeList.add('}');
-    codeList.add('');
-    codeList.add('public void Init()');
-    codeList.add('{');
-    codeList
-        .add('if (NsgServerClasses.AuthController.currentController == null)');
-    codeList.add('{');
-    codeList.add('authController = new ${impl_auth_controller_name}();');
-    codeList.add(
-        'NsgServerClasses.AuthController.currentController = authController;');
-    codeList.add('}');
-    codeList.add('}');
-    codeList.add('');
-    await Future.forEach<NsgGenMethod>(methods, (element) async {
-      await element.generateCode(codeList, nsgGenerator, this, element);
-    });
-
-    await Future.forEach<NsgGenFunction>(functions, (element) async {
-      await element.generateControllerMethod(codeList, nsgGenerator, this);
-    });
-
-    codeList.add('}');
-    codeList.add('}');
-    NsgGenCSProject.indentCode(codeList);
-
-    var fn = '${nsgGenerator.cSharpPath}/${class_name}.cs';
-    //if (!File(fn).existsSync()) {
-    await File(fn).writeAsString(codeList.join('\r\n'));
-    //}
-    await generateInterfaceData(nsgGenerator);
-    await generateImplController(nsgGenerator);
-    await generateImplAuthController(nsgGenerator);
-    await generateCodeDart(nsgGenerator);
+    if (nsgGenerator.doDart) {
+      await generateCodeDart(nsgGenerator);
+    }
   }
 
   void generateInterfaceData(NsgGenerator nsgGenerator) async {
@@ -546,7 +550,7 @@ class NsgGenController {
     codeList.add('}');
     NsgGenCSProject.indentCode(codeList);
     fn = '${nsgGenerator.cSharpPath}/Controllers/${impl_controller_name}.cs';
-    if (!File(fn).existsSync()) {
+    if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
       await File(fn).writeAsString(codeList.join('\r\n'));
     }
   }
@@ -617,7 +621,7 @@ class NsgGenController {
     NsgGenCSProject.indentCode(codeList);
     var fn =
         '${nsgGenerator.cSharpPath}/Controllers/${impl_auth_controller_name}.cs';
-    if (!File(fn).existsSync()) {
+    if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
       await File(fn).writeAsString(codeList.join('\r\n'));
     }
   }
@@ -723,7 +727,7 @@ class NsgGenController {
 
     var fn =
         '${nsgGenerator.dartPath}/${nsgGenerator.getDartUnderscoreName(class_name)}.dart';
-    if (!File(fn).existsSync()) {
+    if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
       await File(fn).writeAsString(codeList.join('\r\n'));
     }
   }

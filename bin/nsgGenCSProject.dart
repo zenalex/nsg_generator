@@ -10,17 +10,17 @@ class NsgGenCSProject {
   }
 
   static void _generateCsproj(NsgGenerator nsgGenerator) {
-    var file = File(
+    var csprojPath =
+        nsgGenerator.cSharpPath + '/${nsgGenerator.cSharpNamespace}.csproj';
+    var file = File(csprojPath);
+    if (file.existsSync() && !nsgGenerator.forceOverwrite) return;
+    var prepFile = File(
         '${nsgGenerator.jsonPath}\\${nsgGenerator.cSharpNamespace}.csproj');
-    if (file.existsSync()) {
+    if (prepFile.existsSync()) {
       print('copying .csproj');
-      file.copy(
-          nsgGenerator.cSharpPath + '/${nsgGenerator.cSharpNamespace}.csproj');
+      prepFile.copy(csprojPath);
       return;
     }
-    file = File(
-        nsgGenerator.cSharpPath + '/${nsgGenerator.cSharpNamespace}.csproj');
-    if (file.existsSync()) return;
     var targetFramework = nsgGenerator.targetFramework ?? 'net5.0';
     if (targetFramework.isEmpty) targetFramework = 'net5.0';
     print('generating .csproj');
@@ -90,7 +90,7 @@ class NsgGenCSProject {
 
   static void _generateProgramCS(NsgGenerator nsgGenerator) {
     var file = File(nsgGenerator.cSharpPath + '/Program.cs');
-    if (file.existsSync()) return;
+    if (file.existsSync() && !nsgGenerator.forceOverwrite) return;
     print('generating Program.cs');
     // TODO: store Program.cs in the target /serviceConfig
     var codeList = <String>[];
@@ -147,7 +147,7 @@ class NsgGenCSProject {
 
   static void _generateStartupCS(NsgGenerator nsgGenerator) {
     var file = File(nsgGenerator.cSharpPath + '/Startup.cs');
-    if (file.existsSync()) return;
+    if (file.existsSync() && !nsgGenerator.forceOverwrite) return;
     print('generating Startup.cs');
     // TODO: store Startup.cs in the target /serviceConfig
     var codeList = <String>[];

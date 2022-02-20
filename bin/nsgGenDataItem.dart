@@ -35,7 +35,7 @@ class NsgGenDataItem {
 
   static void generateNsgServerMetadataItem(NsgGenerator nsgGenerator) async {
     var fn = '${nsgGenerator.cSharpPath}/Models/NsgServerMetadataItem.cs';
-    if (File(fn).existsSync()) return;
+    if (File(fn).existsSync() && !nsgGenerator.forceOverwrite) return;
     var codeList = <String>[];
     codeList.add('using System;');
     codeList.add('using System.Collections.Generic;');
@@ -502,7 +502,7 @@ class NsgGenDataItem {
     codeList.add('}');
     codeList.add('}');
     fn = '${nsgGenerator.cSharpPath}/Models/${typeName}.cs';
-    if (!File(fn).existsSync()) {
+    if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
       NsgGenCSProject.indentCode(codeList);
       await File(fn).writeAsString(codeList.join('\r\n'));
     }
@@ -577,7 +577,7 @@ class NsgGenDataItem {
 
     var fn =
         '${nsgGenerator.dartPath}/${nsgGenerator.getDartUnderscoreName(typeName)}.dart';
-    if (!File(fn).existsSync()) {
+    if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
       await File(fn).writeAsString(codeList.join('\r\n'));
     }
   }
