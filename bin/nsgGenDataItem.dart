@@ -11,6 +11,7 @@ class NsgGenDataItem {
   final String typeName;
   final String databaseType;
   final String databaseTypeNamespace;
+  final String presentation;
   final List<NsgGenDataItemField> fields;
   final List<NsgGenFunction> methods;
 
@@ -18,6 +19,7 @@ class NsgGenDataItem {
       {this.typeName,
       this.databaseType,
       this.databaseTypeNamespace,
+      this.presentation,
       this.fields,
       this.methods});
 
@@ -27,6 +29,7 @@ class NsgGenDataItem {
         typeName: parsedJson['typeName'],
         databaseType: parsedJson['databaseType'],
         databaseTypeNamespace: parsedJson['databaseTypeNamespace'],
+        presentation: parsedJson['presentation'],
         fields: (parsedJson['fields'] as List)
             .map((i) => NsgGenDataItemField.fromJson(i))
             .toList(),
@@ -242,6 +245,13 @@ class NsgGenDataItem {
       codeList.add(
           'public $typeName($databaseType dataObject) : base(dataObject) { }');
       codeList.add('');
+      if (presentation != null && presentation.isNotEmpty) {
+        codeList.add('public override string ToString()');
+        codeList.add('{');
+        codeList.add('return $presentation;');
+        codeList.add('}');
+        codeList.add('');
+      }
       codeList.add('private $databaseType nsgObject;');
       codeList.add('');
       codeList.add('public override NsgMultipleObject NSGObject');
@@ -542,6 +552,14 @@ class NsgGenDataItem {
     });
     codeList.add('  }');
     codeList.add('');
+    if (presentation != null && presentation.isNotEmpty) {
+      codeList.add('  @override');
+      codeList.add('  String toString() {');
+      codeList.add(
+          '    return ${nsgGenerator.getDartName(presentation.replaceAll('\"', '\''))};');
+      codeList.add('  }');
+      codeList.add('');
+    }
     codeList.add('  @override');
     codeList.add('  NsgDataItem getNewObject() => ${typeName}();');
     codeList.add('');

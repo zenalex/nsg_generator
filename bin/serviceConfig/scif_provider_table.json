@@ -1,6 +1,7 @@
 {
     "typeName": "ScifProviderTable",
     "comment": "Поставщик Таблица",
+    "presentation": "Job",
     "fields":[
       {
         "name": "Id",

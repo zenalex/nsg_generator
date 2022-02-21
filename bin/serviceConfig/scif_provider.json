@@ -1,6 +1,7 @@
 {
     "typeName": "ScifProvider",
     "comment": "Поставщик",
+    "presentation": "\"Поставщик\"",
     "fields":[
       {
         "name": "Id",
