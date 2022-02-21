@@ -245,13 +245,21 @@ class NsgGenDataItem {
       codeList.add(
           'public $typeName($databaseType dataObject) : base(dataObject) { }');
       codeList.add('');
+      codeList.add('public override string ToString()');
+      codeList.add('{');
       if (presentation != null && presentation.isNotEmpty) {
-        codeList.add('public override string ToString()');
-        codeList.add('{');
         codeList.add('return $presentation;');
-        codeList.add('}');
-        codeList.add('');
+      } else {
+        var nameField =
+            fields.firstWhere((f) => f.name.toLowerCase() == 'name');
+        if (nameField != null) {
+          codeList.add('return ${nameField.name};');
+        } else {
+          codeList.add('return base.ToString();');
+        }
       }
+      codeList.add('}');
+      codeList.add('');
       codeList.add('private $databaseType nsgObject;');
       codeList.add('');
       codeList.add('public override NsgMultipleObject NSGObject');
@@ -552,14 +560,21 @@ class NsgGenDataItem {
     });
     codeList.add('  }');
     codeList.add('');
+    codeList.add('  @override');
+    codeList.add('  String toString() {');
     if (presentation != null && presentation.isNotEmpty) {
-      codeList.add('  @override');
-      codeList.add('  String toString() {');
       codeList.add(
           '    return ${nsgGenerator.getDartName(presentation.replaceAll('\"', '\''))};');
-      codeList.add('  }');
-      codeList.add('');
+    } else {
+      var nameField = fields.firstWhere((f) => f.name.toLowerCase() == 'name');
+      if (nameField != null) {
+        codeList.add('    return ${nsgGenerator.getDartName(nameField.name)};');
+      } else {
+        codeList.add('    return super.toString();');
+      }
     }
+    codeList.add('  }');
+    codeList.add('');
     codeList.add('  @override');
     codeList.add('  NsgDataItem getNewObject() => ${typeName}();');
     codeList.add('');
