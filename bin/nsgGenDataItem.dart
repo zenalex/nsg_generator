@@ -249,9 +249,9 @@ class NsgGenDataItem {
       codeList.add('{');
       if (presentation != null && presentation.isNotEmpty) {
         codeList.add('return $presentation;');
-      } else {
-        var nameField =
-            fields.firstWhere((f) => f.name.toLowerCase() == 'name');
+      } else if (fields != null && fields.isNotEmpty) {
+        var nameField = fields.firstWhere((f) => f.name.toLowerCase() == 'name',
+            orElse: () => null);
         if (nameField != null) {
           codeList.add('return ${nameField.name};');
         } else {
@@ -538,6 +538,14 @@ class NsgGenDataItem {
     codeList.add("import 'package:nsg_data/nsg_data.dart';");
     codeList.add(
         "import '../${nsgGenerator.getDartUnderscoreName(nsgGenController.class_name)}_model.dart';");
+    var hasEnums = false;
+    fields.forEach((field) {
+      if (field.type == 'Enum') {
+        if (hasEnums) return;
+        codeList.add("import '../enums.dart';");
+        hasEnums = true;
+      }
+    });
     codeList.add('class ${typeName}Generated extends NsgDataItem {');
     fields.forEach((_) {
       codeList.add(
@@ -565,8 +573,9 @@ class NsgGenDataItem {
     if (presentation != null && presentation.isNotEmpty) {
       codeList.add(
           '    return ${nsgGenerator.getDartName(presentation.replaceAll('\"', '\''))};');
-    } else {
-      var nameField = fields.firstWhere((f) => f.name.toLowerCase() == 'name');
+    } else if (fields != null && fields.isNotEmpty) {
+      var nameField = fields.firstWhere((f) => f.name.toLowerCase() == 'name',
+          orElse: () => null);
       if (nameField != null) {
         codeList.add('    return ${nsgGenerator.getDartName(nameField.name)};');
       } else {
