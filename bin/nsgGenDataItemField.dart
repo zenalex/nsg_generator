@@ -80,11 +80,6 @@ class NsgGenDataItemField {
   }
 
   void writeGetter(NsgGenController nsgGenController, List<String> codeList) {
-    if (description != null && description.isNotEmpty) {
-      description.split('\n').forEach((descLine) {
-        codeList.add('/// $descLine');
-      });
-    }
     if (type == 'String') {
       codeList.add(
           '$dartType get $dartName => getFieldValue($fieldNameVar).toString();');
@@ -136,11 +131,6 @@ class NsgGenDataItemField {
   }
 
   void writeSetter(NsgGenController nsgGenController, List<String> codeList) {
-    if (description != null && description.isNotEmpty) {
-      description.split('\n').forEach((descLine) {
-        codeList.add('/// $descLine');
-      });
-    }
     if (type == 'Image') {
       codeList.add(
           'set $dartName(String value) => setFieldValue($fieldNameVar, value);');

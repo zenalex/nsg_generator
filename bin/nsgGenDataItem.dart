@@ -589,6 +589,11 @@ class NsgGenDataItem {
     codeList.add('');
 
     fields.forEach((_) {
+      if (_.description != null && _.description.isNotEmpty) {
+        _.description.split('\n').forEach((descLine) {
+          codeList.add('/// $descLine');
+        });
+      }
       _.writeGetter(nsgGenController, codeList);
       _.writeSetter(nsgGenController, codeList);
     });
