@@ -664,6 +664,9 @@ class NsgGenController {
     var codeList = <String>[];
     codeList.add("import 'package:get/get.dart';");
     codeList.add("import 'package:nsg_data/nsg_data.dart';");
+    if (nsgGenerator.enums.isNotEmpty) {
+      codeList.add("import '../enums.dart';");
+    }
     codeList.add(
         "import '../${nsgGenerator.getDartUnderscoreName(class_name)}_model.dart';");
     codeList.add('');
@@ -740,6 +743,14 @@ class NsgGenController {
       }
       codeList.add(
           '       .registerDataItem(${_.genDataItem.typeName}(), remoteProvider: provider);');
+    });
+    nsgGenerator.enums.forEach((_) {
+      codeList.add('      NsgDataClient.client');
+      if (_ == null) {
+        print('${_.class_name}.genDataItem == null');
+      }
+      codeList.add(
+          '       .registerDataItem(${_.class_name}(0, \'\'), remoteProvider: provider);');
     });
   }
 }

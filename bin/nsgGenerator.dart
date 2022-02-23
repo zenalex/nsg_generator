@@ -29,7 +29,7 @@ class NsgGenerator {
   factory NsgGenerator.fromJson(Map<String, dynamic> parsedJson) {
     var targetFramework = parsedJson['targetFramework'] ?? 'net5.0';
     if (targetFramework.isEmpty) targetFramework = 'net5.0';
-    var enums;
+    var enums = <NsgGenEnum>[];
     if (parsedJson.containsKey('enums')) {
       enums = (parsedJson['enums'] as List)
           .map((i) => NsgGenEnum.fromJson(i))

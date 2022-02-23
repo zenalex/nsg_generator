@@ -133,6 +133,7 @@ class NsgGenEnum {
   Future generateEnumDart(NsgGenerator nsgGenerator) async {
     var codeList = <String>[];
     codeList.add('import \'package:nsg_data/nsg_data.dart\';');
+    codeList.add('');
     codeList.add('class $class_name extends NsgEnum {');
     values.forEach((i) {
       codeList.add(
@@ -142,22 +143,18 @@ class NsgGenEnum {
     codeList.add(
         '  $class_name(dynamic value, String name) : super(value: value, name: name);');
     codeList.add('');
+    codeList.add('  @override');
+    codeList.add('  void initialize() {');
     codeList
-        .add('  static List<$class_name> listAll = List<$class_name>.from(');
-    codeList.add(
-        '        {${values.map((e) => nsgGenerator.getDartName(e.codeName)).join(', ')}},');
-    codeList.add('        growable: false);');
-    codeList.add('');
-    codeList.add('  static $class_name fromValue(dynamic v) {');
-    codeList
-        .add('    return listAll.firstWhere((element) => element.value == v);');
-    codeList.add('  }');
-    codeList.add('');
-    codeList.add('  static $class_name fromString(String v) {');
-    codeList
-        .add('    return listAll.firstWhere((element) => element.name == v);');
+        .add('    NsgEnum.listAllValues[runtimeType] = <int, $class_name>{');
+    values.forEach((v) {
+      codeList
+          .add('      ${v.value}: ${nsgGenerator.getDartName(v.codeName)},');
+    });
+    codeList.add('    };');
     codeList.add('  }');
     codeList.add('}');
+    codeList.add('');
     await File(
             '${nsgGenerator.dartPath}/enums/${nsgGenerator.getDartUnderscoreName(class_name)}.dart')
         .writeAsString(codeList.join('\r\n'));
