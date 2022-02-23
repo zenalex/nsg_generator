@@ -60,8 +60,9 @@ class NsgGenDataItem {
     codeList.add('');
     codeList.add('[JsonIgnore]');
     codeList.add('public virtual NsgMultipleObject NSGObject { get; set; }');
+    codeList.add('public virtual void OnSetNsgObject() { }');
     codeList.add(
-        'public delegate void NsgObjectEventHandler<T>(T obj) where T : NsgMultipleObject;');
+        'public virtual void OnBeforePostNsgObject<T>(T obj) where T : NsgMultipleObject { }');
     codeList.add('');
     codeList.add(
         'public static List<T> FromTable<T>(NsgDataTable table) where T : NsgServerMetadataItem, new()');
@@ -294,11 +295,9 @@ class NsgGenDataItem {
           codeList.add('${el.name} = nsgObject.${el.dbName};');
         }
       });
-      codeList.add('SetNsgObject(nsgObject);');
+      codeList.add('OnSetNsgObject();');
       codeList.add('}');
       codeList.add('}');
-      codeList.add(
-          'public event NsgObjectEventHandler<$databaseType> SetNsgObject = (o) => { };');
       codeList.add('');
 
       codeList.add('public override bool PostNsgObject()');
@@ -356,7 +355,7 @@ class NsgGenDataItem {
           codeList.add('nsgObject.${el.dbName} = ${el.name};');
         }
       });
-      codeList.add('BeforePostNsgObject(nsgObject);');
+      codeList.add('OnBeforePostNsgObject(nsgObject);');
       codeList.add('bool posted = nsgObject.Post();');
       codeList.add('if (posted) this.NSGObject = nsgObject;');
       codeList.add('return posted;');
@@ -367,8 +366,6 @@ class NsgGenDataItem {
           'if (nsgObject.ObjectState == NsgObjectStates.Edit) nsgObject.Cancel();');
       codeList.add('}');
       codeList.add('}');
-      codeList.add(
-          'public event NsgObjectEventHandler<$databaseType> BeforePostNsgObject = (o) => { };');
       codeList.add('');
       codeList.add(
           'public override Dictionary<string, string> GetClientServerNames() => ClientServerNames;');
