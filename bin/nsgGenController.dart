@@ -476,7 +476,7 @@ class NsgGenController {
             codeList.add(
                 'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
             codeList.add(
-                'RES["results"] = NsgServerMetadataItem.PostAll<ScifProvider>(items);');
+                'RES["results"] = NsgServerMetadataItem.PostAll<${m.genDataItem.typeName}>(items);');
             codeList.add('return RES;');
           } else {
             codeList.add('throw new NotImplementedException();');
