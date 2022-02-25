@@ -607,9 +607,6 @@ class NsgGenDataItem {
       _.writeGetter(nsgGenController, codeList);
       _.writeSetter(nsgGenController, codeList);
     });
-    methods.forEach((_) {
-      _.writeMethod(nsgGenController, codeList);
-    });
     codeList.add('');
     codeList.add('  @override');
     codeList.add('  String get apiRequestItems {');
@@ -630,6 +627,9 @@ class NsgGenDataItem {
         "import '${nsgGenerator.genPathName}/${nsgGenerator.getDartUnderscoreName(typeName)}.g.dart';");
     codeList.add('');
     codeList.add('class ${typeName} extends ${typeName}Generated {');
+    methods.forEach((_) {
+      _.writeMethod(nsgGenController, codeList);
+    });
     codeList.add('}');
 
     var fn =

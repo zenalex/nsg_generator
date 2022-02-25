@@ -95,21 +95,21 @@ class NsgGenFunction {
     if (type == null) {
       codeList.add('void $dartName($paramTNString) { }');
     } else if (type == 'String') {
-      codeList.add('$dartType $dartName($paramTNString) { }');
+      codeList.add('$dartType $dartName($paramTNString) => \'\';');
     } else if (type == 'Date' || type == 'DateTime') {
-      codeList.add('$dartType $dartName($paramTNString) { }');
+      codeList.add('$dartType $dartName($paramTNString) => $dartType();');
     } else if (type == 'Duration') {
-      codeList.add('$dartType $dartName($paramTNString) { }');
+      codeList.add('$dartType $dartName($paramTNString)=> $dartType();');
     } else if (type == 'int') {
-      codeList.add('$dartType $dartName($paramTNString) { }');
+      codeList.add('$dartType $dartName($paramTNString) => 0;');
     } else if (type == 'bool') {
-      codeList.add('$dartType $dartName($paramTNString) { }');
+      codeList.add('$dartType $dartName($paramTNString) => false;');
     } else if (type == 'double') {
-      codeList.add('$dartType $dartName($paramTNString) { }');
+      codeList.add('$dartType $dartName($paramTNString) => 0;');
     } else if (type == 'Image') {
-      codeList.add('String $dartName($paramTNString) { }');
+      codeList.add('String $dartName($paramTNString) => \'\';');
     } else if (type == 'Reference') {
-      codeList.add('String $dartName($paramTNString) { }');
+      codeList.add('String $dartName($paramTNString) => \'\';');
     } else {
       print("write getter for method type $type couldn't be found");
       throw Exception();

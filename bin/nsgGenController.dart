@@ -108,16 +108,25 @@ class NsgGenController {
       codeList.add('${class_name}Interface controller;');
       codeList.add('AuthImplInterface authController;');
 
-      codeList.add('private readonly ILogger<${class_name}> _logger;');
-      codeList.add('public ${class_name}(ILogger<${class_name}> logger)');
+      codeList.add('private readonly ILogger<$class_name> _logger;');
+      codeList.add('public $class_name(ILogger<$class_name> logger)');
       codeList.add('{');
       codeList.add('_logger = logger;');
       codeList.add('#if (Real)');
-      codeList.add('controller = new ${impl_controller_name}();');
-      codeList.add('authController = new ${impl_auth_controller_name}();');
+      codeList.add('controller = new $impl_controller_name();');
+      if (useAuthorization) {
+        codeList.add('authController = new $impl_auth_controller_name();');
+      } else {
+        codeList.add('authController = AuthController.CurrentController;');
+      }
       codeList.add('#else');
       codeList.add('controller = new ${impl_controller_name}Mock();');
-      codeList.add('authController = new ${impl_auth_controller_name}Mock();');
+      if (useAuthorization) {
+        codeList
+            .add('authController = new ${impl_auth_controller_name}Mock();');
+      } else {
+        codeList.add('authController = AuthController.CurrentController;');
+      }
       codeList.add('#endif');
       codeList.add('}');
       codeList.add('');
@@ -130,8 +139,13 @@ class NsgGenController {
       codeList.add('{');
       codeList.add('get');
       codeList.add('{');
-      codeList.add(
-          'if (currentController == null) currentController = new ${class_name}();');
+      if (nsgGenerator.targetFramework == 'net5.0') {
+        codeList.add(
+            'if (currentController == null) currentController = new ${class_name}(null);');
+      } else {
+        codeList.add(
+            'if (currentController == null) currentController = new ${class_name}();');
+      }
       codeList.add('return currentController;');
       codeList.add('}');
       codeList.add('}');
@@ -148,7 +162,11 @@ class NsgGenController {
       codeList.add(
           'if (NsgServerClasses.AuthController.currentController == null)');
       codeList.add('{');
-      codeList.add('authController = new ${impl_auth_controller_name}();');
+      if (useAuthorization) {
+        codeList.add('authController = new $impl_auth_controller_name();');
+      } else {
+        codeList.add('authController = AuthController.CurrentController;');
+      }
       codeList.add(
           'NsgServerClasses.AuthController.currentController = authController;');
       codeList.add('}');
@@ -172,7 +190,9 @@ class NsgGenController {
       //}
       await generateInterfaceData(nsgGenerator);
       await generateImplController(nsgGenerator);
-      await generateImplAuthController(nsgGenerator);
+      if (useAuthorization) {
+        await generateImplAuthController(nsgGenerator);
+      }
     }
     if (nsgGenerator.doDart) {
       await generateCodeDart(nsgGenerator);
