@@ -546,7 +546,9 @@ class NsgGenDataItem {
     fields.forEach((field) {
       if (field.type == 'Enum') {
         if (hasEnums) return;
-        codeList.add("import '../enums.dart';");
+        if (nsgGenerator.enums.isNotEmpty) {
+          codeList.add("import '../enums.dart';");
+        }
         hasEnums = true;
       }
     });
