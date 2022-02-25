@@ -88,8 +88,10 @@ class NsgGenFunction {
         paramNString += p.name + ', ';
       });
     }
-    paramTNString = paramTNString.substring(0, paramTNString.length - 2);
-    paramNString = paramNString.substring(0, paramNString.length - 2);
+    if (paramTNString.isNotEmpty) {
+      paramTNString = paramTNString.substring(0, paramTNString.length - 2);
+      paramNString = paramNString.substring(0, paramNString.length - 2);
+    }
     if (type == null) {
       codeList.add('void $dartName($paramTNString) { }');
     } else if (type == 'String') {
@@ -207,7 +209,9 @@ class NsgGenFunction {
         paramTNString += p.returnType + ' ' + p.name + ', ';
       });
     }
-    paramTNString = paramTNString.substring(0, paramTNString.length - 2);
+    if (paramTNString.isNotEmpty) {
+      paramTNString = paramTNString.substring(0, paramTNString.length - 2);
+    }
 
     codeList.add(
         '  Future<$returnType?> ${nsgGenerator.getDartName(name)}($paramTNString) async {');

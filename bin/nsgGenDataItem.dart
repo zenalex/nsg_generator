@@ -445,8 +445,10 @@ class NsgGenDataItem {
           paramNString += p.name + ', ';
         });
       }
-      paramTNString = paramTNString.substring(0, paramTNString.length - 2);
-      paramNString = paramNString.substring(0, paramNString.length - 2);
+      if (paramTNString.isNotEmpty) {
+        paramTNString = paramTNString.substring(0, paramTNString.length - 2);
+        paramNString = paramNString.substring(0, paramNString.length - 2);
+      }
       if (element.description != null && element.description.isNotEmpty) {
         codeList.add('/// <summary>');
         element.description.split('\n').forEach((descLine) {
@@ -497,7 +499,9 @@ class NsgGenDataItem {
           paramTNString += p.returnType + ' ' + p.name + ', ';
         });
       }
-      paramTNString = paramTNString.substring(0, paramTNString.length - 2);
+      if (paramTNString.isNotEmpty) {
+        paramTNString = paramTNString.substring(0, paramTNString.length - 2);
+      }
       if (element.description != null && element.description.isNotEmpty) {
         codeList.add('/// <summary>');
         element.description.split('\n').forEach((descLine) {
