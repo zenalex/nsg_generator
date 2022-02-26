@@ -248,21 +248,18 @@ class NsgGenDataItem {
       codeList.add(
           'public $typeName($databaseType dataObject) : base(dataObject) { }');
       codeList.add('');
-      codeList.add('public override string ToString()');
-      codeList.add('{');
       if (presentation != null && presentation.isNotEmpty) {
-        codeList.add('return $presentation;');
+        codeList.add('public override string ToString() => $presentation;');
+        codeList.add('');
       } else if (fields != null && fields.isNotEmpty) {
         var nameField = fields.firstWhere((f) => f.name.toLowerCase() == 'name',
             orElse: () => null);
         if (nameField != null) {
-          codeList.add('return ${nameField.name};');
-        } else {
-          codeList.add('return base.ToString();');
+          codeList
+              .add('public override string ToString() => ${nameField.name};');
+          codeList.add('');
         }
       }
-      codeList.add('}');
-      codeList.add('');
       codeList.add('private $databaseType nsgObject;');
       codeList.add('');
       codeList.add('public override NsgMultipleObject NSGObject');
@@ -578,22 +575,21 @@ class NsgGenDataItem {
     });
     codeList.add('  }');
     codeList.add('');
-    codeList.add('  @override');
-    codeList.add('  String toString() {');
     if (presentation != null && presentation.isNotEmpty) {
+      codeList.add('  @override');
       codeList.add(
-          '    return ${nsgGenerator.getDartName(presentation.replaceAll('\"', '\''))};');
+          '  String toString() => ${nsgGenerator.getDartName(presentation.replaceAll('\"', '\''))};');
+      codeList.add('');
     } else if (fields != null && fields.isNotEmpty) {
       var nameField = fields.firstWhere((f) => f.name.toLowerCase() == 'name',
           orElse: () => null);
       if (nameField != null) {
-        codeList.add('    return ${nsgGenerator.getDartName(nameField.name)};');
-      } else {
-        codeList.add('    return super.toString();');
+        codeList.add('  @override');
+        codeList.add(
+            '  String toString() => ${nsgGenerator.getDartName(nameField.name)};');
+        codeList.add('');
       }
     }
-    codeList.add('  }');
-    codeList.add('');
     codeList.add('  @override');
     codeList.add('  NsgDataItem getNewObject() => ${typeName}();');
     codeList.add('');
