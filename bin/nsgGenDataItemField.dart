@@ -6,6 +6,7 @@ class NsgGenDataItemField {
   final String type;
   final String dbName;
   final String dbType;
+  final int maxLength;
   final String description;
   final String apiPrefix;
   final bool isPrimary;
@@ -19,6 +20,7 @@ class NsgGenDataItemField {
       this.type,
       this.dbName,
       this.dbType,
+      this.maxLength,
       this.description,
       this.apiPrefix,
       this.isPrimary,
@@ -28,11 +30,20 @@ class NsgGenDataItemField {
       this.userName});
 
   factory NsgGenDataItemField.fromJson(Map<String, dynamic> parsedJson) {
+    var ml = parsedJson['maxLength'];
+    if (ml is String) ml = int.parse(ml); // as int ??
+    // (defaultMaxLength.containsValue(parsedJson['type'])
+    //     ? defaultMaxLength[parsedJson['type']]
+    //     : 0);
     return NsgGenDataItemField(
         name: parsedJson['name'],
         type: parsedJson['type'],
         dbName: parsedJson['databaseName'],
         dbType: parsedJson['databaseType'],
+        maxLength: ml ??
+            (defaultMaxLength.containsKey(parsedJson['type'])
+                ? defaultMaxLength[parsedJson['type']]
+                : 0),
         description: parsedJson['description'],
         apiPrefix: parsedJson['api_prefix'],
         isPrimary: parsedJson['isPrimary'] == 'true',
@@ -41,6 +52,11 @@ class NsgGenDataItemField {
         userVisibility: parsedJson['userVisibility'] == 'true',
         userName: parsedJson['userName']);
   }
+
+  static Map<String, int> defaultMaxLength = <String, int>{
+    'String': 50,
+    'double': 2
+  };
 
   String get dartName => NsgGenerator.generator.getDartName(name);
 

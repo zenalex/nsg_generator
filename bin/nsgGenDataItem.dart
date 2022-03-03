@@ -224,6 +224,7 @@ class NsgGenDataItem {
     var codeList = <String>[];
     codeList.add('using System;');
     codeList.add('using System.Collections.Generic;');
+    codeList.add('using System.ComponentModel.DataAnnotations;');
     if (databaseType != null && databaseType.isNotEmpty) {
       NsgGenDataItem.generateNsgServerMetadataItem(nsgGenerator);
       codeList.add('using NsgSoft.DataObjects;');
@@ -427,6 +428,9 @@ class NsgGenDataItem {
         codeList.add('/// </remarks> ');
         codeList.add('public string ${element.name} { get; set; }');
       } else {
+        if (!element.name.endsWith('Id')) {
+          codeList.add('[StringLength(${element.maxLength})]');
+        }
         codeList.add('public string ${element.name} { get; set; }');
       }
       if (element.type == 'Image') nsgMethod.addImageMethod(element);
@@ -570,8 +574,23 @@ class NsgGenDataItem {
     codeList.add('  @override');
     codeList.add('  void initialize() {');
     fields.forEach((_) {
-      codeList.add(
-          '   addfield(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+      if (_.isPrimary) {
+        codeList.add(
+            '   addfield(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+      } else {
+        if (_.type == 'String' &&
+            _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
+          codeList.add(
+              '   addfield(${_.nsgDataType}(${_.fieldNameVar}, maxLength: ${_.maxLength}), primaryKey: ${_.isPrimary});');
+        } else if (_.type == 'double' &&
+            _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
+          codeList.add(
+              '   addfield(${_.nsgDataType}(${_.fieldNameVar}, maxDecimalPlaces: ${_.maxLength}), primaryKey: ${_.isPrimary});');
+        } else {
+          codeList.add(
+              '   addfield(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+        }
+      }
     });
     codeList.add('  }');
     codeList.add('');
