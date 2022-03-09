@@ -14,6 +14,7 @@ class NsgGenMethod {
   final String type;
   final String dataTypeFlie;
   final bool allowPost;
+  final bool allowDelete;
 
   NsgGenDataItem genDataItem;
 
@@ -24,18 +25,19 @@ class NsgGenMethod {
       this.authorize,
       this.type,
       this.dataTypeFlie,
-      this.allowPost});
+      this.allowPost,
+      this.allowDelete});
 
   factory NsgGenMethod.fromJson(Map<String, dynamic> parsedJson) {
     return NsgGenMethod(
-      name: parsedJson['name'],
-      description: parsedJson['description'],
-      apiPrefix: parsedJson['api_prefix'],
-      authorize: parsedJson['authorize'],
-      type: parsedJson['type'],
-      dataTypeFlie: parsedJson['dataTypeFile'],
-      allowPost: parsedJson['allowPost'] == 'true',
-    );
+        name: parsedJson['name'],
+        description: parsedJson['description'],
+        apiPrefix: parsedJson['api_prefix'],
+        authorize: parsedJson['authorize'],
+        type: parsedJson['type'],
+        dataTypeFlie: parsedJson['dataTypeFile'],
+        allowPost: parsedJson['allowPost'] == 'true',
+        allowDelete: parsedJson['allowDelete'] == 'true');
   }
 
   Future generateCode(List<String> codeList, NsgGenerator nsgGenerator,
@@ -123,6 +125,37 @@ class NsgGenMethod {
       } else {
         codeList
             .add('return await controller.${method.name}Post(null, items);');
+      }
+      codeList.add('}');
+      codeList.add('');
+    }
+
+    //Generation delete data method
+    if (allowDelete) {
+      codeList.add('[Route("$apiPrefix/Delete")]');
+      //Authorization
+      if (authorize == 'anonymous') {
+        codeList.add('[Authorize]');
+      } else if (authorize == 'user') {
+        codeList.add('[Authorize(Roles = UserRoles.User)]');
+      } else if (authorize != 'none') {
+        throw Exception(
+            'Wrong authorization type in method ${method.name}([FromBody] ${method.genDataItem.typeName} items)');
+      }
+      codeList.add('[HttpDelete]');
+      // codeList.add(
+      //     'public async Task<IEnumerable<${method.genDataItem.typeName}>> ${method.name}Post([FromBody] IEnumerable<${method.genDataItem.typeName}> items)');
+      codeList.add(
+          'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${method.name}Delete([FromBody] IEnumerable<${method.genDataItem.typeName}> items)');
+      codeList.add('{');
+      if (authorize != 'none') {
+        codeList
+            .add('var user = await authController.GetUserByToken(Request);');
+        codeList
+            .add('return await controller.${method.name}Delete(user, items);');
+      } else {
+        codeList
+            .add('return await controller.${method.name}Delete(null, items);');
       }
       codeList.add('}');
       codeList.add('');

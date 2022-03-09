@@ -110,6 +110,15 @@ class NsgGenDataItem {
     codeList.add('}');
     codeList.add('');
     codeList.add(
+        'public static void SetDeleteMarkAll<T>(IEnumerable<NsgServerDataItem> objs) where T : NsgServerMetadataItem');
+    codeList.add('{');
+    codeList.add('foreach (T i in objs)');
+    codeList.add('{');
+    codeList.add('i.NSGObject.SetDeleteMark();');
+    codeList.add('}');
+    codeList.add('}');
+    codeList.add('');
+    codeList.add(
         'public virtual Dictionary<string, string> GetClientServerNames() => new Dictionary<string, string>();');
     codeList.add('');
     codeList.add('public NsgCompare GetNsgCompareFromXml(string xml)');
