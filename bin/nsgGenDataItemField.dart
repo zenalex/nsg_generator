@@ -153,6 +153,9 @@ class NsgGenDataItemField {
     } else if (type == 'Reference') {
       codeList.add(
           'set $dartName(String value) => setFieldValue($fieldNameVar, value);');
+      codeList.add(
+          'set ${NsgGenerator.generator.getDartName(referenceName)}($referenceType value) =>');
+      codeList.add('    setFieldValue($fieldNameVar, value.id);');
     } else if (type == 'List<Reference>') {
       codeList.add(
           'set $dartName(List<$referenceType> value) => setFieldValue($fieldNameVar, value);');
