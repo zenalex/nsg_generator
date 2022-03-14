@@ -68,10 +68,10 @@ class NsgGenDataItem {
     codeList.add('{');
     codeList.add('if (postSuccessful)');
     codeList.add('{');
-    codeList.add('oldObj.CopyNotPredefinedFieldsFromObject(obj);');
     codeList.add('string changed = string.Empty;');
     codeList.add('if (oldObj != null)');
     codeList.add('{');
+    codeList.add('oldObj.CopyNotPredefinedFieldsFromObject(obj);');
     codeList.add('changed += "Changed properties: ";');
     codeList.add('foreach (var name in obj.ObjectList.ObjectsNames)');
     codeList.add('{');
