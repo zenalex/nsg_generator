@@ -68,22 +68,22 @@ class NsgGenDataItem {
     codeList.add('{');
     codeList.add('if (postSuccessful)');
     codeList.add('{');
-    codeList.add('string changed = Environment.NewLine;');
+    codeList.add('oldObj.CopyNotPredefinedFieldsFromObject(obj);');
+    codeList.add('string changed = string.Empty;');
     codeList.add('if (oldObj != null)');
     codeList.add('{');
-    codeList.add('changed += "Changed properties: " + Environment.NewLine;');
+    codeList.add('changed += "Changed properties: ";');
     codeList.add('foreach (var name in obj.ObjectList.ObjectsNames)');
     codeList.add('{');
-    codeList.add('if (obj[name].Value != oldObj[name].Value)');
+    codeList.add('if (oldObj.ObjectList[name].IsModify)');
     codeList.add('{');
-    codeList.add('changed += name + Environment.NewLine;');
+    codeList.add('changed += name + ", ";');
     codeList.add('}');
     codeList.add('}');
     codeList.add('}');
     codeList.add(
-        'NsgUserActionsRegistrator.RegisterObjectAction(NsgSettings.CurrentUser, NsgUserRegistrationActions.Post,');
-    codeList
-        .add('\$"{NsgUserRegistrationActions.Post}: {obj}" + changed, obj);');
+        'NsgUserActionsRegistrator.RegisterObjectAction(NsgSettings.CurrentUser,');
+    codeList.add('    NsgUserRegistrationActions.Post, changed, obj);');
     codeList.add('}');
     codeList.add('}');
     codeList.add('');
