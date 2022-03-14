@@ -63,6 +63,29 @@ class NsgGenDataItem {
     codeList.add('public virtual void OnSetNsgObject() { }');
     codeList.add(
         'public virtual void OnBeforePostNsgObject<T>(T obj) where T : NsgMultipleObject { }');
+    codeList.add(
+        'public virtual void OnAfterPostNsgObject<T>(T obj, T oldObj, bool postSuccessful = true) where T : NsgMultipleObject');
+    codeList.add('{');
+    codeList.add('if (postSuccessful)');
+    codeList.add('{');
+    codeList.add('string changed = Environment.NewLine;');
+    codeList.add('if (oldObj != null)');
+    codeList.add('{');
+    codeList.add('changed += "Changed properties: " + Environment.NewLine;');
+    codeList.add('foreach (var name in obj.ObjectList.ObjectsNames)');
+    codeList.add('{');
+    codeList.add('if (obj[name].Value != oldObj[name].Value)');
+    codeList.add('{');
+    codeList.add('changed += name + Environment.NewLine;');
+    codeList.add('}');
+    codeList.add('}');
+    codeList.add('}');
+    codeList.add(
+        'NsgUserActionsRegistrator.RegisterObjectAction(NsgSettings.CurrentUser, NsgUserRegistrationActions.Post,');
+    codeList
+        .add('\$"{NsgUserRegistrationActions.Post}: {obj}" + changed, obj);');
+    codeList.add('}');
+    codeList.add('}');
     codeList.add('');
     codeList.add(
         'public static List<T> FromTable<T>(NsgDataTable table) where T : NsgServerMetadataItem, new()');
@@ -115,6 +138,10 @@ class NsgGenDataItem {
     codeList.add('foreach (T i in objs)');
     codeList.add('{');
     codeList.add('i.NSGObject.SetDeleteMark();');
+    codeList.add(
+        'NsgUserActionsRegistrator.RegisterObjectAction(NsgSettings.CurrentUser,');
+    codeList.add(
+        '    NsgUserRegistrationActions.SetDeleteMark, \$"{NsgUserRegistrationActions.SetDeleteMark}: {i.NSGObject}", i.NSGObject);');
     codeList.add('}');
     codeList.add('}');
     codeList.add('');
@@ -310,6 +337,7 @@ class NsgGenDataItem {
       codeList.add('public override bool PostNsgObject()');
       codeList.add('{');
       codeList.add('var nsgObject = $databaseType.Новый();');
+      codeList.add('NsgMultipleObject clone = null;');
       var pkField = fields.firstWhere(
           (f) => f.name.toLowerCase().contains('id') && f.isPrimary);
       codeList.add(
@@ -327,6 +355,7 @@ class NsgGenDataItem {
       codeList.add('{');
       codeList.add('throw new Exception("ERROR: WOI45");');
       codeList.add('}');
+      codeList.add('clone = nsgObject.CloneObject as NsgMultipleObject;');
       codeList.add('nsgObject.Edit();');
       codeList.add('}');
       fields.where((f) => f != pkField).forEach((el) {
@@ -365,6 +394,7 @@ class NsgGenDataItem {
       codeList.add('OnBeforePostNsgObject(nsgObject);');
       codeList.add('bool posted = nsgObject.Post();');
       codeList.add('if (posted) this.NSGObject = nsgObject;');
+      codeList.add('OnAfterPostNsgObject(nsgObject, clone, posted);');
       codeList.add('return posted;');
       codeList.add('}');
       codeList.add('finally');
