@@ -40,15 +40,18 @@ class NsgGenFunction {
   String get dartName => NsgGenerator.generator.getDartName(name);
 
   String get returnType {
-    if (type == 'Reference') {
+    if (type == 'Reference' || type == 'Enum') {
       return referenceType;
-    } else if (type == 'Enum') {
-      return 'int';
+    } else if (type == 'Date') {
+      return 'DateTime';
     }
     return type;
   }
 
   String get dartType {
+    if (type == 'Reference' || type == 'Enum') {
+      return referenceType;
+    }
     if (type == 'Date') return 'DateTime';
     return type;
   }
@@ -214,7 +217,7 @@ class NsgGenFunction {
     }
 
     codeList.add(
-        '  Future<$returnType?> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
+        '  Future<$dartType?> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
     codeList.add('    var params = <String, String>{};');
     params.forEach((p) {
       if (p.type == 'String') {
@@ -225,8 +228,8 @@ class NsgGenFunction {
     });
     codeList.add('    final filter = NsgDataRequestParams(params: params);');
     codeList.add('    try {');
-    codeList.add(
-        '      var res = await NsgDataRequest<$returnType>().requestItem(');
+    codeList
+        .add('      var res = await NsgDataRequest<$dartType>().requestItem(');
     codeList
         .add('          function: \'${controller.api_prefix}/$apiPrefix\',');
     codeList.add('          method: \'POST\',');
