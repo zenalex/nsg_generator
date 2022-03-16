@@ -256,7 +256,7 @@ class NsgGenController {
       codeList.add('');
     }
     codeList.add(
-        'void ApplyServerFilter<T>(INsgTokenExtension user, NsgFindParams findParams) where T : NsgServerDataItem, new();');
+        'void ApplyServerFilter<T>(INsgTokenExtension user, ref NsgFindParams findParams) where T : NsgServerDataItem, new();');
 
     codeList.add('}');
     codeList.add('}');
@@ -313,7 +313,7 @@ class NsgGenController {
           'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${m.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams)');
       codeList.add('{');
       codeList.add(
-          'ApplyServerFilter<${m.genDataItem.typeName}>(user, findParams);');
+          'ApplyServerFilter<${m.genDataItem.typeName}>(user, ref findParams);');
       codeList.add('return ${m.name}Event(user, findParams);');
       codeList.add('}');
       codeList.add('');
@@ -353,7 +353,7 @@ class NsgGenController {
     });
 
     codeList.add(
-        'public void ApplyServerFilter<T>(INsgTokenExtension user, NsgFindParams findParams) where T : NsgServerDataItem, new()');
+        'public void ApplyServerFilter<T>(INsgTokenExtension user, ref NsgFindParams findParams) where T : NsgServerDataItem, new()');
     codeList.add('{');
     codeList.add('T obj = new T();');
     codeList.add('if (findParams == null) findParams = new NsgFindParams();');
