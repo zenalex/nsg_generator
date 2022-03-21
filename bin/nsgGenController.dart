@@ -735,10 +735,10 @@ class NsgGenController {
     nsgGenerator.enums.forEach((_) {
       codeList.add('      NsgDataClient.client');
       if (_ == null) {
-        print('${_.class_name}.genDataItem == null');
+        print('${_.className}.genDataItem == null');
       }
       codeList.add(
-          '       .registerDataItem(${_.class_name}(0, \'\'), remoteProvider: provider);');
+          '       .registerDataItem(${_.className}(0, \'\'), remoteProvider: provider);');
     });
   }
 }
