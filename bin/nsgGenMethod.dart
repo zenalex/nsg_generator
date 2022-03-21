@@ -57,7 +57,7 @@ class NsgGenMethod {
     }
     //POST or GET
     var apiType = '';
-    if (type == 'get') apiType = 'HttpGet';
+    if (type == 'get') apiType = 'HttpPost'; //'HttpGet';
     if (type == 'post') apiType = 'HttpPost';
     codeList.add('[$apiType]');
     codeList.add(

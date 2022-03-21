@@ -221,10 +221,29 @@ class NsgGenDataItem {
     codeList.add('}');
     codeList.add('');
     codeList.add(
-        'public override void PrepareFindParams(NsgFindParams findParams)');
+        'private static NsgCompare ClientCompareToNsgCompare(NsgClientCompare clientCompare)');
     codeList.add('{');
     codeList.add(
-        'findParams.SearchCriteriaXml = GetNsgCompareFromXml(findParams.SearchCriteriaXml).ToXml();');
+        'var cmp = new NsgCompare((NsgSoft.Database.NsgLogicalOperator)clientCompare.LogicalOperator);');
+    codeList.add('foreach (var i in clientCompare.ParamList)');
+    codeList.add('{');
+    codeList.add(
+        'cmp.Add(i.Name, i.Value, (NsgSoft.Database.NsgComparison)i.ComparisonOperator);');
+    codeList.add('}');
+    codeList.add('return cmp;');
+    codeList.add('}');
+    codeList.add('');
+    codeList.add(
+        'public override void PrepareFindParams(NsgFindParams findParams)');
+    codeList.add('{');
+    codeList
+        .add('var cmp = GetNsgCompareFromXml(findParams.SearchCriteriaXml);');
+    codeList.add('if (findParams.Compare != null)');
+    codeList.add('{');
+    codeList.add('cmp.Add(ClientCompareToNsgCompare(findParams.Compare));');
+    codeList.add('ReplaceCompareParameterNames(cmp);');
+    codeList.add('}');
+    codeList.add('findParams.SearchCriteriaXml = cmp.ToXml();');
     codeList.add('findParams.Sorting = PrepareFieldNames(findParams.Sorting);');
     codeList.add(
         'findParams.ReadNestedField = PrepareFieldNames(findParams.ReadNestedField);');
