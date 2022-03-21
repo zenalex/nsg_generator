@@ -6,16 +6,16 @@ import 'nsgGenCSProject.dart';
 import 'nsgGenerator.dart';
 
 class NsgGenEnum {
-  final String class_name;
+  final String className;
   final String dataTypeFile;
   String description;
   List<NsgGenEnumItem> values;
 
-  NsgGenEnum({this.class_name, this.dataTypeFile, this.description = ''});
+  NsgGenEnum({this.className, this.dataTypeFile, this.description = ''});
 
   factory NsgGenEnum.fromJson(Map<String, dynamic> parsedJson) {
     return NsgGenEnum(
-        class_name: parsedJson['class_name'],
+        className: parsedJson['class_name'],
         dataTypeFile: parsedJson['dataTypeFile'],
         description: parsedJson['description']);
   }
@@ -44,29 +44,28 @@ class NsgGenEnum {
       codeList.add('{');
       if (description != null && description.isNotEmpty) {
         codeList.add('/// <summary>');
-        codeList.add('/// ${description}');
+        codeList.add('/// $description');
         codeList.add('/// </summary>');
       }
-      codeList.add('public class ${class_name} : NsgServerEnum');
+      codeList.add('public class $className : NsgServerEnum');
       codeList.add('{');
       values.forEach((i) {
         codeList.add(
-            'public static ${class_name} ${i.codeName} { get; } = new ${class_name}(${i.value}, "${i.name}");');
+            'public static $className ${i.codeName} { get; } = new $className(${i.value}, "${i.name}");');
       });
       codeList.add('');
       codeList.add(
-          'private ${class_name}(int val, string name) : base(val, name) { }');
+          'private $className(int val, string name) : base(val, name) { }');
       codeList.add('');
-      codeList.add('public static IEnumerable<${class_name}> List()');
+      codeList.add('public static IEnumerable<$className> List()');
       codeList.add('{');
       codeList
           .add('return new[] { ${values.map((e) => e.codeName).join(', ')} };');
       codeList.add('}');
       codeList.add('');
-      codeList
-          .add('public static explicit operator ${class_name}(string name)');
+      codeList.add('public static explicit operator $className(string name)');
       codeList.add('{');
-      codeList.add('foreach (${class_name} i in List())');
+      codeList.add('foreach ($className i in List())');
       codeList.add('{');
       codeList.add(
           'if (string.Equals(i.Name, name, StringComparison.OrdinalIgnoreCase))');
@@ -75,9 +74,9 @@ class NsgGenEnum {
       codeList.add('return null;');
       codeList.add('}');
       codeList.add('');
-      codeList.add('public static explicit operator ${class_name}(int value)');
+      codeList.add('public static explicit operator $className(int value)');
       codeList.add('{');
-      codeList.add('foreach (${class_name} i in List())');
+      codeList.add('foreach ($className i in List())');
       codeList.add('{');
       codeList.add('if (i.Value == value)');
       codeList.add('    return i;');
@@ -88,7 +87,7 @@ class NsgGenEnum {
       codeList.add('}');
       NsgGenCSProject.indentCode(codeList);
 
-      var fn = '${nsgGenerator.cSharpPath}/Enums/${class_name}.cs';
+      var fn = '${nsgGenerator.cSharpPath}/Enums/$className.cs';
       //if (!File(fn).existsSync()) {
       await File(fn).writeAsString(codeList.join('\r\n'));
       //}
@@ -106,11 +105,11 @@ class NsgGenEnum {
       NsgGenerator nsgGenerator, List<NsgGenEnum> enums) async {
     if (enums == null || enums.isEmpty) return;
     await Future.forEach<NsgGenEnum>(enums, (element) async {
-      print('loading ${element.class_name}');
+      print('loading ${element.className}');
       await element.load(nsgGenerator);
     });
     await Future.forEach<NsgGenEnum>(enums, (element) async {
-      print('generating ${element.class_name}');
+      print('generating ${element.className}');
       await element.generateCode(nsgGenerator);
     });
     if (nsgGenerator.doDart) {
@@ -123,7 +122,7 @@ class NsgGenEnum {
     var codeList = <String>[];
     enums.forEach((_) {
       codeList.add(
-          "export 'enums/${nsgGenerator.getDartUnderscoreName(_.class_name)}.dart';");
+          "export 'enums/${nsgGenerator.getDartUnderscoreName(_.className)}.dart';");
     });
 
     await File('${nsgGenerator.dartPath}/enums.dart')
@@ -134,19 +133,18 @@ class NsgGenEnum {
     var codeList = <String>[];
     codeList.add('import \'package:nsg_data/nsg_data.dart\';');
     codeList.add('');
-    codeList.add('class $class_name extends NsgEnum {');
+    codeList.add('class $className extends NsgEnum {');
     values.forEach((i) {
       codeList.add(
-          '  static $class_name ${nsgGenerator.getDartName(i.codeName)} = $class_name(${i.value}, \'${i.name}\');');
+          '  static $className ${nsgGenerator.getDartName(i.codeName)} = $className(${i.value}, \'${i.name}\');');
     });
     codeList.add('');
     codeList.add(
-        '  $class_name(dynamic value, String name) : super(value: value, name: name);');
+        '  $className(dynamic value, String name) : super(value: value, name: name);');
     codeList.add('');
     codeList.add('  @override');
     codeList.add('  void initialize() {');
-    codeList
-        .add('    NsgEnum.listAllValues[runtimeType] = <int, $class_name>{');
+    codeList.add('    NsgEnum.listAllValues[runtimeType] = <int, $className>{');
     values.forEach((v) {
       codeList
           .add('      ${v.value}: ${nsgGenerator.getDartName(v.codeName)},');
@@ -156,7 +154,7 @@ class NsgGenEnum {
     codeList.add('}');
     codeList.add('');
     await File(
-            '${nsgGenerator.dartPath}/enums/${nsgGenerator.getDartUnderscoreName(class_name)}.dart')
+            '${nsgGenerator.dartPath}/enums/${nsgGenerator.getDartUnderscoreName(className)}.dart')
         .writeAsString(codeList.join('\r\n'));
   }
 }
