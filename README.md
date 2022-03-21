@@ -96,7 +96,7 @@ Uri сервера
 *1.
 Поле referenceType нужно заполнять, есть type
 - ссылочный ("type": "Reference")
-- список объектов ("type": "List<Reference>")
+- список объектов ("type": "List < Reference >")
 - перечисление ("type": "Enum")
 
 
