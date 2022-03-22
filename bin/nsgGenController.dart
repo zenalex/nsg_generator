@@ -524,7 +524,15 @@ class NsgGenController {
       codeList.add('NsgSorting sorting = new NsgSorting();');
       codeList.add('if (findParams != null)');
       codeList.add('{');
+      codeList.add('if (findParams.Compare != null)');
+      codeList.add('{');
+      codeList.add(
+          'cmp = new ServerT().ClientCompareToNsgCompare(findParams.Compare);');
+      codeList.add('}');
+      codeList.add('else');
+      codeList.add('{');
       codeList.add('cmp = NsgCompare.FromXml(findParams.SearchCriteriaXml);');
+      codeList.add('}');
       codeList
           .add('sorting = new ServerT().GetNsgSorting(findParams.Sorting);');
       codeList.add('}');

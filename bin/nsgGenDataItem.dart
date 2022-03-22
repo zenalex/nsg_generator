@@ -221,7 +221,7 @@ class NsgGenDataItem {
     codeList.add('}');
     codeList.add('');
     codeList.add(
-        'private static NsgCompare ClientCompareToNsgCompare(NsgClientCompare clientCompare)');
+        'public NsgCompare ClientCompareToNsgCompare(NsgClientCompare clientCompare)');
     codeList.add('{');
     codeList.add(
         'var cmp = new NsgCompare((NsgSoft.Database.NsgLogicalOperator)clientCompare.LogicalOperator);');
@@ -230,6 +230,7 @@ class NsgGenDataItem {
     codeList.add(
         'cmp.Add(i.Name, i.Value, (NsgSoft.Database.NsgComparison)i.ComparisonOperator);');
     codeList.add('}');
+    codeList.add('ReplaceCompareParameterNames(cmp);');
     codeList.add('return cmp;');
     codeList.add('}');
     codeList.add('');
@@ -241,7 +242,6 @@ class NsgGenDataItem {
     codeList.add('if (findParams.Compare != null)');
     codeList.add('{');
     codeList.add('cmp.Add(ClientCompareToNsgCompare(findParams.Compare));');
-    codeList.add('ReplaceCompareParameterNames(cmp);');
     codeList.add('}');
     codeList.add('findParams.SearchCriteriaXml = cmp.ToXml();');
     codeList.add('findParams.Sorting = PrepareFieldNames(findParams.Sorting);');
