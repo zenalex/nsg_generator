@@ -224,7 +224,9 @@ class NsgGenDataItem {
         'public NsgCompare ClientCompareToNsgCompare(NsgClientCompare clientCompare)');
     codeList.add('{');
     codeList.add(
-        'var cmp = new NsgCompare((NsgSoft.Database.NsgLogicalOperator)clientCompare.LogicalOperator);');
+        'var cmp = new NsgCompare(clientCompare.LogicalOperator == null ? NsgSoft.Database.NsgLogicalOperator.And :');
+    codeList.add(
+        '    (NsgSoft.Database.NsgLogicalOperator)clientCompare.LogicalOperator);');
     codeList.add('foreach (var i in clientCompare.ParamList)');
     codeList.add('{');
     codeList.add(
@@ -237,13 +239,16 @@ class NsgGenDataItem {
     codeList.add(
         'public override void PrepareFindParams(NsgFindParams findParams)');
     codeList.add('{');
-    codeList
-        .add('var cmp = GetNsgCompareFromXml(findParams.SearchCriteriaXml);');
     codeList.add('if (findParams.Compare != null)');
     codeList.add('{');
-    codeList.add('cmp.Add(ClientCompareToNsgCompare(findParams.Compare));');
+    codeList.add('var cmp = findParams.CompareServer;');
+    codeList.add('if (cmp == null) cmp = new NsgCompare();');
+    codeList
+        .add('var nsgCompare = ClientCompareToNsgCompare(findParams.Compare);');
+    codeList.add('cmp.Add(new NsgCompareParam("USER_COMPARE", nsgCompare));');
+    codeList.add('ReplaceCompareParameterNames(cmp);');
+    codeList.add('findParams.CompareServer = cmp;');
     codeList.add('}');
-    codeList.add('findParams.SearchCriteriaXml = cmp.ToXml();');
     codeList.add('findParams.Sorting = PrepareFieldNames(findParams.Sorting);');
     codeList.add(
         'findParams.ReadNestedField = PrepareFieldNames(findParams.ReadNestedField);');
@@ -263,10 +268,10 @@ class NsgGenDataItem {
     codeList.add(
         'public static void AddNsgCompare(NsgFindParams findParams, NsgCompare cmp)');
     codeList.add('{');
-    codeList.add(
-        'var inCmp = NsgSoft.DataObjects.NsgCompare.FromXml(findParams.SearchCriteriaXml);');
+    codeList.add('var inCmp = findParams.CompareServer;');
+    codeList.add('if (inCmp == null) inCmp = new NsgCompare();');
     codeList.add('inCmp.Add(cmp);');
-    codeList.add('findParams.SearchCriteriaXml = inCmp.ToXml();');
+    codeList.add('findParams.CompareServer = inCmp;');
     codeList.add('}');
     codeList.add('}');
     codeList.add('}');

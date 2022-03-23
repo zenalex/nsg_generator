@@ -360,13 +360,8 @@ class NsgGenController {
     codeList.add('obj.PrepareFindParams(findParams);');
     if (hasMetadata) {
       codeList.add('');
-      codeList.add(
-          'var cmp = string.IsNullOrWhiteSpace(findParams.SearchCriteriaXml) ?');
-      codeList.add('    new NsgSoft.DataObjects.NsgCompare() :');
-      codeList.add(
-          '    NsgSoft.DataObjects.NsgCompare.FromXml(findParams.SearchCriteriaXml);');
-      codeList.add('OnGetControllerCompare(user, obj, cmp);');
-      codeList.add('findParams.SearchCriteriaXml = cmp.ToXml();');
+      codeList
+          .add('OnGetControllerCompare(user, obj, findParams.CompareServer);');
       codeList.add('');
     }
     codeList.add('OnApplyServerFilter(user, obj, findParams);');
@@ -524,15 +519,7 @@ class NsgGenController {
       codeList.add('NsgSorting sorting = new NsgSorting();');
       codeList.add('if (findParams != null)');
       codeList.add('{');
-      codeList.add('if (findParams.Compare != null)');
-      codeList.add('{');
-      codeList.add(
-          'cmp = new ServerT().ClientCompareToNsgCompare(findParams.Compare);');
-      codeList.add('}');
-      codeList.add('else');
-      codeList.add('{');
-      codeList.add('cmp = NsgCompare.FromXml(findParams.SearchCriteriaXml);');
-      codeList.add('}');
+      codeList.add('cmp = findParams.CompareServer;');
       codeList
           .add('sorting = new ServerT().GetNsgSorting(findParams.Sorting);');
       codeList.add('}');
