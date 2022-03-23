@@ -163,7 +163,7 @@ class NsgGenFunction {
             '${p.type}.Parse(body["${p.name}"].ToString(), System.Globalization.CultureInfo.InvariantCulture)';
       } else {
         pStr +=
-            '(body["${p.name}"] as Newtonsoft.Json.Linq.JObject).ToObject<${p.returnType}>()';
+            '(body["${p.name}"] as Newtonsoft.Json.Linq.JObject)?.ToObject<${p.returnType}>() ?? new ${p.returnType}()';
       }
       codeList.add(pStr + ';');
     });
@@ -237,7 +237,7 @@ class NsgGenFunction {
     codeList
         .add('      var res = await NsgDataRequest<$dartType>().requestItem(');
     codeList
-        .add('          function: \'${controller.api_prefix}/$apiPrefix\',');
+        .add('          function: \'/${controller.api_prefix}/$apiPrefix\',');
     codeList.add('          method: \'POST\',');
     codeList.add('          filter: filter,');
     codeList.add('          autoRepeate: true,');
