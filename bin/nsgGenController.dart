@@ -362,12 +362,7 @@ class NsgGenController {
     codeList.add('T obj = new T();');
     codeList.add('if (findParams == null) findParams = new NsgFindParams();');
     codeList.add('obj.PrepareFindParams(findParams);');
-    if (hasMetadata) {
-      codeList.add('');
-      codeList
-          .add('OnGetControllerCompare(user, obj, findParams.CompareServer);');
-      codeList.add('');
-    }
+    codeList.add('OnGetControllerCompare(user, obj, findParams);');
     codeList.add('OnApplyServerFilter(user, obj, findParams);');
     codeList.add('obj.ApplyServerFilter(user, findParams);');
     codeList.add('}');
@@ -498,11 +493,9 @@ class NsgGenController {
       await element.generateControllerImplMethod(codeList, nsgGenerator, this);
       codeList.add('');
     });
-    if (hasMetadata) {
-      codeList.add(
-          'public void OnGetControllerCompare(INsgTokenExtension user, NsgServerDataItem obj, NsgSoft.DataObjects.NsgCompare cmp) { }');
-      codeList.add('');
-    }
+    codeList.add(
+        'public void OnGetControllerCompare(INsgTokenExtension user, NsgServerDataItem obj, NsgFindParams findParams) { }');
+    codeList.add('');
     codeList.add(
         'public void OnApplyServerFilter(INsgTokenExtension user, NsgServerDataItem obj, NsgFindParams findParams) { }');
 
