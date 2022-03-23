@@ -149,6 +149,12 @@ class NsgGenFunction {
     codeList.add('{');
     codeList.add('var user = await authController.GetUserByToken(Request);');
     params.forEach((p) {
+      if (p.type == 'Date' || p.type == 'DateTime') {
+        codeList.add(
+            'if (!body.ContainsKey("${p.name}") || !DateTime.TryParse(body["${p.name}"].ToString(), out DateTime ${p.name})) ${p.name} = DateTime.Now;');
+        return;
+      }
+      //if (!body.ContainsKey("date") || !DateTime.TryParse(body["date"].ToString(), out DateTime date)) date = DateTime.Now;
       var pStr = '${p.returnType} ${p.name} = ';
       if (p.type == 'String') {
         pStr += 'body["${p.name}"].ToString()';
