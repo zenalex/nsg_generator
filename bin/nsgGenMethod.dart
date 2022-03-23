@@ -11,9 +11,9 @@ class NsgGenMethod {
   final String description;
   final String apiPrefix;
   final String authorize;
-  final String type;
+  final String getterType;
   final String dataTypeFlie;
-  final bool allowRequest;
+  final bool allowGetter;
   final bool allowPost;
   final bool allowDelete;
 
@@ -24,9 +24,9 @@ class NsgGenMethod {
       this.description,
       this.apiPrefix,
       this.authorize,
-      this.type,
+      this.getterType,
       this.dataTypeFlie,
-      this.allowRequest,
+      this.allowGetter,
       this.allowPost,
       this.allowDelete});
 
@@ -36,19 +36,23 @@ class NsgGenMethod {
         description: parsedJson['description'],
         apiPrefix: parsedJson['api_prefix'],
         authorize: parsedJson['authorize'],
-        type: parsedJson['type'],
+        getterType: parsedJson.containsKey('getterType')
+            ? parsedJson['getterType']
+            : parsedJson['type'],
         dataTypeFlie: parsedJson['dataTypeFile'],
-        allowRequest: parsedJson['allowRequest'] != 'false',
+        allowGetter: parsedJson['allowGetter'] != 'false',
         allowPost: parsedJson['allowPost'] == 'true',
         allowDelete: parsedJson['allowDelete'] == 'true');
   }
 
   Future generateCode(List<String> codeList, NsgGenerator nsgGenerator,
       NsgGenController controller, NsgGenMethod method) async {
-    codeList.add('/// <summary>');
-    codeList.add('/// $description');
-    codeList.add('/// </summary>');
-    if (allowRequest) {
+    if (allowGetter || allowPost || allowDelete) {
+      codeList.add('/// <summary>');
+      codeList.add('/// $description');
+      codeList.add('/// </summary>');
+    }
+    if (allowGetter) {
       codeList.add('[Route("$apiPrefix")]');
 
       //Authorization
@@ -61,7 +65,7 @@ class NsgGenMethod {
       }
       //POST or GET
       var apiType = 'HttpGet';
-      if (type == 'post') apiType = 'HttpPost';
+      if (getterType == 'post') apiType = 'HttpPost';
       codeList.add('[$apiType]');
       codeList.add(
           'public async Task<IEnumerable<NsgServerDataItem>> ${method.name}([FromBody] NsgFindParams findParams)');
