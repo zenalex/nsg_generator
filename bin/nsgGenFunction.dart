@@ -145,7 +145,7 @@ class NsgGenFunction {
     if (type == 'get') apiType = 'HttpGet';
     codeList.add('[$apiType]');
     codeList.add(
-        'public async Task<$returnType> $name([FromBody] Dictionary<string, object> body)');
+        'public async Task<IEnumerable<$returnType>> $name([FromBody] Dictionary<string, object> body)');
     codeList.add('{');
     codeList.add('var user = await authController.GetUserByToken(Request);');
     params.forEach((p) {
@@ -179,7 +179,7 @@ class NsgGenFunction {
         paramTNString += ', ' + p.returnType + ' ' + p.name;
       });
     }
-    codeList.add('Task<$returnType> $name($paramTNString);');
+    codeList.add('Task<IEnumerable<$returnType>> $name($paramTNString);');
   }
 
   void generateControllerImplDesignerMethod(List<String> codeList,
@@ -192,7 +192,7 @@ class NsgGenFunction {
         paramNString += ', ' + p.name;
       });
     }
-    codeList.add('public Task<$returnType> $name($paramTNString)');
+    codeList.add('public Task<IEnumerable<$returnType>> $name($paramTNString)');
     codeList.add('    => On$name($paramNString);');
   }
 
@@ -204,7 +204,8 @@ class NsgGenFunction {
         paramTNString += ', ' + p.returnType + ' ' + p.name;
       });
     }
-    codeList.add('public Task<$returnType> On$name($paramTNString)');
+    codeList
+        .add('public Task<IEnumerable<$returnType>> On$name($paramTNString)');
     codeList.add('{');
     codeList.add('throw new NotImplementedException();');
     codeList.add('}');
@@ -228,6 +229,13 @@ class NsgGenFunction {
     params.forEach((p) {
       if (p.type == 'String') {
         codeList.add('    params[\'${p.name}\'] = ${p.name};');
+      } else if (p.type == 'Date' || p.type == 'DateTime') {
+        codeList
+            .add('    params[\'${p.name}\'] = ${p.name}.toIso8601String();');
+      } else if (p.type == 'Reference') {
+        codeList.add('    params[\'${p.name}\'] = ${p.name}.toJson();');
+      } else if (p.type == 'Enum') {
+        codeList.add('    params[\'${p.name}\'] = ${p.name}.value;');
       } else {
         codeList.add('    params[\'${p.name}\'] = ${p.name}.toString();');
       }
