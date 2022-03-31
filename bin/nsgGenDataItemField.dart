@@ -44,7 +44,9 @@ class NsgGenDataItemField {
             (defaultMaxLength.containsKey(parsedJson['type'])
                 ? defaultMaxLength[parsedJson['type']]
                 : 0),
-        description: parsedJson['description'],
+        description: parsedJson.containsKey('description')
+            ? parsedJson['description']
+            : parsedJson['databaseName'],
         apiPrefix: parsedJson['api_prefix'],
         isPrimary: parsedJson['isPrimary'] == 'true',
         referenceName: parsedJson['referenceName'],

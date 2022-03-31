@@ -9,6 +9,7 @@ import 'nsgGenerator.dart';
 
 class NsgGenDataItem {
   final String typeName;
+  final String description;
   final String databaseType;
   final String databaseTypeNamespace;
   final String presentation;
@@ -17,6 +18,7 @@ class NsgGenDataItem {
 
   NsgGenDataItem(
       {this.typeName,
+      this.description,
       this.databaseType,
       this.databaseTypeNamespace,
       this.presentation,
@@ -27,6 +29,9 @@ class NsgGenDataItem {
     var methods = parsedJson['methods'] as List ?? List.empty();
     return NsgGenDataItem(
         typeName: parsedJson['typeName'],
+        description: parsedJson.containsKey('description')
+            ? parsedJson['description']
+            : parsedJson['databaseType'],
         databaseType: parsedJson['databaseType'],
         databaseTypeNamespace: parsedJson['databaseTypeNamespace'],
         presentation: parsedJson['presentation'],
@@ -300,6 +305,13 @@ class NsgGenDataItem {
           '// --------------------------------------------------------------');
       codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
       codeList.add('{');
+      if (description != null && description.isNotEmpty) {
+        codeList.add('/// <summary>');
+        description.split('\n').forEach((descLine) {
+          codeList.add('/// $descLine');
+        });
+        codeList.add('/// </summary>');
+      }
       codeList.add('public partial class $typeName : NsgServerMetadataItem');
       codeList.add('{');
 
@@ -610,16 +622,20 @@ class NsgGenDataItem {
     codeList.add("import 'package:nsg_data/nsg_data.dart';");
     codeList.add(
         "import '../${nsgGenerator.getDartUnderscoreName(nsgGenController.class_name)}_model.dart';");
-    var hasEnums = false;
-    fields.forEach((field) {
+    for (var field in fields) {
       if (field.type == 'Enum') {
-        if (hasEnums) return;
         if (nsgGenerator.enums.isNotEmpty) {
           codeList.add("import '../enums.dart';");
         }
-        hasEnums = true;
+        break;
       }
-    });
+    }
+    if (description != null && description.isNotEmpty) {
+      codeList.add('');
+      description.split('\n').forEach((descLine) {
+        codeList.add('/// $descLine');
+      });
+    }
     codeList.add('class ${typeName}Generated extends NsgDataItem {');
     fields.forEach((_) {
       codeList.add(
