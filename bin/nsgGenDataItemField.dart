@@ -103,7 +103,7 @@ class NsgGenDataItemField {
           '$dartType get $dartName => getFieldValue($fieldNameVar).toString();');
     } else if (type == 'Date' || type == 'DateTime') {
       codeList.add(
-          '$dartType get $dartName => $dartType.parse(getFieldValue($fieldNameVar));');
+          '$dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
     } else if (type == 'int') {
       codeList.add(
           '$dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
