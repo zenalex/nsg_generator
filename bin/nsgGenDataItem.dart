@@ -104,21 +104,11 @@ class NsgGenDataItem {
     codeList.add('}');
     codeList.add('');
     codeList.add(
-        'public static IEnumerable<T> FindAll<T>(NsgMultipleObject obj, NsgCompare cmp, NsgSorting sorting, int count = 0)');
+        'public static IEnumerable<T> FindAll<T>(NsgMultipleObject obj, NsgCompare cmp, NsgSorting sorting, int count = 100)');
     codeList.add('    where T : NsgServerMetadataItem, new()');
     codeList.add('{');
-    codeList.add('Func<NsgMultipleObject[]> findAll;');
-    codeList.add('int _count = count;');
-    codeList.add('var dataObj = obj;');
-    codeList.add('if (_count == 0)');
-    codeList.add('{');
-    codeList.add(
-        'if (sorting == null || sorting.Count == 0) findAll = () => dataObj.FindAll(cmp);');
-    codeList.add('else findAll = () => dataObj.FindAll(cmp, sorting);');
-    codeList.add('}');
-    codeList.add(
-        'else findAll = () => dataObj.FindAll(ref _count, 0, sorting, cmp);');
-    codeList.add('foreach (var i in findAll())');
+    codeList.add('int _count = Math.Min(count, 100);');
+    codeList.add('foreach (var i in obj.FindAll(ref _count, 0, sorting, cmp))');
     codeList.add('{');
     codeList.add('yield return new T { NSGObject = i };');
     codeList.add('}');
