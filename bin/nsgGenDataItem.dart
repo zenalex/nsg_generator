@@ -369,7 +369,11 @@ class NsgGenDataItem {
         } else if (el.dartType == 'double') {
           codeList.add('${el.name} = (double)nsgObject.${el.dbName};');
         } else if (['String', 'string'].contains(el.dartType)) {
-          codeList.add('${el.name} = nsgObject.${el.dbName}.ToString();');
+          if (el.type == 'Guid') {
+            codeList.add('${el.name} = nsgObject.${el.dbName};');
+          } else {
+            codeList.add('${el.name} = nsgObject.${el.dbName}.ToString();');
+          }
         } else if (el.dartType == 'Reference' || el.dartType == 'Image') {
           codeList
               .add('${el.name} = nsgObject.${el.dbName}?.Value.ToString();');
@@ -532,10 +536,14 @@ class NsgGenDataItem {
         codeList.add('/// </remarks> ');
         codeList.add('public string ${element.name} { get; set; }');
       } else {
-        if (!element.name.endsWith('Id')) {
-          codeList.add('[StringLength(${element.maxLength})]');
+        if (element.type == 'Guid') {
+          codeList.add('public Guid ${element.name} { get; set; }');
+        } else {
+          if (!element.name.endsWith('Id')) {
+            codeList.add('[StringLength(${element.maxLength})]');
+          }
+          codeList.add('public string ${element.name} { get; set; }');
         }
-        codeList.add('public string ${element.name} { get; set; }');
       }
       if (element.type == 'Image') nsgMethod.addImageMethod(element);
       codeList.add('');

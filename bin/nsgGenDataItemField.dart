@@ -67,11 +67,12 @@ class NsgGenDataItemField {
 
   String get dartType {
     if (type == 'Date') return 'DateTime';
+    if (type == 'Guid') return 'String';
     return type;
   }
 
   String get nsgDataType {
-    if (type == 'String') {
+    if (type == 'String' || type == 'Guid') {
       return 'NsgDataStringField';
     } else if (type == 'Date' || type == 'DateTime') {
       return 'NsgDataDateField';
@@ -98,7 +99,7 @@ class NsgGenDataItemField {
   }
 
   void writeGetter(NsgGenController nsgGenController, List<String> codeList) {
-    if (type == 'String') {
+    if (type == 'String' || type == 'Guid') {
       codeList.add(
           '$dartType get $dartName => getFieldValue($fieldNameVar).toString();');
     } else if (type == 'Date' || type == 'DateTime') {
