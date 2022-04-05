@@ -518,14 +518,14 @@ class NsgGenController {
       codeList.add('{');
       codeList.add('NsgCompare cmp = new NsgCompare();');
       codeList.add('NsgSorting sorting = new NsgSorting();');
+      codeList.add('var obj = new ServerT { NSGObject = nsgMultipleObject };');
       codeList.add('if (findParams != null)');
       codeList.add('{');
       codeList.add('cmp = findParams.CompareServer;');
-      codeList
-          .add('sorting = new ServerT().GetNsgSorting(findParams.Sorting);');
+      codeList.add('sorting = obj.GetNsgSorting(findParams.Sorting);');
       codeList.add('}');
-      codeList.add(
-          'var res = NsgServerMetadataItem.FindAll<ServerT>(nsgMultipleObject, cmp, sorting);');
+      codeList
+          .add('var res = NsgServerMetadataItem.FindAll(obj, cmp, sorting);');
       codeList.add('return res;');
       codeList.add('}');
       codeList.add('#endregion');

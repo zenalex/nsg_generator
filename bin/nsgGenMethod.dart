@@ -15,6 +15,7 @@ class NsgGenMethod {
   final String dataTypeFlie;
   final bool allowGetter;
   final bool allowPost;
+  final bool checkLastModifiedDate;
   final bool allowDelete;
 
   NsgGenDataItem genDataItem;
@@ -28,6 +29,7 @@ class NsgGenMethod {
       this.dataTypeFlie,
       this.allowGetter,
       this.allowPost,
+      this.checkLastModifiedDate,
       this.allowDelete});
 
   factory NsgGenMethod.fromJson(Map<String, dynamic> parsedJson) {
@@ -42,6 +44,7 @@ class NsgGenMethod {
         dataTypeFlie: parsedJson['dataTypeFile'],
         allowGetter: parsedJson['allowGetter'] != 'false',
         allowPost: parsedJson['allowPost'] == 'true',
+        checkLastModifiedDate: parsedJson['checkLastModifiedDate'] == 'true',
         allowDelete: parsedJson['allowDelete'] == 'true');
   }
 
@@ -111,6 +114,7 @@ class NsgGenMethod {
     }
     //Generate post data method
     if (allowPost) {
+      method.genDataItem.allowPost = checkLastModifiedDate;
       codeList.add('[Route("$apiPrefix/Post")]');
       //Authorization
       if (authorize == 'anonymous') {

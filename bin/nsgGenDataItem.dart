@@ -13,8 +13,10 @@ class NsgGenDataItem {
   final String databaseType;
   final String databaseTypeNamespace;
   final String presentation;
+  final int maxHttpGetItems;
   final List<NsgGenDataItemField> fields;
   final List<NsgGenFunction> methods;
+  bool allowPost = false;
 
   NsgGenDataItem(
       {this.typeName,
@@ -22,6 +24,7 @@ class NsgGenDataItem {
       this.databaseType,
       this.databaseTypeNamespace,
       this.presentation,
+      this.maxHttpGetItems,
       this.fields,
       this.methods});
 
@@ -35,6 +38,7 @@ class NsgGenDataItem {
         databaseType: parsedJson['databaseType'],
         databaseTypeNamespace: parsedJson['databaseTypeNamespace'],
         presentation: parsedJson['presentation'],
+        maxHttpGetItems: parsedJson['maxHttpGetItems'],
         fields: (parsedJson['fields'] as List)
             .map((i) => NsgGenDataItemField.fromJson(i))
             .toList(),
@@ -62,6 +66,9 @@ class NsgGenDataItem {
     codeList.add('{');
     codeList.add('NSGObject = obj;');
     codeList.add('}');
+    codeList.add('');
+    codeList.add('[JsonIgnore]');
+    codeList.add('public int MaxHttpGetItems = 100;');
     codeList.add('');
     codeList.add('[JsonIgnore]');
     codeList.add('public virtual NsgMultipleObject NSGObject { get; set; }');
@@ -114,7 +121,19 @@ class NsgGenDataItem {
     codeList.add('}');
     codeList.add('}');
     codeList.add('');
-
+    codeList.add(
+        'public static IEnumerable<T> FindAll<T>(T obj, NsgCompare cmp, NsgSorting sorting, int count = 0)');
+    codeList.add('    where T : NsgServerMetadataItem, new()');
+    codeList.add('{');
+    codeList.add('if (count == 0) count = obj.MaxHttpGetItems;');
+    codeList.add('int _count = Math.Min(count, 100);');
+    codeList.add(
+        'foreach (var i in obj.NSGObject.FindAll(ref _count, 0, sorting, cmp))');
+    codeList.add('{');
+    codeList.add('yield return new T { NSGObject = i };');
+    codeList.add('}');
+    codeList.add('}');
+    codeList.add('');
     codeList.add('public virtual bool PostNsgObject() => false;');
     codeList.add('');
     codeList.add(
@@ -308,8 +327,16 @@ class NsgGenDataItem {
       //FromData
       codeList.add('public $typeName() : this(null) { }');
       codeList.add('');
-      codeList.add(
-          'public $typeName($databaseType dataObject) : base(dataObject) { }');
+      if (maxHttpGetItems == null) {
+        codeList.add(
+            'public $typeName($databaseType dataObject) : base(dataObject) { }');
+      } else {
+        codeList.add(
+            'public $typeName($databaseType dataObject) : base(dataObject)');
+        codeList.add('{');
+        codeList.add('MaxHttpGetItems = $maxHttpGetItems;');
+        codeList.add('}');
+      }
       codeList.add('');
       if (presentation != null && presentation.isNotEmpty) {
         codeList.add('public override string ToString() => $presentation;');
@@ -355,6 +382,9 @@ class NsgGenDataItem {
           codeList.add('${el.name} = nsgObject.${el.dbName};');
         }
       });
+      if (allowPost) {
+        codeList.add('LastModified = nsgObject["_lastModified"].ToDateTime();');
+      }
       codeList.add('OnSetNsgObject();');
       codeList.add('}');
       codeList.add('}');
@@ -382,6 +412,12 @@ class NsgGenDataItem {
       codeList.add('throw new Exception("ERROR: WOI45");');
       codeList.add('}');
       codeList.add('clone = nsgObject.CloneObject as NsgMultipleObject;');
+      if (allowPost) {
+        codeList.add('if (clone["_lastModified"].ToDateTime() > LastModified)');
+        codeList.add('{');
+        codeList.add('throw new Exception("ERROR: CONFLICT");');
+        codeList.add('}');
+      }
       codeList.add('nsgObject.Edit();');
       codeList.add('}');
       fields.where((f) => f != pkField).forEach((el) {
@@ -417,6 +453,9 @@ class NsgGenDataItem {
           codeList.add('nsgObject.${el.dbName} = ${el.name};');
         }
       });
+      if (allowPost) {
+        codeList.add('nsgObject["_lastModified"].Value = LastModified;');
+      }
       codeList.add('OnBeforePostNsgObject(nsgObject);');
       codeList.add('bool posted = nsgObject.Post();');
       codeList.add('if (posted) this.NSGObject = nsgObject;');
@@ -501,6 +540,10 @@ class NsgGenDataItem {
       if (element.type == 'Image') nsgMethod.addImageMethod(element);
       codeList.add('');
     });
+    if (allowPost) {
+      codeList.add('public DateTime LastModified { get; set; }');
+      codeList.add('');
+    }
 
     methods.forEach((element) {
       var paramTNString = '';
@@ -679,7 +722,7 @@ class NsgGenDataItem {
       }
     }
     codeList.add('  @override');
-    codeList.add('  NsgDataItem getNewObject() => ${typeName}();');
+    codeList.add('  NsgDataItem getNewObject() => $typeName();');
     codeList.add('');
 
     fields.forEach((_) {
@@ -692,6 +735,12 @@ class NsgGenDataItem {
       _.writeSetter(nsgGenController, codeList);
     });
     codeList.add('');
+    if (allowPost) {
+      var lm = NsgGenDataItemField(name: 'LastModified', type: 'DateTime');
+      lm.writeGetter(nsgGenController, codeList);
+      lm.writeSetter(nsgGenController, codeList);
+      codeList.add('');
+    }
     codeList.add('  @override');
     codeList.add('  String get apiRequestItems {');
     codeList.add(
