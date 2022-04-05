@@ -325,7 +325,7 @@ class NsgGenDataItem {
       codeList.add('{');
 
       //FromData
-      codeList.add('public $typeName() : this(null) { }');
+      codeList.add('public $typeName() : this($databaseType.Новый()) { }');
       codeList.add('');
       if (maxHttpGetItems == null) {
         codeList.add(
