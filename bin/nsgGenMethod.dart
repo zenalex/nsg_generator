@@ -104,10 +104,10 @@ class NsgGenMethod {
         codeList
             .add('var user = await authController.GetUserByToken(Request);');
         codeList
-            .add('return await controller.${method.name}(user, findParams);');
+            .add('return await controller.Get<${method.name}>(user, findParams);');
       } else {
         codeList
-            .add('return await controller.${method.name}(null, findParams);');
+            .add('return await controller.Get<${method.name}>(null, findParams);');
       }
       codeList.add('}');
       codeList.add('');
@@ -135,10 +135,10 @@ class NsgGenMethod {
         codeList
             .add('var user = await authController.GetUserByToken(Request);');
         codeList
-            .add('return await controller.${method.name}Post(user, items);');
+            .add('return await controller.Post<${method.name}>(user, items);');
       } else {
         codeList
-            .add('return await controller.${method.name}Post(null, items);');
+            .add('return await controller.Post<${method.name}>(null, items);');
       }
       codeList.add('}');
       codeList.add('');
@@ -166,10 +166,10 @@ class NsgGenMethod {
         codeList
             .add('var user = await authController.GetUserByToken(Request);');
         codeList
-            .add('return await controller.${method.name}Delete(user, items);');
+            .add('return await controller.Delete<${method.name}>(user, items);');
       } else {
         codeList
-            .add('return await controller.${method.name}Delete(null, items);');
+            .add('return await controller.Delete<${method.name}>(null, items);');
       }
       codeList.add('}');
       codeList.add('');
