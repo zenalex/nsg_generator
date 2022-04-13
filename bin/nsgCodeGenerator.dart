@@ -18,9 +18,10 @@ void main(List<String> args) async {
     if (args.contains('-force') ||
         args.contains('-overwrite') ||
         args.contains('-forceoverwrite')) {
-      print('All files will be overwritten. Proceed? (y/n)');
-      var yn = stdin.readLineSync(encoding: utf8);
-      forceOverwrite = yn.toLowerCase() == 'y';
+      print('Overwrite all files? (y/n/cancel)');
+      var yn = stdin.readLineSync(encoding: utf8).toLowerCase();
+      if (yn != 'y' && yn != 'n') return;
+      forceOverwrite = yn == 'y';
     }
   } else {
     print('Enter path: ');
