@@ -6,9 +6,9 @@ import 'nsgGenEnum.dart';
 
 class NsgGenerator {
   final String targetFramework;
-  final String cSharpPath;
+  String cSharpPath;
   final String cSharpNamespace;
-  final String dartPath;
+  String dartPath;
   final List<NsgGenController> controllers;
   final List<NsgGenEnum> enums;
   bool doCSharp;
