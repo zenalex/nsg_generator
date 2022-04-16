@@ -696,19 +696,19 @@ class NsgGenDataItem {
     fields.forEach((_) {
       if (_.isPrimary) {
         codeList.add(
-            '   addfield(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+            '   addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
       } else {
         if (_.type == 'String' &&
             _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
           codeList.add(
-              '   addfield(${_.nsgDataType}(${_.fieldNameVar}, maxLength: ${_.maxLength}), primaryKey: ${_.isPrimary});');
+              '   addField(${_.nsgDataType}(${_.fieldNameVar}, maxLength: ${_.maxLength}), primaryKey: ${_.isPrimary});');
         } else if (_.type == 'double' &&
             _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
           codeList.add(
-              '   addfield(${_.nsgDataType}(${_.fieldNameVar}, maxDecimalPlaces: ${_.maxLength}), primaryKey: ${_.isPrimary});');
+              '   addField(${_.nsgDataType}(${_.fieldNameVar}, maxDecimalPlaces: ${_.maxLength}), primaryKey: ${_.isPrimary});');
         } else {
           codeList.add(
-              '   addfield(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+              '   addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
         }
       }
     });
