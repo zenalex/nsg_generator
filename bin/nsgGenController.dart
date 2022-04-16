@@ -221,24 +221,19 @@ class NsgGenController {
     codeList.add('{');
     codeList.add('public interface ${class_name}Interface');
     codeList.add('{');
-
+    codeList.add(
+        'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Get<T>(INsgTokenExtension user, NsgFindParams findParams)');
+    codeList.add('    where T : NsgServerDataItem, new();');
+    codeList.add('');
+    codeList.add(
+        'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post<T>(INsgTokenExtension user, IEnumerable<T> items)');
+    codeList.add('    where T : NsgServerDataItem, new();');
+    codeList.add('');
+    codeList.add(
+        'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Delete<T>(INsgTokenExtension user, IEnumerable<T> items)');
+    codeList.add('    where T : NsgServerDataItem, new();');
     var publicMdf = (nsgGenerator.targetFramework == 'net5.0' ? 'public ' : '');
     methods.forEach((_) {
-      /// 'NsgServerDataItem' == _.genDataItem.typeName
-      //if (_.authorize != 'none') {
-      if (_.allowGetter) {
-        codeList.add(
-            '${publicMdf}Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${_.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams);');
-      }
-      if (_.allowPost) {
-        codeList.add(
-            '${publicMdf}Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${_.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
-      }
-      if (_.allowDelete) {
-        codeList.add(
-            '${publicMdf}Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${_.name}Delete(INsgTokenExtension user, [FromBody] IEnumerable<${_.genDataItem.typeName}> items);');
-      }
-      //}
       _.imageFieldList.forEach((el) {
         if (_.authorize != 'none') {
           codeList.add(
@@ -299,9 +294,24 @@ class NsgGenController {
         'public partial class $impl_controller_name : ${class_name}Interface');
     codeList.add('{');
     codeList.add(
-        'private delegate Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> HttpGetEventHandler(INsgTokenExtension user, NsgFindParams findParams);');
+        'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Get<T>(INsgTokenExtension user, NsgFindParams findParams) where T : NsgServerDataItem, new()');
+    codeList.add('{');
+    codeList.add('ApplyServerFilter<T>(user, ref findParams);');
+    codeList.add('return new T().Get(user, findParams);');
+    codeList.add('}');
+    codeList.add('');
     codeList.add(
-        'private delegate Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> HttpPostEventHandler<T>(INsgTokenExtension user, IEnumerable<NsgServerDataItem> items) where T : NsgServerDataItem;');
+        'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post<T>(INsgTokenExtension user, IEnumerable<T> items) where T : NsgServerDataItem, new()');
+    codeList.add('{');
+    codeList.add('return new T().Post(user, items);');
+    codeList.add('}');
+    codeList.add('');
+    codeList.add(
+        'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Delete<T>(INsgTokenExtension user, IEnumerable<T> items) where T : NsgServerDataItem, new()');
+    codeList.add('{');
+    codeList.add('return new T().Delete(user, items);');
+    codeList.add('}');
+    codeList.add('');
 
     var hasMetadata = false;
     methods.forEach((m) {
@@ -309,33 +319,6 @@ class NsgGenController {
           m.genDataItem.databaseType.isNotEmpty) {
         hasMetadata = true;
       }
-      //if (m.authorize != 'none') {
-      if (m.allowGetter) {
-        codeList.add('private event HttpGetEventHandler ${m.name}Event;');
-        codeList.add(
-            'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${m.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams)');
-        codeList.add('{');
-        codeList.add(
-            'ApplyServerFilter<${m.genDataItem.typeName}>(user, ref findParams);');
-        codeList.add('return ${m.name}Event(user, findParams);');
-        codeList.add('}');
-        codeList.add('');
-      }
-      if (m.allowPost) {
-        codeList.add(
-            'private event HttpPostEventHandler<${m.genDataItem.typeName}> ${m.name}PostEvent;');
-        codeList.add(
-            'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<${m.genDataItem.typeName}> items)');
-        codeList.add('    => ${m.name}PostEvent(user, items);');
-        codeList.add('');
-      }
-      if (m.allowDelete) {
-        codeList.add(
-            'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${m.name}Delete(INsgTokenExtension user, [FromBody] IEnumerable<${m.genDataItem.typeName}> items)');
-        codeList.add('    => On${m.name}Delete(user, items);');
-        codeList.add('');
-      }
-      //}
       m.imageFieldList.forEach((el) {
         if (m.authorize != 'none') {
           codeList.add(
@@ -351,7 +334,7 @@ class NsgGenController {
       });
     });
     await Future.forEach<NsgGenFunction>(functions, (element) async {
-      await element.generateControllerImplDesignerMethod(
+      element.generateControllerImplDesignerMethod(
           codeList, nsgGenerator, this);
       codeList.add('');
     });
@@ -371,7 +354,7 @@ class NsgGenController {
     codeList.add('}');
     NsgGenCSProject.indentCode(codeList);
     var fn =
-        '${nsgGenerator.cSharpPath}/Controllers/${impl_controller_name}.Designer.cs';
+        '${nsgGenerator.cSharpPath}/Controllers/$impl_controller_name.Designer.cs';
     await File(fn).writeAsString(codeList.join('\r\n'));
 
     // ${impl_controller_name}.cs
@@ -405,72 +388,11 @@ class NsgGenController {
     codeList.add('{');
     codeList.add('public partial class ${impl_controller_name}');
     codeList.add('{');
-    codeList.add('public ${impl_controller_name}()');
-    codeList.add('{');
+    // codeList.add('public ${impl_controller_name}()');
+    // codeList.add('{');
+    // codeList.add('}');
+    // codeList.add('');
     methods.forEach((m) {
-      if (m.allowGetter) {
-        codeList.add('${m.name}Event += On${m.name};');
-      }
-      if (m.allowPost) {
-        codeList.add('${m.name}PostEvent += On${m.name}Post;');
-      }
-    });
-    codeList.add('}');
-    codeList.add('');
-    methods.forEach((m) {
-      // if (m.authorize != 'none') {
-      if (m.allowGetter) {
-        codeList.add(
-            'private async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> On${m.name}(INsgTokenExtension user, [FromBody] NsgFindParams findParams)');
-        codeList.add('{');
-        if (hasMetadata &&
-            m.genDataItem.databaseType != null &&
-            m.genDataItem.databaseType.isNotEmpty) {
-          generateImplMetadataGetMethodBody(nsgGenerator, codeList, m);
-        } else {
-          codeList.add('throw new NotImplementedException();');
-        }
-        codeList.add('}');
-        codeList.add('');
-      }
-      if (m.allowPost) {
-        codeList.add(
-            'private async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> On${m.name}Post(INsgTokenExtension user, [FromBody] IEnumerable<NsgServerDataItem> items)');
-        codeList.add('{');
-        if (hasMetadata &&
-            m.genDataItem.databaseType != null &&
-            m.genDataItem.databaseType.isNotEmpty) {
-          codeList.add(
-              'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
-          codeList.add(
-              'RES["results"] = NsgServerMetadataItem.PostAll<${m.genDataItem.typeName}>(items);');
-          codeList.add('return RES;');
-        } else {
-          codeList.add('throw new NotImplementedException();');
-        }
-        codeList.add('}');
-        codeList.add('');
-      }
-      if (m.allowDelete) {
-        codeList.add(
-            'private async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> On${m.name}Delete(INsgTokenExtension user, [FromBody] IEnumerable<NsgServerDataItem> items)');
-        codeList.add('{');
-        if (hasMetadata &&
-            m.genDataItem.databaseType != null &&
-            m.genDataItem.databaseType.isNotEmpty) {
-          codeList.add(
-              'NsgServerMetadataItem.SetDeleteMarkAll<${m.genDataItem.typeName}>(items);');
-          codeList.add(
-              'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
-          codeList.add('RES["results"] = items;');
-          codeList.add('return RES;');
-        } else {
-          codeList.add('throw new NotImplementedException();');
-        }
-        codeList.add('}');
-        codeList.add('');
-      }
-      // }
       m.imageFieldList.forEach((el) {
         if (m.authorize != 'none') {
           codeList.add(
@@ -498,51 +420,19 @@ class NsgGenController {
     codeList.add('');
     codeList.add(
         'public void OnApplyServerFilter(INsgTokenExtension user, NsgServerDataItem obj, NsgFindParams findParams) { }');
-
-    if (hasMetadata) {
-      codeList.add('');
-      codeList.add('#region Common');
-      codeList.add(
-          'private static Dictionary<string, IEnumerable<NsgServerDataItem>> GetResultDictionary<T>(NsgMultipleObject nsgMultipleObject, NsgFindParams findParams)');
-      codeList.add('    where T : NsgServerMetadataItem, new()');
-      codeList.add('{');
-      codeList.add('var res = GetResults<T>(nsgMultipleObject, findParams);');
-      codeList.add(
-          'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
-      codeList.add('RES["results"] = res;');
-      codeList.add('return RES;');
-      codeList.add('}');
-      codeList.add('');
-      codeList.add(
-          'private static IEnumerable<ServerT> GetResults<ServerT>(NsgMultipleObject nsgMultipleObject, NsgFindParams findParams) where ServerT : NsgServerMetadataItem, new()');
-      codeList.add('{');
-      codeList.add('NsgCompare cmp = new NsgCompare();');
-      codeList.add('NsgSorting sorting = new NsgSorting();');
-      codeList.add('var obj = new ServerT { NSGObject = nsgMultipleObject };');
-      codeList.add('if (findParams != null)');
-      codeList.add('{');
-      codeList.add('cmp = findParams.CompareServer;');
-      codeList.add('sorting = obj.GetNsgSorting(findParams.Sorting);');
-      codeList.add('}');
-      codeList
-          .add('var res = NsgServerMetadataItem.FindAll(obj, cmp, sorting);');
-      codeList.add('return res;');
-      codeList.add('}');
-      codeList.add('#endregion');
-    }
     codeList.add('}');
     codeList.add('}');
     NsgGenCSProject.indentCode(codeList);
-    fn = '${nsgGenerator.cSharpPath}/Controllers/${impl_controller_name}.cs';
+    fn = '${nsgGenerator.cSharpPath}/Controllers/$impl_controller_name.cs';
     if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
       await File(fn).writeAsString(codeList.join('\r\n'));
     }
   }
 
-  void generateImplMetadataGetMethodBody(
+  static void generateImplMetadataGetMethodBody(
       NsgGenerator nsgGenerator, List<String> codeList, NsgGenMethod m) async {
     codeList.add(
-        'var RES = GetResultDictionary<${m.genDataItem.typeName}>(${m.genDataItem.databaseType}.Новый(), findParams);');
+        'var RES = GetResultDictionary<${m.genDataItem.typeName}>(findParams);');
     codeList.add('');
     var tables = m.genDataItem.fields
         .where((element) => element.type == 'List<Reference>');

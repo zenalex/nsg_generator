@@ -40,7 +40,7 @@ class NsgGenFunction {
   String get dartName => NsgGenerator.generator.getDartName(name);
 
   String get returnType {
-    if (type == 'Reference' || type == 'Enum') {
+    if (type == 'Reference' || type == 'List<Reference>' || type == 'Enum') {
       return referenceType;
     } else if (type == 'Date') {
       return 'DateTime';
@@ -49,7 +49,7 @@ class NsgGenFunction {
   }
 
   String get dartType {
-    if (type == 'Reference' || type == 'Enum') {
+    if (type == 'Reference' || type == 'List<Reference>' || type == 'Enum') {
       return referenceType;
     }
     if (type == 'Date') return 'DateTime';
@@ -71,7 +71,9 @@ class NsgGenFunction {
     } else if (type == 'Image') {
       return 'NsgDataImageField';
     } else if (type == 'Reference') {
-      return 'NsgDataReferenceField<${referenceType}>';
+      return 'NsgDataReferenceField<$referenceType>';
+    } else if (type == 'List<Reference>') {
+      return 'NsgDataReferenceListField<$referenceType>';
     } else {
       print("get nsgDataType for field type $type couldn't be found");
       throw Exception();
@@ -227,8 +229,13 @@ class NsgGenFunction {
       paramTNString = paramTNString.substring(0, paramTNString.length - 2);
     }
 
-    codeList.add(
-        '  Future<$dartType?> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
+    if (type == 'List<Reference>') {
+      codeList.add(
+          '  Future<List<$dartType>?> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
+    } else {
+      codeList.add(
+          '  Future<$dartType?> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
+    }
     codeList.add('    var params = <String, String>{};');
     params.forEach((p) {
       if (p.type == 'String') {
@@ -246,8 +253,13 @@ class NsgGenFunction {
     });
     codeList.add('    final filter = NsgDataRequestParams(params: params);');
     codeList.add('    try {');
-    codeList
-        .add('      var res = await NsgDataRequest<$dartType>().requestItem(');
+    if (type == 'List<Reference>') {
+      codeList.add(
+          '      var res = await NsgDataRequest<$dartType>().requestItems(');
+    } else {
+      codeList.add(
+          '      var res = await NsgDataRequest<$dartType>().requestItem(');
+    }
     codeList
         .add('          function: \'/${controller.api_prefix}/$apiPrefix\',');
     codeList.add('          method: \'POST\',');

@@ -64,7 +64,7 @@ class NsgGenDataItem {
     codeList.add('{');
     codeList.add('public NsgServerMetadataItem(NsgMultipleObject obj)');
     codeList.add('{');
-    codeList.add('NSGObject = obj;');
+    codeList.add('if (obj != null) NSGObject = obj;');
     codeList.add('}');
     codeList.add('');
     codeList.add('[JsonIgnore]');
@@ -99,6 +99,32 @@ class NsgGenDataItem {
     codeList.add('}');
     codeList.add('}');
     codeList.add('');
+    codeList.add('#region Common');
+    codeList.add(
+        'protected Dictionary<string, IEnumerable<NsgServerDataItem>> GetResultDictionary<T>(NsgFindParams findParams) where T : NsgServerMetadataItem, new()');
+    codeList.add('{');
+    codeList.add('var res = GetResults<T>(findParams);');
+    codeList.add(
+        'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
+    codeList.add('RES["results"] = res;');
+    codeList.add('return RES;');
+    codeList.add('}');
+    codeList.add('');
+    codeList.add(
+        'protected IEnumerable<T> GetResults<T>(NsgFindParams findParams) where T : NsgServerMetadataItem, new()');
+    codeList.add('{');
+    codeList.add('NsgCompare cmp = new NsgCompare();');
+    codeList.add('NsgSorting sorting = new NsgSorting();');
+    codeList.add('if (findParams != null)');
+    codeList.add('{');
+    codeList.add('cmp = findParams.CompareServer;');
+    codeList.add('sorting = GetNsgSorting(findParams.Sorting);');
+    codeList.add('}');
+    codeList.add('var res = FindAll<T>(cmp, sorting);');
+    codeList.add('return res;');
+    codeList.add('}');
+    codeList.add('#endregion');
+    codeList.add('');
     codeList.add(
         'public static List<T> FromTable<T>(NsgDataTable table) where T : NsgServerMetadataItem, new()');
     codeList.add('{');
@@ -129,6 +155,19 @@ class NsgGenDataItem {
     codeList.add('int _count = Math.Min(count, 100);');
     codeList.add(
         'foreach (var i in obj.NSGObject.FindAll(ref _count, 0, sorting, cmp))');
+    codeList.add('{');
+    codeList.add('yield return new T { NSGObject = i };');
+    codeList.add('}');
+    codeList.add('}');
+    codeList.add('');
+    codeList.add(
+        'public IEnumerable<T> FindAll<T>(NsgCompare cmp, NsgSorting sorting, int count = 0)');
+    codeList.add('    where T : NsgServerMetadataItem, new()');
+    codeList.add('{');
+    codeList.add('if (count == 0) count = MaxHttpGetItems;');
+    codeList.add('int _count = Math.Min(count, 100);');
+    codeList.add(
+        'foreach (var i in NSGObject.FindAll(ref _count, 0, sorting, cmp))');
     codeList.add('{');
     codeList.add('yield return new T { NSGObject = i };');
     codeList.add('}');
@@ -273,7 +312,7 @@ class NsgGenDataItem {
     codeList.add('{');
     codeList
         .add('AddNsgCompare(findParams, GetObjectCompare(user, findParams));');
-    codeList.add('base.ApplyServerFilter(user, findParams);');
+    // codeList.add('base.ApplyServerFilter(user, findParams);');
     codeList.add('}');
     codeList.add('');
     codeList.add(
@@ -350,7 +389,7 @@ class NsgGenDataItem {
           codeList.add('');
         }
       }
-      codeList.add('private $databaseType nsgObject;');
+      codeList.add('private $databaseType nsgObject = $databaseType.Новый();');
       codeList.add('');
       codeList.add('public override NsgMultipleObject NSGObject');
       codeList.add('{');
@@ -604,11 +643,67 @@ class NsgGenDataItem {
     codeList.clear();
     codeList.add('using System;');
     codeList.add('using System.Collections.Generic;');
+    codeList.add('using System.Linq;');
+    codeList.add('using System.Threading.Tasks;');
+    codeList.add('using NsgServerClasses;');
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
     codeList.add('{');
     codeList.add('public partial class $typeName');
     codeList.add('{');
+
+    //methods.forEach((m) {
+    // if (m.authorize != 'none') {
+    if (nsgMethod.allowGetter) {
+      codeList.add(
+          'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Get(INsgTokenExtension user, NsgFindParams findParams)');
+      codeList.add('{');
+      if (nsgMethod.genDataItem.databaseType != null &&
+          nsgMethod.genDataItem.databaseType.isNotEmpty) {
+        NsgGenController.generateImplMetadataGetMethodBody(
+            nsgGenerator, codeList, nsgMethod);
+      } else {
+        codeList.add('throw new NotImplementedException();');
+      }
+      codeList.add('}');
+      codeList.add('');
+    }
+    if (nsgMethod.allowPost) {
+      codeList.add(
+          'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post(INsgTokenExtension user, IEnumerable<NsgServerDataItem> items)');
+      codeList.add('{');
+      if (nsgMethod.genDataItem.databaseType != null &&
+          nsgMethod.genDataItem.databaseType.isNotEmpty) {
+        codeList.add(
+            'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
+        codeList.add(
+            'RES["results"] = NsgServerMetadataItem.PostAll<${nsgMethod.genDataItem.typeName}>(items);');
+        codeList.add('return RES;');
+      } else {
+        codeList.add('throw new NotImplementedException();');
+      }
+      codeList.add('}');
+      codeList.add('');
+    }
+    if (nsgMethod.allowDelete) {
+      codeList.add(
+          'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Delete(INsgTokenExtension user, IEnumerable<NsgServerDataItem> items)');
+      codeList.add('{');
+      if (nsgMethod.genDataItem.databaseType != null &&
+          nsgMethod.genDataItem.databaseType.isNotEmpty) {
+        codeList.add(
+            'NsgServerMetadataItem.SetDeleteMarkAll<${nsgMethod.genDataItem.typeName}>(items);');
+        codeList.add(
+            'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
+        codeList.add('RES["results"] = items;');
+        codeList.add('return RES;');
+      } else {
+        codeList.add('throw new NotImplementedException();');
+      }
+      codeList.add('}');
+      codeList.add('');
+    }
+    // });
     methods.forEach((element) {
       var paramTNString = '';
       if (element.params != null && element.params.isNotEmpty) {
