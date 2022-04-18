@@ -338,6 +338,7 @@ class NsgGenDataItem {
     codeList.add('using System;');
     codeList.add('using System.Collections.Generic;');
     codeList.add('using System.ComponentModel.DataAnnotations;');
+    codeList.add('using NsgServerClasses;');
     if (databaseType != null && databaseType.isNotEmpty) {
       // NsgGenDataItem.generateNsgServerMetadataItem(nsgGenerator);
       codeList.add('using NsgSoft.DataObjects;');
