@@ -339,7 +339,7 @@ class NsgGenDataItem {
     codeList.add('using System.Collections.Generic;');
     codeList.add('using System.ComponentModel.DataAnnotations;');
     if (databaseType != null && databaseType.isNotEmpty) {
-      NsgGenDataItem.generateNsgServerMetadataItem(nsgGenerator);
+      // NsgGenDataItem.generateNsgServerMetadataItem(nsgGenerator);
       codeList.add('using NsgSoft.DataObjects;');
       if (databaseTypeNamespace != null && databaseTypeNamespace.isNotEmpty) {
         codeList.add('using $databaseTypeNamespace;');

@@ -415,11 +415,13 @@ class NsgGenController {
       await element.generateControllerImplMethod(codeList, nsgGenerator, this);
       codeList.add('');
     });
+    codeList.add('#region Common');
     codeList.add(
         'public void OnGetControllerCompare(INsgTokenExtension user, NsgServerDataItem obj, NsgFindParams findParams) { }');
     codeList.add('');
     codeList.add(
         'public void OnApplyServerFilter(INsgTokenExtension user, NsgServerDataItem obj, NsgFindParams findParams) { }');
+    codeList.add('#endregion');
     codeList.add('}');
     codeList.add('}');
     NsgGenCSProject.indentCode(codeList);
