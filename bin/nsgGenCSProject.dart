@@ -74,6 +74,8 @@ class NsgGenCSProject {
           '    <PackageReference Include="Microsoft.Owin.Security.OAuth" Version="4.2.0" />');
     }
     codeList.add(
+        '    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />');
+    codeList.add(
         '    <PackageReference Include="Microsoft.AspNet.WebApi.OwinSelfHost" Version="5.2.7" />');
     codeList.add(
         '    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="' +
@@ -123,6 +125,7 @@ class NsgGenCSProject {
       codeList.add('}');
       codeList.add('}');
     } else {
+      codeList.add('using Microsoft.Extensions.Logging;');
       codeList.add('using Microsoft.Owin.Hosting;');
       codeList.add('using System;');
       codeList.add('');
@@ -133,11 +136,40 @@ class NsgGenCSProject {
       codeList.add('public static void Main(string[] args)');
       codeList.add('{');
       codeList.add('string baseAddress = "http://127.0.0.1:5000/";');
+      codeList.add('try');
+      codeList.add('{');
       codeList.add('using (WebApp.Start<Startup>(url: baseAddress))');
       codeList.add('{');
+      codeList.add('Logger.LogInformation("Listening on " + baseAddress);');
       codeList.add('Console.ReadLine();');
       codeList.add('}');
       codeList.add('}');
+      codeList.add('catch (Exception e)');
+      codeList.add('{');
+      codeList.add('Logger.LogError(e, "Launch failed.");');
+      codeList.add('}');
+      codeList.add('}');
+      codeList.add('');
+      codeList.add(
+          'public static ILoggerFactory LoggerFactory { get; } = Microsoft.Extensions.Logging.LoggerFactory.Create((builder) =>');
+      codeList.add('{');
+      // codeList.add('builder.AddEventLog();');
+      codeList.add('#if DEBUG');
+      codeList.add('builder.AddFilter((level) =>');
+      codeList.add('{');
+      codeList.add('return true;');
+      codeList.add('});');
+      codeList.add('#endif');
+      codeList.add('builder.AddConsole((options) =>');
+      codeList.add('{');
+      codeList.add('#pragma warning disable CS0618 // Тип или член устарел');
+      codeList.add('options.TimestampFormat = "HH:mm:ss dd.MM.yyyy ";');
+      codeList.add('#pragma warning restore CS0618 // Тип или член устарел');
+      codeList.add('});');
+      codeList.add('});');
+      codeList.add('');
+      codeList.add(
+          'public static ILogger Logger { get; } = LoggerFactory.CreateLogger("ProgramLog");');
       codeList.add('}');
       codeList.add('}');
     }

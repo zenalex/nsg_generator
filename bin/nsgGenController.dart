@@ -63,12 +63,15 @@ class NsgGenController {
       codeList.add('using System;');
       codeList.add('using System.Collections.Generic;');
       codeList.add('using System.Linq;');
+      codeList.add('using System.Net.Http;');
+      codeList.add('using System.Threading;');
       codeList.add('using System.Threading.Tasks;');
       if (nsgGenerator.targetFramework == 'net5.0') {
         codeList.add('using Microsoft.AspNetCore.Mvc;');
         codeList.add('using Microsoft.AspNetCore.Authorization;');
       } else {
         codeList.add('using System.Web.Http;');
+        codeList.add('using System.Web.Http.Controllers;');
         codeList.add('using System.Web.Mvc;');
         codeList
             .add('using HttpGetAttribute = System.Web.Http.HttpGetAttribute;');
@@ -133,7 +136,8 @@ class NsgGenController {
       codeList.add('}');
       codeList.add('');
       if (nsgGenerator.targetFramework != 'net5.0') {
-        codeList.add('public ${class_name}() : this(null) { }');
+        codeList.add(
+            'public $class_name() : this(Program.LoggerFactory.CreateLogger<$class_name>()) { }');
         codeList.add('');
       }
       codeList.add('private static ${class_name} currentController;');
@@ -172,6 +176,28 @@ class NsgGenController {
       codeList.add(
           'NsgServerClasses.AuthController.currentController = authController;');
       codeList.add('}');
+      codeList.add('}');
+      codeList.add('');
+      codeList.add(
+          'public override Task<HttpResponseMessage> ExecuteAsync(HttpControllerContext controllerContext, CancellationToken cancellationToken)');
+      codeList.add('{');
+      codeList.add(
+          '_logger?.LogDebug(controllerContext.Request.RequestUri.ToString());');
+      codeList.add(
+          'return base.ExecuteAsync(controllerContext, cancellationToken).ContinueWith((response) =>');
+      codeList.add('{');
+      codeList.add('if (response.Status == TaskStatus.RanToCompletion)');
+      codeList.add('{');
+      codeList.add(
+          '_logger?.LogInformation(controllerContext.Request.RequestUri.ToString() + " status " + response.Result.StatusCode);');
+      codeList.add('}');
+      codeList.add('else if (response.Status == TaskStatus.Faulted)');
+      codeList.add('{');
+      codeList.add(
+          '_logger?.LogError(response.Exception, controllerContext.Request.RequestUri.ToString() + " status 500");');
+      codeList.add('}');
+      codeList.add('return response.Result;');
+      codeList.add('});');
       codeList.add('}');
       codeList.add('');
       await Future.forEach<NsgGenMethod>(methods, (element) async {
