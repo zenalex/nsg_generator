@@ -418,8 +418,16 @@ class NsgGenDataItem {
           codeList
               .add('${el.name} = nsgObject.${el.dbName}?.Value.ToString();');
           if (el.dartType == 'Reference') {
+            codeList.add('if (ShouldSerialize${el.referenceName}())');
+            codeList.add('{');
+            codeList.add('List<string> serializeFields = new List<string>();');
             codeList.add(
-                '${el.referenceName} = new ${el.referenceType} { NSGObject = nsgObject.${el.dbName} };');
+                'this.SerializeFields.FindAll(s => s.StartsWith("${el.dartName}.") || s.StartsWith("${el.dbName}."))');
+            codeList.add(
+                '    .ForEach(i => serializeFields.Add(i.Substring(i.IndexOf(\'.\') + 1)));');
+            codeList.add(
+                '${el.referenceName} = new ${el.referenceType} { SerializeFields = serializeFields, NSGObject = nsgObject.${el.dbName} };');
+            codeList.add('}');
           }
         } else if (el.dartType == 'Enum') {
           codeList.add('${el.name} = (int)nsgObject.${el.dbName}.Value;');
@@ -583,7 +591,8 @@ class NsgGenDataItem {
             'public ${element.referenceType} ${element.referenceName} { get; set; }');
         codeList.add('public bool ShouldSerialize${element.referenceName}()');
         codeList.add('{');
-        codeList.add('return SerializeFields.Contains("${element.dartName}");');
+        codeList.add(
+            'return SerializeFields.Find(s => s.StartsWith("${element.dartName}") || s.StartsWith("${element.dbName}")) != default;');
         codeList.add('}');
       } else {
         if (element.type == 'Guid') {
