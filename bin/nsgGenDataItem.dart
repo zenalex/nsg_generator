@@ -417,6 +417,10 @@ class NsgGenDataItem {
         } else if (el.dartType == 'Reference' || el.dartType == 'Image') {
           codeList
               .add('${el.name} = nsgObject.${el.dbName}?.Value.ToString();');
+          if (el.dartType == 'Reference') {
+            codeList.add(
+                '${el.referenceName} = new ${el.referenceType} { NSGObject = nsgObject.${el.dbName} };');
+          }
         } else if (el.dartType == 'Enum') {
           codeList.add('${el.name} = (int)nsgObject.${el.dbName}.Value;');
         } else if (el.dartType == 'List<Reference>') {
@@ -575,6 +579,12 @@ class NsgGenDataItem {
         codeList.add('/// <see cref="${element.referenceType}"/> reference');
         codeList.add('/// </remarks> ');
         codeList.add('public string ${element.name} { get; set; }');
+        codeList.add(
+            'public ${element.referenceType} ${element.referenceName} { get; set; }');
+        codeList.add('public bool ShouldSerialize${element.referenceName}()');
+        codeList.add('{');
+        codeList.add('return SerializeFields.Contains("${element.dartName}");');
+        codeList.add('}');
       } else {
         if (element.type == 'Guid') {
           codeList.add('public Guid ${element.name} { get; set; }');
