@@ -189,12 +189,13 @@ class NsgGenController {
       codeList.add('if (response.Status == TaskStatus.RanToCompletion)');
       codeList.add('{');
       codeList.add(
-          '_logger?.LogInformation(controllerContext.Request.RequestUri.ToString() + " status " + response.Result.StatusCode);');
+          '_logger?.LogInformation(controllerContext.Request.RequestUri.ToString() + " -> " + response.Result.StatusCode);');
       codeList.add('}');
       codeList.add('else if (response.Status == TaskStatus.Faulted)');
       codeList.add('{');
       codeList.add(
-          '_logger?.LogError(response.Exception, controllerContext.Request.RequestUri.ToString() + " status 500");');
+          '_logger?.LogError(response.Exception, controllerContext.Request.RequestUri.ToString() + " -> " +');
+      codeList.add('    System.Net.HttpStatusCode.InternalServerError);');
       codeList.add('}');
       codeList.add('return response.Result;');
       codeList.add('});');
