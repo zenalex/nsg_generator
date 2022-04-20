@@ -268,6 +268,8 @@ class NsgGenCSProject {
       codeList.add('using Microsoft.Owin.Security.Jwt;');
       codeList.add('using Microsoft.Owin.Security.OAuth;');
       codeList.add('using System.Web.Http.Validation;');
+      codeList.add('using System.Web.Http.ExceptionHandling;');
+      codeList.add('using NsgServerClasses;');
       codeList.add('');
       codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
       codeList.add('{');
@@ -312,7 +314,11 @@ class NsgGenCSProject {
       codeList.add(
           'config.Filters.Add(new HostAuthenticationFilter(OAuthDefaults.AuthenticationType));');
       codeList.add(
-          'config.Services.Replace(typeof(IBodyModelValidator), new NsgServerClasses.NsgServerModelValidator());');
+          'app.Use<NsgServerLoggingMiddleware>(Program.LoggerFactory.CreateLogger("API"));');
+      codeList.add(
+          'config.Services.Replace(typeof(IExceptionHandler), new NsgServerExceptionHandler(Program.LoggerFactory.CreateLogger("EXCEPTION")));');
+      codeList.add(
+          'config.Services.Replace(typeof(IBodyModelValidator), new NsgServerModelValidator());');
       codeList.add(
           'config.Formatters.JsonFormatter.SerializerSettings.ContractResolver =');
       codeList.add('    new CamelCasePropertyNamesContractResolver();');
