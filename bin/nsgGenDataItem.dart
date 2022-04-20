@@ -16,7 +16,7 @@ class NsgGenDataItem {
   final int maxHttpGetItems;
   final List<NsgGenDataItemField> fields;
   final List<NsgGenFunction> methods;
-  bool allowPost = false;
+  bool checkLastModifiedDate = false;
 
   NsgGenDataItem(
       {this.typeName,
@@ -438,7 +438,7 @@ class NsgGenDataItem {
           codeList.add('${el.name} = nsgObject.${el.dbName};');
         }
       });
-      if (allowPost) {
+      if (checkLastModifiedDate) {
         codeList.add('LastModified = nsgObject["_lastModified"].ToDateTime();');
       }
       codeList.add('OnSetNsgObject();');
@@ -468,7 +468,7 @@ class NsgGenDataItem {
       codeList.add('throw new Exception("ERROR: WOI45");');
       codeList.add('}');
       codeList.add('clone = nsgObject.CloneObject as NsgMultipleObject;');
-      if (allowPost) {
+      if (checkLastModifiedDate) {
         codeList.add('if (clone["_lastModified"].ToDateTime() > LastModified)');
         codeList.add('{');
         codeList.add('throw new Exception("ERROR: CONFLICT");');
@@ -476,6 +476,22 @@ class NsgGenDataItem {
       }
       codeList.add('nsgObject.Edit();');
       codeList.add('}');
+      codeList.add('GetNsgObject(nsgObject);');
+      codeList.add('OnBeforePostNsgObject(nsgObject);');
+      codeList.add('bool posted = nsgObject.Post();');
+      codeList.add('if (posted) this.NSGObject = nsgObject;');
+      codeList.add('OnAfterPostNsgObject(nsgObject, clone, posted);');
+      codeList.add('return posted;');
+      codeList.add('}');
+      codeList.add('finally');
+      codeList.add('{');
+      codeList.add(
+          'if (nsgObject.ObjectState == NsgObjectStates.Edit) nsgObject.Cancel();');
+      codeList.add('}');
+      codeList.add('}');
+      codeList.add('');
+      codeList.add('public void GetNsgObject($databaseType nsgObject)');
+      codeList.add('{');
       fields.where((f) => f != pkField).forEach((el) {
         if (el.dbName == null || el.dbName.isEmpty) {
           //codeList.add('${el.name} = default;');
@@ -501,28 +517,17 @@ class NsgGenDataItem {
         } else if (el.dartType == 'List<Reference>') {
           codeList.add('foreach (var t in ${el.name})');
           codeList.add('{');
-          codeList.add('t.PostNsgObject();');
-          codeList.add(
-              'nsgObject.${el.dbName}.NewRow(t.NSGObject as NsgDataTableRow);');
+          codeList.add('var row = nsgObject.${el.dbName}.NewRow();');
+          codeList.add('t.GetNsgObject(row);');
           codeList.add('}');
         } else {
           codeList.add('nsgObject.${el.dbName} = ${el.name};');
         }
       });
-      if (allowPost) {
+      if (checkLastModifiedDate) {
         codeList.add('nsgObject["_lastModified"].Value = LastModified;');
       }
-      codeList.add('OnBeforePostNsgObject(nsgObject);');
-      codeList.add('bool posted = nsgObject.Post();');
-      codeList.add('if (posted) this.NSGObject = nsgObject;');
-      codeList.add('OnAfterPostNsgObject(nsgObject, clone, posted);');
-      codeList.add('return posted;');
-      codeList.add('}');
-      codeList.add('finally');
-      codeList.add('{');
-      codeList.add(
-          'if (nsgObject.ObjectState == NsgObjectStates.Edit) nsgObject.Cancel();');
-      codeList.add('}');
+      codeList.add('OnGetNsgObject(nsgObject);');
       codeList.add('}');
       codeList.add('');
       codeList.add(
@@ -607,7 +612,7 @@ class NsgGenDataItem {
       if (element.type == 'Image') nsgMethod.addImageMethod(element);
       codeList.add('');
     });
-    if (allowPost) {
+    if (checkLastModifiedDate) {
       codeList.add('public DateTime LastModified { get; set; }');
       codeList.add('');
     }
@@ -858,7 +863,7 @@ class NsgGenDataItem {
       _.writeSetter(nsgGenController, codeList);
     });
     codeList.add('');
-    if (allowPost) {
+    if (checkLastModifiedDate) {
       var lm = NsgGenDataItemField(name: 'LastModified', type: 'DateTime');
       lm.writeGetter(nsgGenController, codeList);
       lm.writeSetter(nsgGenController, codeList);

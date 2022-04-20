@@ -114,7 +114,7 @@ class NsgGenMethod {
     }
     //Generate post data method
     if (allowPost) {
-      method.genDataItem.allowPost = checkLastModifiedDate;
+      method.genDataItem.checkLastModifiedDate = checkLastModifiedDate;
       codeList.add('[Route("$apiPrefix/Post")]');
       //Authorization
       if (authorize == 'anonymous') {
