@@ -440,48 +440,6 @@ class NsgGenController {
     codeList.add(
         'var RES = GetResultDictionary<${m.genDataItem.typeName}>(findParams);');
     codeList.add('');
-    var tables = m.genDataItem.fields
-        .where((element) => element.type == 'List<Reference>');
-    var refs =
-        m.genDataItem.fields.where((element) => element.type == 'Reference');
-    if (tables.isNotEmpty || refs.isNotEmpty) {
-      codeList
-          .add('if (!string.IsNullOrWhiteSpace(findParams?.ReadNestedField))');
-      codeList.add('{');
-      codeList
-          .add('var res = RES["results"].Cast<${m.genDataItem.typeName}>();');
-      codeList.add(
-          'string[] fields = findParams.ReadNestedField.Split(new[] { \',\' }, StringSplitOptions.RemoveEmptyEntries);');
-      codeList.add('foreach (string s in fields)');
-      codeList.add('{');
-      codeList.add('string field = s.Trim();');
-      tables.forEach((table) {
-        if (table.dbName != null && table.dbName.isNotEmpty) {
-          codeList.add('if (field == "${table.dbName}")');
-        } else {
-          return;
-        }
-        codeList.add('{');
-        codeList.add('var refs = res.SelectMany(i => i.${table.name});');
-        codeList.add('RES[field] = refs;');
-        codeList.add('}');
-      });
-      refs.forEach((refField) {
-        if (refField.dbName != null && refField.dbName.isNotEmpty) {
-          codeList.add('if (field == "${refField.dbName}")');
-        } else {
-          return;
-        }
-        codeList.add('{');
-        codeList.add(
-            'var refs = res.Select(i => new ${refField.referenceType} { NSGObject = i.nsgObject.${refField.dbName} });');
-        codeList.add('RES[field] = refs;');
-        codeList.add('}');
-      });
-      codeList.add('}');
-      codeList.add('}');
-      codeList.add('');
-    }
     codeList.add('return RES;');
   }
 

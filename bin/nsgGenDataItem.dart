@@ -336,6 +336,7 @@ class NsgGenDataItem {
     // ${typeName}.Designer.cs
     var codeList = <String>[];
     codeList.add('using System;');
+    codeList.add('using System.Collections;');
     codeList.add('using System.Collections.Generic;');
     codeList.add('using System.ComponentModel.DataAnnotations;');
     codeList.add('using NsgServerClasses;');
@@ -418,13 +419,10 @@ class NsgGenDataItem {
           codeList
               .add('${el.name} = nsgObject.${el.dbName}?.Value.ToString();');
           if (el.dartType == 'Reference') {
-            codeList.add('if (ShouldSerialize${el.referenceName}())');
+            codeList.add('if (Serialize${el.referenceName}())');
             codeList.add('{');
-            codeList.add('List<string> serializeFields = new List<string>();');
             codeList.add(
-                'this.SerializeFields.FindAll(s => s.StartsWith("${el.dartName}.") || s.StartsWith("${el.dbName}."))');
-            codeList.add(
-                '    .ForEach(i => serializeFields.Add(i.Substring(i.IndexOf(\'.\') + 1)));');
+                'List<string> serializeFields = GetNestedSerializeFields("${el.dartName}");');
             codeList.add(
                 '${el.referenceName} = new ${el.referenceType} { SerializeFields = serializeFields, NSGObject = nsgObject.${el.dbName} };');
             codeList.add('}');
@@ -531,6 +529,82 @@ class NsgGenDataItem {
       codeList.add('}');
       codeList.add('');
       codeList.add(
+          'public static Dictionary<NsgMultipleObject, $typeName> ItemCache =');
+      codeList.add('    new Dictionary<NsgMultipleObject, $typeName>();');
+      codeList.add('');
+      codeList.add(
+          'public override Dictionary<string, IEnumerable> GetAggregateNestedFields()');
+      codeList.add('{');
+      codeList.add('var res = new Dictionary<string, IEnumerable>();');
+      codeList.add('foreach (var field in SerializeFields)');
+      codeList.add('{');
+      codeList.add('#region lists');
+      for (var list in fields.where((field) =>
+          field.type == 'List<Reference>' &&
+          field.dbName != null &&
+          field.dbName.isNotEmpty)) {
+        codeList.add('if (field.StartsWith("${list.dartName}"))');
+        codeList.add('{');
+        codeList.add('if (field == "${list.dartName}")');
+        codeList.add('{');
+        codeList.add('res[field] = ${list.name};');
+        codeList.add('}');
+        codeList.add('var sf = GetNestedSerializeFields("${list.dartName}");');
+        codeList.add('if (sf.Count > 0)');
+        codeList.add('{');
+        codeList.add('foreach (var _i in ${list.name})');
+        codeList.add('{');
+        codeList.add('_i.SerializeFields = sf;');
+        codeList.add('foreach (var _j in _i.GetAggregateNestedFields())');
+        codeList.add('{');
+        codeList.add('res["${list.dartName}." + _j.Key] = _j.Value;');
+        codeList.add('}');
+        codeList.add('}');
+        codeList.add('}');
+        codeList.add('}');
+      }
+      codeList.add('#endregion lists');
+      codeList.add('#region references');
+      for (var field in fields.where((field) =>
+          field.type == 'Reference' &&
+          field.dbName != null &&
+          field.dbName.isNotEmpty)) {
+        codeList.add('if (field.StartsWith("${field.dartName}"))');
+        codeList.add('{');
+        codeList.add('if (field == "${field.dartName}")');
+        codeList.add('{');
+        codeList.add('lock (${field.referenceType}.ItemCache)');
+        codeList.add('{');
+        codeList.add(
+            'if (!${field.referenceType}.ItemCache.ContainsKey(this.nsgObject.${field.dbName}))');
+        codeList.add('{');
+        codeList.add(
+            '${field.referenceType}.ItemCache[this.nsgObject.${field.dbName}] = new ${field.referenceType}();');
+        codeList.add('}');
+        codeList.add(
+            '${field.referenceType}.ItemCache[this.nsgObject.${field.dbName}].NSGObject = this.nsgObject.${field.dbName};');
+        codeList.add(
+            'res[field] = new[] { ${field.referenceType}.ItemCache[this.nsgObject.${field.dbName}] };');
+        codeList.add('}');
+        codeList.add('}');
+        codeList.add('var sf = GetNestedSerializeFields("${field.dartName}");');
+        codeList.add('if (sf.Count > 0)');
+        codeList.add('{');
+        codeList.add(
+            '    var refs = new ${field.referenceType} { SerializeFields = sf, NSGObject = this.nsgObject.${field.dbName} };');
+        codeList.add('foreach (var _j in refs.GetAggregateNestedFields())');
+        codeList.add('{');
+        codeList.add('res["${field.dartName}." + _j.Key] = _j.Value;');
+        codeList.add('}');
+        codeList.add('}');
+        codeList.add('}');
+      }
+      codeList.add('#endregion references');
+      codeList.add('}');
+      codeList.add('return res;');
+      codeList.add('}');
+      codeList.add('');
+      codeList.add(
           'public override Dictionary<string, string> GetClientServerNames() => ClientServerNames;');
       codeList.add(
           'public static Dictionary<string, string> ClientServerNames = new Dictionary<string, string>');
@@ -592,9 +666,10 @@ class NsgGenDataItem {
         codeList.add('/// <see cref="${element.referenceType}"/> reference');
         codeList.add('/// </remarks> ');
         codeList.add('public string ${element.name} { get; set; }');
+        codeList.add('[Newtonsoft.Json.JsonIgnore]');
         codeList.add(
             'public ${element.referenceType} ${element.referenceName} { get; set; }');
-        codeList.add('public bool ShouldSerialize${element.referenceName}()');
+        codeList.add('public bool Serialize${element.referenceName}()');
         codeList.add('{');
         codeList.add(
             'return SerializeFields.Find(s => s.StartsWith("${element.dartName}") || s.StartsWith("${element.dbName}")) != default;');
