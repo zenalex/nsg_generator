@@ -590,7 +590,8 @@ class NsgGenDataItem {
         codeList.add('#endregion lists');
         codeList.add('#region references');
         for (var field in refs) {
-          codeList.add('if (field.StartsWith("${field.dartName}"))');
+          codeList.add(
+              'if (field.StartsWith("${field.dartName}") && this.nsgObject.${field.dbName}.Selected)');
           codeList.add('{');
           codeList.add('if (field == "${field.dartName}")');
           codeList.add('{');
@@ -711,7 +712,7 @@ class NsgGenDataItem {
         codeList.add('public bool Serialize${element.referenceName}()');
         codeList.add('{');
         codeList.add(
-            'return SerializeFields.Find(s => s.StartsWith("${element.dartName}") || s.StartsWith("${element.dbName}")) != default;');
+            'return SerializeFields.Find(s => s.StartsWith("${element.dartName}")) != default;');
         codeList.add('}');
       } else {
         if (element.type == 'Guid') {

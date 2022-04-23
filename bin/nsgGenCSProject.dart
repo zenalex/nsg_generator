@@ -315,13 +315,18 @@ class NsgGenCSProject {
           'config.Filters.Add(new HostAuthenticationFilter(OAuthDefaults.AuthenticationType));');
       codeList.add(
           'app.Use<NsgServerLoggingMiddleware>(Program.LoggerFactory.CreateLogger("API"));');
+      codeList.add('config.Services.Replace(typeof(IExceptionHandler),');
       codeList.add(
-          'config.Services.Replace(typeof(IExceptionHandler), new NsgServerExceptionHandler(Program.LoggerFactory.CreateLogger("EXCEPTION")));');
+          '    new NsgServerExceptionHandler(Program.LoggerFactory.CreateLogger("EXCEPTION")));');
       codeList.add(
           'config.Services.Replace(typeof(IBodyModelValidator), new NsgServerModelValidator());');
       codeList.add(
           'config.Formatters.JsonFormatter.SerializerSettings.ContractResolver =');
       codeList.add('    new CamelCasePropertyNamesContractResolver();');
+      codeList.add(
+          'config.Formatters.JsonFormatter.SerializerSettings.DefaultValueHandling =');
+      codeList
+          .add('    Newtonsoft.Json.DefaultValueHandling.IgnoreAndPopulate;');
       codeList.add('app.UseWebApi(config);');
       codeList.add('');
       nsgGenerator.controllers.forEach((controller) {
