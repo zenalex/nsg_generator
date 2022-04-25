@@ -560,15 +560,16 @@ class NsgGenDataItem {
         for (var list in lists) {
           codeList.add('if (field.StartsWith("${list.dartName}"))');
           codeList.add('{');
-          // codeList.add('if (field == "${list.dartName}")');
+          codeList.add('var field0 = field.Split(\'.\')[0];');
+          // codeList.add('if (field0 == "${list.dartName}")');
           // codeList.add('{');
-          codeList.add('if (!res.ContainsKey(field))');
+          codeList.add('if (!res.ContainsKey(field0))');
           codeList.add('{');
-          codeList.add('res[field] = ${list.name};');
+          codeList.add('res[field0] = ${list.name};');
           codeList.add('}');
           codeList.add('else');
           codeList.add('{');
-          codeList.add('res[field] = res[field].Concat(${list.name});');
+          codeList.add('res[field0] = res[field0].Concat(${list.name});');
           codeList.add('}');
           // codeList.add('}');
           codeList
@@ -600,7 +601,8 @@ class NsgGenDataItem {
           codeList.add(
               'if (field.StartsWith("${field.dartName}") && this.nsgObject.${field.dbName}.Selected)');
           codeList.add('{');
-          // codeList.add('if (field == "${field.dartName}")');
+          codeList.add('var field0 = field.Split(\'.\')[0];');
+          // codeList.add('if (field0 == "${field.dartName}")');
           // codeList.add('{');
           codeList.add('lock (${field.referenceType}.ItemCache)');
           codeList.add('{');
@@ -614,13 +616,13 @@ class NsgGenDataItem {
               '${field.referenceType}.ItemCache[this.nsgObject.${field.dbName}].NSGObject = this.nsgObject.${field.dbName};');
           codeList.add(
               'var refs = new[] { ${field.referenceType}.ItemCache[this.nsgObject.${field.dbName}] };');
-          codeList.add('if (!res.ContainsKey(field))');
+          codeList.add('if (!res.ContainsKey(field0))');
           codeList.add('{');
-          codeList.add('res[field] = refs;');
+          codeList.add('res[field0] = refs;');
           codeList.add('}');
           codeList.add('else');
           codeList.add('{');
-          codeList.add('res[field] = res[field].Concat(refs);');
+          codeList.add('res[field0] = res[field0].Concat(refs);');
           codeList.add('}');
           codeList.add('}');
           // codeList.add('}');
