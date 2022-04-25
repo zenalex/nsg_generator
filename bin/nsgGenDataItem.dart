@@ -14,6 +14,7 @@ class NsgGenDataItem {
   final String databaseTypeNamespace;
   final String presentation;
   final int maxHttpGetItems;
+  final String periodFieldName;
   final List<NsgGenDataItemField> fields;
   final List<NsgGenFunction> methods;
   bool checkLastModifiedDate = false;
@@ -25,6 +26,7 @@ class NsgGenDataItem {
       this.databaseTypeNamespace,
       this.presentation,
       this.maxHttpGetItems,
+      this.periodFieldName,
       this.fields,
       this.methods});
 
@@ -39,6 +41,7 @@ class NsgGenDataItem {
         databaseTypeNamespace: parsedJson['databaseTypeNamespace'],
         presentation: parsedJson['presentation'],
         maxHttpGetItems: parsedJson['maxHttpGetItems'],
+        periodFieldName: parsedJson['periodFieldName'],
         fields: (parsedJson['fields'] as List)
             .map((i) => NsgGenDataItemField.fromJson(i))
             .toList(),
@@ -431,8 +434,11 @@ class NsgGenDataItem {
         } else if (el.dartType == 'Enum') {
           codeList.add('${el.name} = (int)nsgObject.${el.dbName}.Value;');
         } else if (el.dartType == 'List<Reference>') {
+          codeList.add('if (Serialize${el.name}())');
+          codeList.add('{');
           codeList.add(
               '${el.name} = FromTable<${el.referenceType}>(nsgObject.${el.dbName});');
+          codeList.add('}');
         } else {
           codeList.add('${el.name} = nsgObject.${el.dbName};');
         }
@@ -689,9 +695,15 @@ class NsgGenDataItem {
       } else if (element.dartType == 'DateTime') {
         codeList.add('public DateTime ${element.name} { get; set; }');
       } else if (element.dartType == 'List<Reference>') {
+        codeList.add('[Newtonsoft.Json.JsonIgnore]');
         codeList.add(
             'public List<${element.referenceType}> ${element.name} { get; set; }');
         codeList.add('    = new List<${element.referenceType}>();');
+        codeList.add('public bool Serialize${element.name}()');
+        codeList.add('{');
+        codeList.add(
+            'return SerializeFields.Find(s => s.StartsWith("${element.dartName}")) != default;');
+        codeList.add('}');
       } else if (element.dartType == 'List<Enum>') {
         codeList.add(
             'public IEnumerable<${element.referenceType}> ${element.name} { get; set; }');
@@ -982,6 +994,11 @@ class NsgGenDataItem {
       var lm = NsgGenDataItemField(name: 'LastModified', type: 'DateTime');
       lm.writeGetter(nsgGenController, codeList);
       lm.writeSetter(nsgGenController, codeList);
+      codeList.add('');
+    }
+    if (periodFieldName != null && periodFieldName.isNotEmpty) {
+      codeList.add('  @override');
+      codeList.add('  String get periodFieldName => name$periodFieldName;');
       codeList.add('');
     }
     codeList.add('  @override');
