@@ -404,49 +404,50 @@ class NsgGenDataItem {
       codeList.add('{');
       codeList.add('nsgObject = value as $databaseType;');
       codeList.add('if (value == null) return;');
-      fields.forEach((el) {
-        if (el.dartType == 'List<Enum>') {
-          codeList.add('${el.name} = ${el.referenceType}.List();');
-        } else if (el.dbName == null || el.dbName.isEmpty) {
-          //codeList.add('${el.name} = default;');
-        } else if (el.dartType == 'int') {
-          codeList.add('${el.name} = (int)nsgObject.${el.dbName};');
-        } else if (el.dartType == 'double') {
-          codeList.add('${el.name} = (double)nsgObject.${el.dbName};');
-        } else if (['String', 'string'].contains(el.dartType)) {
-          if (el.type == 'Guid') {
-            codeList.add('${el.name} = nsgObject.${el.dbName};');
-          } else {
-            codeList.add('${el.name} = nsgObject.${el.dbName}.ToString();');
-          }
-        } else if (el.dartType == 'Reference' || el.dartType == 'Image') {
-          codeList
-              .add('${el.name} = nsgObject.${el.dbName}?.Value.ToString();');
-          if (el.dartType == 'Reference') {
-            codeList.add('if (Serialize${el.referenceName}())');
-            codeList.add('{');
-            codeList.add(
-                'List<string> serializeFields = GetNestedSerializeFields("${el.dartName}");');
-            codeList.add(
-                '${el.referenceName} = new ${el.referenceType} { SerializeFields = serializeFields, NSGObject = nsgObject.${el.dbName} };');
-            codeList.add('}');
-          }
-        } else if (el.dartType == 'Enum') {
-          codeList.add('${el.name} = (int)nsgObject.${el.dbName}.Value;');
-        } else if (el.dartType == 'List<Reference>') {
-          codeList.add('if (Serialize${el.name}())');
-          codeList.add('{');
-          codeList.add(
-              '${el.name} = FromTable<${el.referenceType}>(nsgObject.${el.dbName});');
-          codeList.add('}');
-        } else {
-          codeList.add('${el.name} = nsgObject.${el.dbName};');
-        }
-      });
-      if (checkLastModifiedDate) {
-        codeList.add('LastModified = nsgObject["_lastModified"].ToDateTime();');
-      }
-      codeList.add('OnSetNsgObject();');
+      codeList.add('SetNsgObject(nsgObject);');
+      // fields.forEach((el) {
+      //   if (el.dartType == 'List<Enum>') {
+      //     codeList.add('${el.name} = ${el.referenceType}.List();');
+      //   } else if (el.dbName == null || el.dbName.isEmpty) {
+      //     //codeList.add('${el.name} = default;');
+      //   } else if (el.dartType == 'int') {
+      //     codeList.add('${el.name} = (int)nsgObject.${el.dbName};');
+      //   } else if (el.dartType == 'double') {
+      //     codeList.add('${el.name} = (double)nsgObject.${el.dbName};');
+      //   } else if (['String', 'string'].contains(el.dartType)) {
+      //     if (el.type == 'Guid') {
+      //       codeList.add('${el.name} = nsgObject.${el.dbName};');
+      //     } else {
+      //       codeList.add('${el.name} = nsgObject.${el.dbName}.ToString();');
+      //     }
+      //   } else if (el.dartType == 'Reference' || el.dartType == 'Image') {
+      //     codeList
+      //         .add('${el.name} = nsgObject.${el.dbName}?.Value.ToString();');
+      //     if (el.dartType == 'Reference') {
+      //       codeList.add('if (Serialize${el.referenceName}())');
+      //       codeList.add('{');
+      //       codeList.add(
+      //           'List<string> serializeFields = GetNestedSerializeFields("${el.dartName}");');
+      //       codeList.add(
+      //           '${el.referenceName} = new ${el.referenceType} { SerializeFields = serializeFields, NSGObject = nsgObject.${el.dbName} };');
+      //       codeList.add('}');
+      //     }
+      //   } else if (el.dartType == 'Enum') {
+      //     codeList.add('${el.name} = (int)nsgObject.${el.dbName}.Value;');
+      //   } else if (el.dartType == 'List<Reference>') {
+      //     codeList.add('if (Serialize${el.name}())');
+      //     codeList.add('{');
+      //     codeList.add(
+      //         '${el.name} = FromTable<${el.referenceType}>(nsgObject.${el.dbName});');
+      //     codeList.add('}');
+      //   } else {
+      //     codeList.add('${el.name} = nsgObject.${el.dbName};');
+      //   }
+      // });
+      // if (checkLastModifiedDate) {
+      //   codeList.add('LastModified = nsgObject["_lastModified"].ToDateTime();');
+      // }
+      // codeList.add('OnSetNsgObject();');
       codeList.add('}');
       codeList.add('}');
       codeList.add('');
