@@ -560,8 +560,8 @@ class NsgGenDataItem {
         for (var list in lists) {
           codeList.add('if (field.StartsWith("${list.dartName}"))');
           codeList.add('{');
-          codeList.add('if (field == "${list.dartName}")');
-          codeList.add('{');
+          // codeList.add('if (field == "${list.dartName}")');
+          // codeList.add('{');
           codeList.add('if (!res.ContainsKey(field))');
           codeList.add('{');
           codeList.add('res[field] = ${list.name};');
@@ -570,7 +570,7 @@ class NsgGenDataItem {
           codeList.add('{');
           codeList.add('res[field] = res[field].Concat(${list.name});');
           codeList.add('}');
-          codeList.add('}');
+          // codeList.add('}');
           codeList
               .add('var sf = GetNestedSerializeFields("${list.dartName}");');
           codeList.add('if (sf.Count > 0)');
@@ -600,8 +600,8 @@ class NsgGenDataItem {
           codeList.add(
               'if (field.StartsWith("${field.dartName}") && this.nsgObject.${field.dbName}.Selected)');
           codeList.add('{');
-          codeList.add('if (field == "${field.dartName}")');
-          codeList.add('{');
+          // codeList.add('if (field == "${field.dartName}")');
+          // codeList.add('{');
           codeList.add('lock (${field.referenceType}.ItemCache)');
           codeList.add('{');
           codeList.add(
@@ -623,7 +623,7 @@ class NsgGenDataItem {
           codeList.add('res[field] = res[field].Concat(refs);');
           codeList.add('}');
           codeList.add('}');
-          codeList.add('}');
+          // codeList.add('}');
           codeList
               .add('var sf = GetNestedSerializeFields("${field.dartName}");');
           codeList.add('if (sf.Count > 0)');
