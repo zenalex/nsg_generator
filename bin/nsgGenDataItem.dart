@@ -720,6 +720,8 @@ class NsgGenDataItem {
         codeList.add('/// <remarks> ');
         codeList.add('/// <see cref="${element.referenceType}"/> reference');
         codeList.add('/// </remarks> ');
+        codeList.add(
+            '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000")]');
         codeList.add('public string ${element.name} { get; set; }');
         codeList.add('[Newtonsoft.Json.JsonIgnore]');
         codeList.add(
@@ -735,6 +737,7 @@ class NsgGenDataItem {
         } else {
           if (!element.name.endsWith('Id')) {
             codeList.add('[StringLength(${element.maxLength})]');
+            codeList.add('[System.ComponentModel.DefaultValue("")]');
           }
           codeList.add('public string ${element.name} { get; set; }');
         }
