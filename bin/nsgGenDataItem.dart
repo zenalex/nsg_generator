@@ -536,9 +536,8 @@ class NsgGenDataItem {
       codeList.add('OnGetNsgObject(nsgObject);');
       codeList.add('}');
       codeList.add('');
-      codeList.add(
-          'public static Dictionary<NsgMultipleObject, $typeName> ItemCache =');
-      codeList.add('    new Dictionary<NsgMultipleObject, $typeName>();');
+      codeList.add('public static Dictionary<Guid, $typeName> ItemCache =');
+      codeList.add('    new Dictionary<Guid, $typeName>();');
       codeList.add('');
       var lists = fields.where((field) =>
           field.type == 'List<Reference>' &&
@@ -598,24 +597,26 @@ class NsgGenDataItem {
         codeList.add('#endregion lists');
         codeList.add('#region references');
         for (var field in refs) {
-          codeList.add(
-              'if (field.StartsWith("${field.dartName}") && this.nsgObject.${field.dbName}.Selected)');
+          codeList.add('if (field.StartsWith("${field.dartName}"))');
           codeList.add('{');
           codeList.add('var field0 = field.Split(\'.\')[0];');
+          codeList.add(
+              'var guid0 = (this.nsgObject["${field.dbName}"] as NsgReference).RefID;');
+          codeList.add('if (guid0 == Guid.Empty) continue;');
           // codeList.add('if (field0 == "${field.dartName}")');
           // codeList.add('{');
           codeList.add('lock (${field.referenceType}.ItemCache)');
           codeList.add('{');
-          codeList.add(
-              'if (!${field.referenceType}.ItemCache.ContainsKey(this.nsgObject.${field.dbName}))');
+          codeList
+              .add('if (!${field.referenceType}.ItemCache.ContainsKey(guid0))');
           codeList.add('{');
           codeList.add(
-              '${field.referenceType}.ItemCache[this.nsgObject.${field.dbName}] = new ${field.referenceType}();');
+              '${field.referenceType}.ItemCache[guid0] = new ${field.referenceType}();');
           codeList.add('}');
           codeList.add(
-              '${field.referenceType}.ItemCache[this.nsgObject.${field.dbName}].NSGObject = this.nsgObject.${field.dbName};');
+              '${field.referenceType}.ItemCache[guid0].NSGObject = this.nsgObject.${field.dbName};');
           codeList.add(
-              'var refs = new[] { ${field.referenceType}.ItemCache[this.nsgObject.${field.dbName}] };');
+              'var refs = new[] { ${field.referenceType}.ItemCache[guid0] };');
           codeList.add('if (!res.ContainsKey(field0))');
           codeList.add('{');
           codeList.add('res[field0] = refs;');
