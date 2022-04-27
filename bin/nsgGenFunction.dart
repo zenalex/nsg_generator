@@ -27,7 +27,7 @@ class NsgGenFunction {
         type: parsedJson['type'],
         description: parsedJson['description'],
         apiPrefix: parsedJson['api_prefix'],
-        authorize: parsedJson['authorize'],
+        authorize: parsedJson['authorize'] ?? 'none',
         referenceName: parsedJson['referenceName'],
         referenceType: parsedJson['referenceType'],
         params: parsedJson.containsKey('params')
@@ -128,7 +128,7 @@ class NsgGenFunction {
 
   void generateControllerMethod(List<String> codeList,
       NsgGenerator nsgGenerator, NsgGenController controller) async {
-    var paramNString = 'user';
+    var paramNString = controller.useAuthorization ? 'user' : 'null';
     if (params != null && params.isNotEmpty) {
       params.forEach((p) {
         paramNString += ', ' + p.name;
@@ -139,7 +139,8 @@ class NsgGenFunction {
     codeList.add('/// </summary>');
     codeList.add('[Route("$apiPrefix")]');
     //Authorization
-    if (authorize == 'anonymous') {
+    if (!controller.useAuthorization) {
+    } else if (authorize == 'anonymous') {
       codeList.add('[Authorize]');
     } else if (authorize == 'user') {
       codeList.add('[Authorize(Roles = UserRoles.User)]');
@@ -153,7 +154,9 @@ class NsgGenFunction {
     codeList.add(
         'public async Task<IEnumerable<$returnType>> $name([FromBody] Dictionary<string, object> body)');
     codeList.add('{');
-    codeList.add('var user = await authController.GetUserByToken(Request);');
+    if (controller.useAuthorization) {
+      codeList.add('var user = await authController.GetUserByToken(Request);');
+    }
     params.forEach((p) {
       if (p.type == 'Date' || p.type == 'DateTime') {
         codeList.add(
