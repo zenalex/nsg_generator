@@ -9,6 +9,7 @@ class NsgGenerator {
   String cSharpPath;
   final String cSharpNamespace;
   String dartPath;
+  final String applicationName;
   final List<NsgGenController> controllers;
   final List<NsgGenEnum> enums;
   bool doCSharp;
@@ -23,6 +24,7 @@ class NsgGenerator {
       this.cSharpPath,
       this.cSharpNamespace,
       this.dartPath,
+      this.applicationName,
       this.controllers,
       this.enums});
 
@@ -40,6 +42,7 @@ class NsgGenerator {
         cSharpPath: parsedJson['cSharpPath'],
         cSharpNamespace: parsedJson['cSharpNamespace'],
         dartPath: parsedJson['dartPath'],
+        applicationName: parsedJson['applicationName'] ?? 'application',
         controllers: (parsedJson['controller'] as List)
             .map((i) => NsgGenController.fromJson(i))
             .toList(),

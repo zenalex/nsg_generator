@@ -522,7 +522,8 @@ class NsgGenController {
     codeList.add('  NsgDataProvider? provider;');
     codeList.add('  @override');
     codeList.add('  Future onInit() async {');
-    codeList.add('    provider ??= NsgDataProvider(firebaseToken: \'\');');
+    codeList.add(
+        '    provider ??= NsgDataProvider(applicationName: \'${nsgGenerator.applicationName}\', firebaseToken: \'\');');
     codeList.add("  provider!.serverUri = '$serverUri';");
     codeList.add('  ');
     addRegisterDataItems(nsgGenerator, codeList);
