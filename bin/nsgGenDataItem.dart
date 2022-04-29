@@ -668,7 +668,6 @@ class NsgGenDataItem {
       codeList.add('');
       //ToData
     } else {
-      codeList.add('using NsgServerClasses;');
       codeList.add('');
       codeList.add(
           '// --------------------------------------------------------------');
@@ -699,7 +698,9 @@ class NsgGenDataItem {
       } else if (element.dartType == 'DateTime') {
         codeList.add('public DateTime ${element.name} { get; set; }');
       } else if (element.dartType == 'List<Reference>') {
-        codeList.add('[Newtonsoft.Json.JsonIgnore]');
+        if (element.alwaysReturnNested != null && !element.alwaysReturnNested) {
+          codeList.add('[Newtonsoft.Json.JsonIgnore]');
+        }
         codeList.add(
             'public List<${element.referenceType}> ${element.name} { get; set; }');
         codeList.add('    = new List<${element.referenceType}>();');
@@ -724,7 +725,9 @@ class NsgGenDataItem {
         codeList.add(
             '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000")]');
         codeList.add('public string ${element.name} { get; set; }');
-        codeList.add('[Newtonsoft.Json.JsonIgnore]');
+        if (element.alwaysReturnNested != null && !element.alwaysReturnNested) {
+          codeList.add('[Newtonsoft.Json.JsonIgnore]');
+        }
         codeList.add(
             'public ${element.referenceType} ${element.referenceName} { get; set; }');
         codeList.add('public bool Serialize${element.referenceName}()');
@@ -737,7 +740,9 @@ class NsgGenDataItem {
           codeList.add('public Guid ${element.name} { get; set; }');
         } else {
           if (!element.name.endsWith('Id')) {
-            codeList.add('[StringLength(${element.maxLength})]');
+            if (element.maxLength > 0) {
+              codeList.add('[StringLength(${element.maxLength})]');
+            }
             codeList.add('[System.ComponentModel.DefaultValue("")]');
           }
           codeList.add('public string ${element.name} { get; set; }');

@@ -28,7 +28,7 @@ class NsgGenCSProject {
     codeList.add('<Project Sdk="Microsoft.NET.Sdk.Web">');
     codeList.add('');
     codeList.add('  <PropertyGroup>');
-    codeList.add('    <TargetFramework>${targetFramework}</TargetFramework>');
+    codeList.add('    <TargetFramework>$targetFramework</TargetFramework>');
     codeList.add('  </PropertyGroup>');
     codeList.add('');
     codeList.add(
@@ -39,7 +39,7 @@ class NsgGenCSProject {
     codeList.add('  <ItemGroup>');
     codeList.add('    <Reference Include="NsgServerClasses">');
     codeList.add(
-        '      <HintPath>..\\..\\NsgServerClasses\\bin\\Debug\\${targetFramework}\\NsgServerClasses.dll</HintPath>');
+        '      <HintPath>..\\..\\NsgServerClasses\\bin\\Debug\\$targetFramework\\NsgServerClasses.dll</HintPath>');
     codeList.add('    </Reference>');
     if (targetFramework != 'net5.0') {
       codeList.add('    <Reference Include="System.Web" />');
