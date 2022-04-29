@@ -8,12 +8,11 @@ void main(List<String> args) async {
   var nsgArgs = NsgGeneratorArgs();
   if (args.isNotEmpty) {
     nsgArgs.serviceConfigPath = args[0];
-    if (args.contains('-csharp')) {
-      nsgArgs.doCSharp = true;
-    } else if (args.contains('-dart')) {
-      nsgArgs.doDart = true;
-    } else {
-      nsgArgs.doCSharp = nsgArgs.doDart = true;
+    var doCSharp = args.contains('-csharp');
+    var doDart = args.contains('-dart');
+    if (doCSharp != doDart) {
+      nsgArgs.doCSharp = doCSharp;
+      nsgArgs.doDart = doDart;
     }
     if (args.contains('-force') ||
         args.contains('-overwrite') ||
@@ -23,6 +22,9 @@ void main(List<String> args) async {
       if (yn != 'y' && yn != 'n') return;
       nsgArgs.forceOverwrite = yn == 'y';
     }
+    nsgArgs.copyCsproj = args.contains('-copyCsproj');
+    nsgArgs.copyProgramCs = args.contains('-copyProgramCs');
+    nsgArgs.copyStartupCs = args.contains('-copyStartupCs');
     for (var i in args) {
       if (i.startsWith('csharp:')) {
         nsgArgs.cSharpPath = i.substring(i.indexOf(':') + 1).trim();
@@ -34,7 +36,6 @@ void main(List<String> args) async {
   } else {
     print('Enter path: ');
     nsgArgs.serviceConfigPath = stdin.readLineSync(encoding: utf8);
-    nsgArgs.doCSharp = nsgArgs.doDart = true;
   }
   startGenerator(nsgArgs);
 }
@@ -45,6 +46,9 @@ void startGenerator(NsgGeneratorArgs args) async {
   generator.doCSharp = args.doCSharp;
   generator.doDart = args.doDart;
   generator.forceOverwrite = args.forceOverwrite;
+  generator.copyCsproj = args.copyCsproj;
+  generator.copyProgramCs = args.copyProgramCs;
+  generator.copyStartupCs = args.copyStartupCs;
   if (args.cSharpPath.isNotEmpty) {
     generator.cSharpPath = args.cSharpPath;
   }

@@ -797,7 +797,7 @@ class NsgGenDataItem {
     codeList.add('}');
     codeList.add('}');
 
-    var fn = '${nsgGenerator.cSharpPath}/Models/${typeName}.Designer.cs';
+    var fn = '${nsgGenerator.cSharpPath}/Models/$typeName.Designer.cs';
     //if (!File(fn).existsSync()) {
     NsgGenCSProject.indentCode(codeList);
     await File(fn).writeAsString(codeList.join('\r\n'));
@@ -903,7 +903,7 @@ class NsgGenDataItem {
     });
     codeList.add('}');
     codeList.add('}');
-    fn = '${nsgGenerator.cSharpPath}/Models/${typeName}.cs';
+    fn = '${nsgGenerator.cSharpPath}/Models/$typeName.cs';
     if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
       NsgGenCSProject.indentCode(codeList);
       await File(fn).writeAsString(codeList.join('\r\n'));
@@ -1031,7 +1031,7 @@ class NsgGenDataItem {
     codeList.add(
         "import '${nsgGenerator.genPathName}/${nsgGenerator.getDartUnderscoreName(typeName)}.g.dart';");
     codeList.add('');
-    codeList.add('class ${typeName} extends ${typeName}Generated {');
+    codeList.add('class $typeName extends ${typeName}Generated {');
     methods.forEach((_) {
       _.writeMethod(nsgGenController, codeList);
     });

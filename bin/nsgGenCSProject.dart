@@ -11,15 +11,17 @@ class NsgGenCSProject {
 
   static void _generateCsproj(NsgGenerator nsgGenerator) {
     var csprojPath =
-        nsgGenerator.cSharpPath + '/${nsgGenerator.cSharpNamespace}.csproj';
+        '${nsgGenerator.cSharpPath}/${nsgGenerator.cSharpNamespace}.csproj';
     var file = File(csprojPath);
     if (file.existsSync() && !nsgGenerator.forceOverwrite) return;
-    var prepFile = File(
-        '${nsgGenerator.jsonPath}\\${nsgGenerator.cSharpNamespace}.csproj');
-    if (prepFile.existsSync()) {
-      print('copying .csproj');
-      prepFile.copy(csprojPath);
-      return;
+    if (nsgGenerator.copyCsproj) {
+      var prepFile = File(
+          '${nsgGenerator.jsonPath}/${nsgGenerator.cSharpNamespace}.csproj');
+      if (prepFile.existsSync()) {
+        print('copying .csproj');
+        prepFile.copy(csprojPath);
+        return;
+      }
     }
     var targetFramework = nsgGenerator.targetFramework ?? 'net5.0';
     if (targetFramework.isEmpty) targetFramework = 'net5.0';
@@ -91,10 +93,17 @@ class NsgGenCSProject {
   }
 
   static void _generateProgramCS(NsgGenerator nsgGenerator) {
-    var file = File(nsgGenerator.cSharpPath + '/Program.cs');
+    var file = File('${nsgGenerator.cSharpPath}/Program.cs');
     if (file.existsSync() && !nsgGenerator.forceOverwrite) return;
+    if (nsgGenerator.copyProgramCs) {
+      var prepFile = File('${nsgGenerator.jsonPath}/Program.cs');
+      if (prepFile.existsSync()) {
+        print('copying Project.cs');
+        prepFile.copy('${nsgGenerator.cSharpPath}/Program.cs');
+        return;
+      }
+    }
     print('generating Program.cs');
-    // TODO: store Program.cs in the target /serviceConfig
     var codeList = <String>[];
     if (nsgGenerator.targetFramework == 'net5.0') {
       codeList.add('using Microsoft.AspNetCore.Hosting;');
@@ -178,10 +187,17 @@ class NsgGenCSProject {
   }
 
   static void _generateStartupCS(NsgGenerator nsgGenerator) {
-    var file = File(nsgGenerator.cSharpPath + '/Startup.cs');
+    var file = File('${nsgGenerator.cSharpPath}/Startup.cs');
     if (file.existsSync() && !nsgGenerator.forceOverwrite) return;
+    if (nsgGenerator.copyStartupCs) {
+      var prepFile = File('${nsgGenerator.jsonPath}/Startup.cs');
+      if (prepFile.existsSync()) {
+        print('copying Startup.cs');
+        prepFile.copy('${nsgGenerator.cSharpPath}/Startup.cs');
+        return;
+      }
+    }
     print('generating Startup.cs');
-    // TODO: store Startup.cs in the target /serviceConfig
     var codeList = <String>[];
     if (nsgGenerator.targetFramework == 'net5.0') {
       codeList.add('using Microsoft.AspNetCore.Builder;');

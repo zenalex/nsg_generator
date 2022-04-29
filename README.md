@@ -409,6 +409,18 @@ dart bin\nsgCodeGenerator.dart C:\GeneratorConfig [-csharp] [-dart] [-force|-ove
 -overwrite
 -forceoverwrite
 ```
+- Если в папке найден файл .csproj, скопировать его
+```
+-copyCsproj
+```
+- Если в папке найден файл Program.cs, скопировать его
+```
+-copyProgramCs
+```
+- Если в папке найден файл Startup.cs, скопировать его
+```
+-copyStartupCs
+```
 - Указать путь для генерации проекта C# (вместо указанного в [generation_config.json](#1-описание-структуры-generation_config))
 ```
 csharp:C:\Server

@@ -23,7 +23,7 @@ class NsgGenEnum {
   Future load(NsgGenerator nsgGenerator) async {
     //print('$class_name Enum initializing');
     var text =
-        await File('${nsgGenerator.jsonPath}/${dataTypeFile}').readAsString();
+        await File('${nsgGenerator.jsonPath}/$dataTypeFile').readAsString();
     var parsedEnumJson = json.decode(text);
     values = (parsedEnumJson['values'] as List)
         .map((i) => NsgGenEnumItem(

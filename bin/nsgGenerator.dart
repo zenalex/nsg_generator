@@ -15,6 +15,9 @@ class NsgGenerator {
   bool doCSharp;
   bool doDart;
   bool forceOverwrite;
+  bool copyCsproj;
+  bool copyProgramCs;
+  bool copyStartupCs;
 
   String jsonPath;
   static NsgGenerator generator;

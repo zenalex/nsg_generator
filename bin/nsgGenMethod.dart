@@ -217,7 +217,7 @@ class NsgGenMethod {
   Future loadGenDataItem(NsgGenerator nsgGenerator) async {
     print('$name genDataItem initializing');
     var text =
-        await File('${nsgGenerator.jsonPath}/${dataTypeFlie}').readAsString();
+        await File('${nsgGenerator.jsonPath}/$dataTypeFlie').readAsString();
     genDataItem = NsgGenDataItem.fromJson(json.decode(text));
     print('$name genDataItem initialized');
   }
