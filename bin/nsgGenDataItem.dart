@@ -539,6 +539,30 @@ class NsgGenDataItem {
       codeList.add('public static Dictionary<Guid, $typeName> ItemCache =');
       codeList.add('    new Dictionary<Guid, $typeName>();');
       codeList.add('');
+      codeList
+          .add('public override void PopulateItemCache(Guid[] guids = null)');
+      codeList.add('{');
+      codeList.add('if (ItemCache.Count == 0) return;');
+      codeList.add('NsgCompare cmp = new NsgCompare()');
+      codeList.add(
+          '    .Add(NsgSoft.Common.NsgDataFixedFields._ID, ItemCache.Select(i => i.Key).ToArray(), NsgSoft.Database.NsgComparison.In);');
+      codeList.add('if (guids != null)');
+      codeList.add('{');
+      codeList.add(
+          'cmp.Add(NsgSoft.Common.NsgDataFixedFields._ID, guids, NsgSoft.Database.NsgComparison.In);');
+      codeList.add('}');
+      codeList.add('var all = ItemCache.First().Value.NSGObject.FindAll(cmp);');
+      codeList.add('foreach (var i in ItemCache)');
+      codeList.add('{');
+      codeList.add(
+          'var exact = all.FirstOrDefault(j => (Guid)j[NsgSoft.Common.NsgDataFixedFields._ID].Value == i.Key);');
+      codeList.add('if (exact != null)');
+      codeList.add('{');
+      codeList.add('i.Value.NSGObject = exact;');
+      codeList.add('}');
+      codeList.add('}');
+      codeList.add('}');
+      codeList.add('');
       var lists = fields.where((field) =>
           field.type == 'List<Reference>' &&
           field.dbName != null &&
@@ -613,8 +637,8 @@ class NsgGenDataItem {
           codeList.add(
               '${field.referenceType}.ItemCache[guid0] = new ${field.referenceType}();');
           codeList.add('}');
-          codeList.add(
-              '${field.referenceType}.ItemCache[guid0].NSGObject = this.nsgObject.${field.dbName};');
+          // codeList.add(
+          //     '${field.referenceType}.ItemCache[guid0].NSGObject = this.nsgObject.${field.dbName};');
           codeList.add(
               'var refs = new[] { ${field.referenceType}.ItemCache[guid0] };');
           codeList.add('if (!res.ContainsKey(field0))');
