@@ -539,145 +539,6 @@ class NsgGenDataItem {
       codeList.add('public static Dictionary<Guid, $typeName> ItemCache =');
       codeList.add('    new Dictionary<Guid, $typeName>();');
       codeList.add('');
-      codeList
-          .add('public override void PopulateItemCache(Guid[] guids = null)');
-      codeList.add('{');
-      codeList.add('if (ItemCache.Count == 0) return;');
-      codeList.add('NsgCompare cmp = new NsgCompare()');
-      codeList.add(
-          '    .Add(NsgSoft.Common.NsgDataFixedFields._ID, ItemCache.Select(i => i.Key).ToArray(), NsgSoft.Database.NsgComparison.In);');
-      codeList.add('if (guids != null)');
-      codeList.add('{');
-      codeList.add(
-          'cmp.Add(NsgSoft.Common.NsgDataFixedFields._ID, guids, NsgSoft.Database.NsgComparison.In);');
-      codeList.add('}');
-      codeList.add('var all = ItemCache.First().Value.NSGObject.FindAll(cmp);');
-      codeList.add('foreach (var i in ItemCache)');
-      codeList.add('{');
-      codeList.add(
-          'var exact = all.FirstOrDefault(j => (Guid)j[NsgSoft.Common.NsgDataFixedFields._ID].Value == i.Key);');
-      codeList.add('if (exact != null)');
-      codeList.add('{');
-      codeList.add('i.Value.NSGObject = exact;');
-      codeList.add('}');
-      codeList.add('}');
-      codeList.add('}');
-      codeList.add('');
-      var lists = fields.where((field) =>
-          field.type == 'List<Reference>' &&
-          field.dbName != null &&
-          field.dbName.isNotEmpty);
-      var refs = fields.where((field) =>
-          field.type == 'Reference' &&
-          field.dbName != null &&
-          field.dbName.isNotEmpty);
-      if (lists.isNotEmpty || refs.isNotEmpty) {
-        codeList.add(
-            'public override Dictionary<string, IEnumerable<NsgServerDataItem>> GetAggregateNestedFields()');
-        codeList.add('{');
-        codeList.add(
-            'var res = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
-        codeList.add('foreach (var field in SerializeFields)');
-        codeList.add('{');
-        codeList.add('#region lists');
-        for (var list in lists) {
-          codeList.add('if (field.StartsWith("${list.dartName}"))');
-          codeList.add('{');
-          codeList.add('var field0 = field.Split(\'.\')[0];');
-          // codeList.add('if (field0 == "${list.dartName}")');
-          // codeList.add('{');
-          codeList.add('if (!res.ContainsKey(field0))');
-          codeList.add('{');
-          codeList.add('res[field0] = ${list.name};');
-          codeList.add('}');
-          codeList.add('else');
-          codeList.add('{');
-          codeList.add('res[field0] = res[field0].Concat(${list.name});');
-          codeList.add('}');
-          // codeList.add('}');
-          codeList
-              .add('var sf = GetNestedSerializeFields("${list.dartName}");');
-          codeList.add('if (sf.Count > 0)');
-          codeList.add('{');
-          codeList.add('foreach (var _i in ${list.name})');
-          codeList.add('{');
-          codeList.add('_i.SerializeFields = sf;');
-          codeList.add('foreach (var _j in _i.GetAggregateNestedFields())');
-          codeList.add('{');
-          codeList.add('if (!res.ContainsKey("${list.dartName}." + _j.Key))');
-          codeList.add('{');
-          codeList.add('res["${list.dartName}." + _j.Key] = _j.Value;');
-          codeList.add('}');
-          codeList.add('else');
-          codeList.add('{');
-          codeList.add(
-              'res["${list.dartName}." + _j.Key] = res["${list.dartName}." + _j.Key].Concat(_j.Value);');
-          codeList.add('}');
-          codeList.add('}');
-          codeList.add('}');
-          codeList.add('}');
-          codeList.add('}');
-        }
-        codeList.add('#endregion lists');
-        codeList.add('#region references');
-        for (var field in refs) {
-          codeList.add('if (field.StartsWith("${field.dartName}"))');
-          codeList.add('{');
-          codeList.add('var field0 = field.Split(\'.\')[0];');
-          codeList.add(
-              'var guid0 = (this.nsgObject["${field.dbName}"] as NsgReference).RefID;');
-          codeList.add('if (guid0 == Guid.Empty) continue;');
-          // codeList.add('if (field0 == "${field.dartName}")');
-          // codeList.add('{');
-          codeList.add('lock (${field.referenceType}.ItemCache)');
-          codeList.add('{');
-          codeList
-              .add('if (!${field.referenceType}.ItemCache.ContainsKey(guid0))');
-          codeList.add('{');
-          codeList.add(
-              '${field.referenceType}.ItemCache[guid0] = new ${field.referenceType}();');
-          codeList.add('}');
-          // codeList.add(
-          //     '${field.referenceType}.ItemCache[guid0].NSGObject = this.nsgObject.${field.dbName};');
-          codeList.add(
-              'var refs = new[] { ${field.referenceType}.ItemCache[guid0] };');
-          codeList.add('if (!res.ContainsKey(field0))');
-          codeList.add('{');
-          codeList.add('res[field0] = refs;');
-          codeList.add('}');
-          codeList.add('else');
-          codeList.add('{');
-          codeList.add('res[field0] = res[field0].Concat(refs);');
-          codeList.add('}');
-          codeList.add('}');
-          // codeList.add('}');
-          codeList
-              .add('var sf = GetNestedSerializeFields("${field.dartName}");');
-          codeList.add('if (sf.Count > 0)');
-          codeList.add('{');
-          codeList.add(
-              'var refs = new ${field.referenceType} { SerializeFields = sf, NSGObject = this.nsgObject.${field.dbName} };');
-          codeList.add('foreach (var _j in refs.GetAggregateNestedFields())');
-          codeList.add('{');
-          codeList.add('if (!res.ContainsKey("${field.dartName}." + _j.Key))');
-          codeList.add('{');
-          codeList.add('res["${field.dartName}." + _j.Key] = _j.Value;');
-          codeList.add('}');
-          codeList.add('else');
-          codeList.add('{');
-          codeList.add(
-              'res["${field.dartName}." + _j.Key] = res["${field.dartName}." + _j.Key].Concat(_j.Value);');
-          codeList.add('}');
-          codeList.add('}');
-          codeList.add('}');
-          codeList.add('}');
-        }
-        codeList.add('#endregion references');
-        codeList.add('}');
-        codeList.add('return res;');
-        codeList.add('}');
-      }
-      codeList.add('');
       codeList.add(
           'public override Dictionary<string, string> GetClientServerNames() => ClientServerNames;');
       codeList.add(
@@ -690,6 +551,20 @@ class NsgGenDataItem {
       });
       codeList.add('};');
       codeList.add('');
+
+      var refs = fields.where((field) => field.type == 'Reference');
+      if (refs.isNotEmpty) {
+        codeList.add(
+            'public override Dictionary<string, string> GetReferenceNames() => ReferenceNames;');
+        codeList.add(
+            'public static Dictionary<string, string> ReferenceNames = new Dictionary<string, string>');
+        codeList.add('{');
+        refs.forEach((field) {
+          codeList.add('["${field.dartName}"] = "${field.referenceName}",');
+        });
+        codeList.add('};');
+        codeList.add('');
+      }
       //ToData
     } else {
       codeList.add('');
