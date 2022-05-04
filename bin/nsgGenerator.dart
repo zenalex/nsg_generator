@@ -109,7 +109,7 @@ class NsgGenerator {
 
   String getDartUnderscoreName(String dn) {
     if (dn == null || dn.isEmpty) return dn;
-    var exp = RegExp(r'(?<=[a-z])[A-Z]');
+    var exp = RegExp(r'(?<=[a-zA-Z])((?<=[a-z])|(?=[A-Z][a-z]))[A-Z]');
     dn =
         dn.replaceAllMapped(exp, (Match m) => ('_' + m.group(0))).toLowerCase();
     return dn;
