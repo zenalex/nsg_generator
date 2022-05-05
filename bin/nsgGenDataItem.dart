@@ -603,11 +603,11 @@ class NsgGenDataItem {
         codeList.add(
             'public List<${element.referenceType}> ${element.name} { get; set; }');
         codeList.add('    = new List<${element.referenceType}>();');
-        codeList.add('public bool Serialize${element.name}()');
-        codeList.add('{');
-        codeList.add(
-            'return SerializeFields.Find(s => s.StartsWith("${element.dartName}")) != default;');
-        codeList.add('}');
+        // codeList.add('public bool Serialize${element.name}()');
+        // codeList.add('{');
+        // codeList.add(
+        //     'return SerializeFields.Find(s => s.StartsWith("${element.dartName}")) != default;');
+        // codeList.add('}');
       } else if (element.dartType == 'List<Enum>') {
         codeList.add(
             'public IEnumerable<${element.referenceType}> ${element.name} { get; set; }');
@@ -629,11 +629,11 @@ class NsgGenDataItem {
         }
         codeList.add(
             'public ${element.referenceType} ${element.referenceName} { get; set; }');
-        codeList.add('public bool Serialize${element.referenceName}()');
-        codeList.add('{');
-        codeList.add(
-            'return SerializeFields.Find(s => s.StartsWith("${element.dartName}")) != default;');
-        codeList.add('}');
+        // codeList.add('public bool Serialize${element.referenceName}()');
+        // codeList.add('{');
+        // codeList.add(
+        //     'return SerializeFields.Find(s => s.StartsWith("${element.dartName}")) != default;');
+        // codeList.add('}');
       } else {
         if (element.type == 'Guid') {
           codeList.add('public Guid ${element.name} { get; set; }');
