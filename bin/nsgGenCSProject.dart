@@ -43,6 +43,7 @@ class NsgGenCSProject {
     codeList.add(
         '      <HintPath>..\\..\\NsgServerClasses\\bin\\Debug\\$targetFramework\\NsgServerClasses.dll</HintPath>');
     codeList.add('    </Reference>');
+    codeList.add('    <Reference Include="System.Configuration" />');
     if (targetFramework != 'net5.0') {
       codeList.add('    <Reference Include="System.Web" />');
     }
@@ -144,7 +145,8 @@ class NsgGenCSProject {
       codeList.add('{');
       codeList.add('public static void Main(string[] args)');
       codeList.add('{');
-      codeList.add('string baseAddress = "http://127.0.0.1:5000/";');
+      codeList.add(
+          'string baseAddress = System.Configuration.ConfigurationManager.AppSettings["URL"] ?? "http://127.0.0.1:5000/";');
       codeList.add('try');
       codeList.add('{');
       codeList.add('using (WebApp.Start<Startup>(url: baseAddress))');
