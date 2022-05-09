@@ -482,7 +482,7 @@ class NsgGenDataItem {
       }
       codeList.add('nsgObject.Edit();');
       codeList.add('}');
-      codeList.add('GetNsgObject(nsgObject);');
+      codeList.add('PopulateNsgObject(nsgObject);');
       codeList.add('OnBeforePostNsgObject(nsgObject);');
       codeList.add('bool posted = nsgObject.Post();');
       codeList.add('if (posted) this.NSGObject = nsgObject;');
@@ -496,7 +496,7 @@ class NsgGenDataItem {
       codeList.add('}');
       codeList.add('}');
       codeList.add('');
-      codeList.add('public void GetNsgObject($databaseType nsgObject)');
+      codeList.add('public void PopulateNsgObject($databaseType nsgObject)');
       codeList.add('{');
       fields.where((f) => f != pkField).forEach((el) {
         if (el.dbName == null || el.dbName.isEmpty) {
@@ -524,7 +524,7 @@ class NsgGenDataItem {
           codeList.add('foreach (var t in ${el.name})');
           codeList.add('{');
           codeList.add('var row = nsgObject.${el.dbName}.NewRow();');
-          codeList.add('t.GetNsgObject(row);');
+          codeList.add('t.PopulateNsgObject(row);');
           codeList.add('}');
         } else {
           codeList.add('nsgObject.${el.dbName} = ${el.name};');
@@ -533,12 +533,12 @@ class NsgGenDataItem {
       if (checkLastModifiedDate) {
         codeList.add('nsgObject["_lastModified"].Value = LastModified;');
       }
-      codeList.add('OnGetNsgObject(nsgObject);');
+      codeList.add('OnPopulateNsgObject(nsgObject);');
       codeList.add('}');
       codeList.add('');
-      codeList.add('public static Dictionary<Guid, $typeName> ItemCache =');
-      codeList.add('    new Dictionary<Guid, $typeName>();');
-      codeList.add('');
+      // codeList.add('public static Dictionary<Guid, $typeName> ItemCache =');
+      // codeList.add('    new Dictionary<Guid, $typeName>();');
+      // codeList.add('');
       codeList.add(
           'public override Dictionary<string, string> GetClientServerNames() => ClientServerNames;');
       codeList.add(
