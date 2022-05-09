@@ -370,14 +370,16 @@ class NsgGenDataItem {
       codeList.add('{');
 
       //FromData
-      codeList.add('public $typeName() : this(null) { }');
+      codeList.add('public $typeName() : this(null, null) { }');
       codeList.add('');
       if (maxHttpGetItems == null) {
         codeList.add(
-            'public $typeName($databaseType dataObject) : base(dataObject) { }');
+            'public $typeName(IEnumerable<string> serializeFields, $databaseType dataObject)');
+        codeList.add('    : base(serializeFields, dataObject) { }');
       } else {
         codeList.add(
-            'public $typeName($databaseType dataObject) : base(dataObject)');
+            'public $typeName(IEnumerable<string> serializeFields, $databaseType dataObject)');
+        codeList.add('    : base(serializeFields, dataObject)');
         codeList.add('{');
         codeList.add('MaxHttpGetItems = $maxHttpGetItems;');
         codeList.add('}');
@@ -580,6 +582,7 @@ class NsgGenDataItem {
       codeList.add('{');
     }
 
+    // codeList.add('protected override bool NestReferences() => false;');
     fields.forEach((element) {
       if (element.description != null && element.description.isNotEmpty) {
         codeList.add('/// <summary>');
@@ -597,17 +600,18 @@ class NsgGenDataItem {
       } else if (element.dartType == 'DateTime') {
         codeList.add('public DateTime ${element.name} { get; set; }');
       } else if (element.dartType == 'List<Reference>') {
-        if (element.alwaysReturnNested != null && !element.alwaysReturnNested) {
-          codeList.add('[Newtonsoft.Json.JsonIgnore]');
-        }
         codeList.add(
             'public List<${element.referenceType}> ${element.name} { get; set; }');
         codeList.add('    = new List<${element.referenceType}>();');
-        // codeList.add('public bool Serialize${element.name}()');
-        // codeList.add('{');
-        // codeList.add(
-        //     'return SerializeFields.Find(s => s.StartsWith("${element.dartName}")) != default;');
-        // codeList.add('}');
+        if (!element.alwaysReturnNested) {
+          codeList.add('public bool ShouldSerialize${element.name}()');
+          codeList.add('{');
+          codeList
+              .add('return NestReferences() && (SerializeFields == null ||');
+          codeList.add(
+              '    SerializeFields.Find(s => s.StartsWith("${element.dartName}")) != default);');
+          codeList.add('}');
+        }
       } else if (element.dartType == 'List<Enum>') {
         codeList.add(
             'public IEnumerable<${element.referenceType}> ${element.name} { get; set; }');
@@ -624,16 +628,17 @@ class NsgGenDataItem {
         codeList.add(
             '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000")]');
         codeList.add('public string ${element.name} { get; set; }');
-        if (element.alwaysReturnNested != null && !element.alwaysReturnNested) {
-          codeList.add('[Newtonsoft.Json.JsonIgnore]');
-        }
         codeList.add(
             'public ${element.referenceType} ${element.referenceName} { get; set; }');
-        // codeList.add('public bool Serialize${element.referenceName}()');
-        // codeList.add('{');
-        // codeList.add(
-        //     'return SerializeFields.Find(s => s.StartsWith("${element.dartName}")) != default;');
-        // codeList.add('}');
+        if (!element.alwaysReturnNested) {
+          codeList.add('public bool ShouldSerialize${element.referenceName}()');
+          codeList.add('{');
+          codeList
+              .add('return NestReferences() && (SerializeFields == null ||');
+          codeList.add(
+              '    SerializeFields.Find(s => s.StartsWith("${element.dartName}")) != default);');
+          codeList.add('}');
+        }
       } else {
         if (element.type == 'Guid') {
           codeList.add('public Guid ${element.name} { get; set; }');
