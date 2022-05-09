@@ -128,7 +128,8 @@ class NsgGenFunction {
 
   void generateControllerMethod(List<String> codeList,
       NsgGenerator nsgGenerator, NsgGenController controller) async {
-    var paramNString = controller.useAuthorization ? 'user' : 'null';
+    var paramNString =
+        controller.useAuthorization ? 'user, findParams' : 'null, findParams';
     if (params != null && params.isNotEmpty) {
       params.forEach((p) {
         paramNString += ', ' + p.name;
@@ -152,27 +153,29 @@ class NsgGenFunction {
     if (type == 'get') apiType = 'HttpGet';
     codeList.add('[$apiType]');
     codeList.add(
-        'public async Task<IEnumerable<$returnType>> $name([FromBody] Dictionary<string, object> body)');
+        'public async Task<IEnumerable<$returnType>> $name([FromBody] NsgFindParams findParams)');
     codeList.add('{');
     if (controller.useAuthorization) {
       codeList.add('var user = await authController.GetUserByToken(Request);');
     }
     params.forEach((p) {
       if (p.type == 'Date' || p.type == 'DateTime') {
+        codeList.add('if (!findParams.Parameters.ContainsKey("${p.name}") ||');
         codeList.add(
-            'if (!body.ContainsKey("${p.name}") || !DateTime.TryParse(body["${p.name}"].ToString(), out DateTime ${p.name})) ${p.name} = DateTime.Now;');
+            '    !DateTime.TryParse(findParams.Parameters["${p.name}"].ToString(), out DateTime ${p.name}))');
+        codeList.add('    ${p.name} = DateTime.Now;');
         return;
       }
       //if (!body.ContainsKey("date") || !DateTime.TryParse(body["date"].ToString(), out DateTime date)) date = DateTime.Now;
       var pStr = '${p.returnType} ${p.name} = ';
       if (p.type == 'String') {
-        pStr += 'body["${p.name}"].ToString()';
+        pStr += 'findParams.Parameters["${p.name}"].ToString()';
       } else if (p.type == 'int' || p.type == 'double') {
         pStr +=
-            '${p.type}.Parse(body["${p.name}"].ToString(), System.Globalization.CultureInfo.InvariantCulture)';
+            '${p.type}.Parse(findParams.Parameters["${p.name}"].ToString(), System.Globalization.CultureInfo.InvariantCulture)';
       } else {
         pStr +=
-            '(body["${p.name}"] as Newtonsoft.Json.Linq.JObject)?.ToObject<${p.returnType}>() ?? new ${p.returnType}()';
+            '(findParams.Parameters["${p.name}"] as Newtonsoft.Json.Linq.JObject)?.ToObject<${p.returnType}>() ?? new ${p.returnType}()';
       }
       codeList.add(pStr + ';');
     });
@@ -182,7 +185,7 @@ class NsgGenFunction {
 
   void generateControllerInterfaceMethod(List<String> codeList,
       NsgGenerator nsgGenerator, NsgGenController controller) async {
-    var paramTNString = 'INsgTokenExtension user';
+    var paramTNString = 'INsgTokenExtension user, NsgFindParams findParams';
     if (params != null && params.isNotEmpty) {
       params.forEach((p) {
         paramTNString += ', ' + p.returnType + ' ' + p.name;
@@ -193,8 +196,8 @@ class NsgGenFunction {
 
   void generateControllerImplDesignerMethod(List<String> codeList,
       NsgGenerator nsgGenerator, NsgGenController controller) async {
-    var paramTNString = 'INsgTokenExtension user';
-    var paramNString = 'user';
+    var paramTNString = 'INsgTokenExtension user, NsgFindParams findParams';
+    var paramNString = 'user, findParams';
     if (params != null && params.isNotEmpty) {
       params.forEach((p) {
         paramTNString += ', ' + p.returnType + ' ' + p.name;
@@ -207,7 +210,7 @@ class NsgGenFunction {
 
   void generateControllerImplMethod(List<String> codeList,
       NsgGenerator nsgGenerator, NsgGenController controller) async {
-    var paramTNString = 'INsgTokenExtension user';
+    var paramTNString = 'INsgTokenExtension user, NsgFindParams findParams';
     if (params != null && params.isNotEmpty) {
       params.forEach((p) {
         paramTNString += ', ' + p.returnType + ' ' + p.name;
