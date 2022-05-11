@@ -102,6 +102,9 @@ class NsgGenDataItemField {
   }
 
   void writeGetter(NsgGenController nsgGenController, List<String> codeList) {
+    if (['id', 'ownerid'].contains(name.toLowerCase())) {
+      codeList.add('@override');
+    }
     if (type == 'String' || type == 'Guid') {
       codeList.add(
           '$dartType get $dartName => getFieldValue($fieldNameVar).toString();');
