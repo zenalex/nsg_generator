@@ -242,7 +242,7 @@ class NsgGenFunction {
       codeList.add(
           '  Future<$dartType?> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
     }
-    codeList.add('    var params = <String, String>{};');
+    codeList.add('    var params = <String, dynamic>{};');
     params.forEach((p) {
       if (p.type == 'String') {
         codeList.add('    params[\'${p.name}\'] = ${p.name};');
