@@ -241,7 +241,7 @@ class NsgGenFunction {
 
     if (type == 'List<Reference>') {
       codeList.add(
-          '  Future<List<$dartType>?> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
+          '  Future<List<$dartType>> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
     } else {
       codeList.add(
           '  Future<$dartType?> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
@@ -278,7 +278,11 @@ class NsgGenFunction {
     codeList.add('          autoRepeateCount: 3);');
     codeList.add('      return res;');
     codeList.add('    } catch (e) {');
-    codeList.add('      return null;');
+    if (type == 'List<Reference>') {
+      codeList.add('      return [];');
+    } else {
+      codeList.add('      return null;');
+    }
     codeList.add('    }');
     codeList.add('  }');
   }
