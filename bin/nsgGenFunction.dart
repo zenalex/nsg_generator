@@ -153,7 +153,7 @@ class NsgGenFunction {
     if (type == 'get') apiType = 'HttpGet';
     codeList.add('[$apiType]');
     codeList.add(
-        'public async Task<IEnumerable<$returnType>> $name([FromBody] NsgFindParams findParams)');
+        'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name([FromBody] NsgFindParams findParams)');
     codeList.add('{');
     if (controller.useAuthorization) {
       codeList.add('var user = await authController.GetUserByToken(Request);');
@@ -191,7 +191,8 @@ class NsgGenFunction {
         paramTNString += ', ' + p.returnType + ' ' + p.name;
       });
     }
-    codeList.add('Task<IEnumerable<$returnType>> $name($paramTNString);');
+    codeList.add(
+        'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name($paramTNString);');
   }
 
   void generateControllerImplDesignerMethod(List<String> codeList,
@@ -204,8 +205,11 @@ class NsgGenFunction {
         paramNString += ', ' + p.name;
       });
     }
-    codeList.add('public Task<IEnumerable<$returnType>> $name($paramTNString)');
-    codeList.add('    => On$name($paramNString);');
+    codeList.add(
+        'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name($paramTNString)');
+    codeList.add(
+        '    => NsgServerMetadataItem.GetDictWithNestedFields<$returnType>(');
+    codeList.add('        await On$name($paramNString), findParams);');
   }
 
   void generateControllerImplMethod(List<String> codeList,

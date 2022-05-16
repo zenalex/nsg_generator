@@ -460,7 +460,7 @@ class NsgGenDataItem {
       codeList.add('NsgMultipleObject clone = null;');
       var pkField = fields.firstWhere(
           (f) => f.name.toLowerCase().contains('id') && f.isPrimary);
-      codeList.add(
+      codeList.add(//'Guid g = ' + pkField.name + ';');
           'Guid g = Guid.TryParse(${pkField.name}, out Guid ${pkField.name}Guid) ? ${pkField.name}Guid : Guid.Empty;');
       codeList.add('try');
       codeList.add('{');
@@ -641,15 +641,24 @@ class NsgGenDataItem {
         }
       } else {
         if (element.type == 'Guid') {
-          codeList.add('public Guid ${element.name} { get; set; }');
+          codeList
+              .add('public Guid ${element.name} { get; set; } = Guid.Empty;');
         } else {
-          if (!element.name.endsWith('Id')) {
+          if (element.name.endsWith('Id')) {
+            codeList.add(
+                '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000")]');
+          } else {
             if (element.maxLength > 0) {
               codeList.add('[StringLength(${element.maxLength})]');
             }
             codeList.add('[System.ComponentModel.DefaultValue("")]');
           }
-          codeList.add('public string ${element.name} { get; set; }');
+          if (element.isPrimary) {
+            codeList.add(
+                'public string ${element.name} { get; set; } = "00000000-0000-0000-0000-000000000000";');
+          } else {
+            codeList.add('public string ${element.name} { get; set; }');
+          }
         }
       }
       if (element.type == 'Image') nsgMethod.addImageMethod(element);
