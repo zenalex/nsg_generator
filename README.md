@@ -292,14 +292,6 @@ Uri сервера
 
 #
 
->###### \*1.
->Поле referenceType нужно заполнять, если type
->- ссылочный (```"type": "Reference"```)
->- список объектов (```"type": "List<Reference>"```)
->- перечисление (```"type": "Enum"```)
-
-#
-
 ### 1. 1. 2. Описание структуры функции (function)
 
 Имя функции  
@@ -608,12 +600,35 @@ Uri сервера
 
 #
 
+## Типы данных  
+| C# | Dart | generation_config.json | Описание |
+| - | - | - | - |
+| String | String | ```String``` | строка |
+| int | int | ```int``` | целое число |
+| bool | bool | ```bool``` | логическое |
+| decimal | double | ```double``` | вещественное число |
+| DateTime | DateTime | ```DateTime``` | дата и время |
+
+## Ссылочные типы данных
+#### \*1
+Поле referenceType нужно заполнять, если type:
+- объект (```"type": "Reference"```)
+- список объектов (```"type": "List<Reference>"```)
+- перечисление (```"type": "Enum"```)
+
+#  
+
 ## Запуск
 Генерацию можно запустить прямо из консоли PowerShell:
 ```
 dart bin\nsgCodeGenerator.dart C:\GeneratorConfig [-csharp] [-dart] [-force|-overwrite|-forceoverwrite] [csharp:] [dart:]
 ```
+, где
+- ```bin\nsgCodeGenerator.dart``` - путь к точке входа программы,
+- ```C:\GeneratorConfig``` - путь к папке config
+
 ### Аргументы командной строки:
+Путь к папке config всегда идет первым агрументом. Все остальные - в произвольном порядке.
 - Генерировать только C# (если не указано также `-dart`)
 ```
 -csharp
