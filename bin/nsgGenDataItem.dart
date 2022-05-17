@@ -627,7 +627,8 @@ class NsgGenDataItem {
         codeList.add('/// </remarks> ');
         codeList.add(
             '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000")]');
-        codeList.add('public string ${element.name} { get; set; }');
+        codeList.add(
+            'public string ${element.name} { get; set; } = "00000000-0000-0000-0000-000000000000";');
         codeList.add(
             'public ${element.referenceType} ${element.referenceName} { get; set; }');
         if (!element.alwaysReturnNested) {
@@ -657,7 +658,8 @@ class NsgGenDataItem {
             codeList.add(
                 'public string ${element.name} { get; set; } = "00000000-0000-0000-0000-000000000000";');
           } else {
-            codeList.add('public string ${element.name} { get; set; }');
+            codeList.add(
+                'public string ${element.name} { get; set; } = string.Empty;');
           }
         }
       }
