@@ -34,12 +34,11 @@ class NsgGenController {
     return NsgGenController(
         api_prefix: parsedJson['api_prefix'],
         class_name: parsedJson['class_name'],
-        impl_controller_name:
-            (parsedJson['impl_controller_name']?.isNotEmpty ?? false)
-                ? parsedJson['impl_controller_name']
-                : parsedJson['class_name'] + 'Implementation',
+        impl_controller_name: parsedJson.containsKey('impl_controller_name')
+            ? parsedJson['impl_controller_name']
+            : parsedJson['class_name'] + 'Implementation',
         impl_auth_controller_name:
-            (parsedJson['impl_auth_controller_name']?.isNotEmpty ?? false)
+            parsedJson.containsKey('impl_auth_controller_name')
                 ? parsedJson['impl_auth_controller_name']
                 : 'AuthControllerImplementation',
         dataType: parsedJson['dataType'],
