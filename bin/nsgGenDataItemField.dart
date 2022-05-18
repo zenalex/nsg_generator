@@ -49,7 +49,11 @@ class NsgGenDataItemField {
         description: parsedJson.containsKey('description')
             ? parsedJson['description']
             : parsedJson['databaseName'],
-        apiPrefix: parsedJson['api_prefix'],
+        apiPrefix: parsedJson.containsKey('apiPrefix')
+            ? parsedJson['apiPrefix']
+            : parsedJson.containsKey('api_prefix')
+                ? parsedJson['api_prefix']
+                : parsedJson['name'],
         isPrimary: parsedJson['isPrimary'] == 'true',
         referenceName: parsedJson['referenceName'],
         referenceType: parsedJson['referenceType'],

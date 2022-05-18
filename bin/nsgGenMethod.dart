@@ -36,7 +36,11 @@ class NsgGenMethod {
     return NsgGenMethod(
         name: parsedJson['name'],
         description: parsedJson['description'],
-        apiPrefix: parsedJson['api_prefix'],
+        apiPrefix: parsedJson.containsKey('apiPrefix')
+            ? parsedJson['apiPrefix']
+            : parsedJson.containsKey('api_prefix')
+                ? parsedJson['api_prefix']
+                : parsedJson['name'],
         authorize: parsedJson['authorize'] ?? 'none',
         getterType: parsedJson.containsKey('getterType')
             ? parsedJson['getterType']
