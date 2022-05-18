@@ -857,7 +857,7 @@ class NsgGenDataItem {
           " static const ${_.fieldNameVar} = '${nsgGenerator.getDartName(_.name)}';");
     });
     codeList.add('');
-    codeList.add(' static final Map fieldNameDict = {');
+    codeList.add(' static final Map<String, String> fieldNameDict = {');
     fields.forEach((_) {
       if (_.userVisibility) {
         codeList.add("   ${_.fieldNameVar}: '${_.userName}',");
