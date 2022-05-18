@@ -46,7 +46,9 @@ class NsgGenMethod {
             ? parsedJson['getterType']
             : parsedJson['type'],
         dataTypeFlie: parsedJson['dataTypeFile'],
-        allowGetter: parsedJson['allowGetter'] != 'false',
+        allowGetter: parsedJson.containsKey('allowGetter')
+            ? parsedJson['allowGetter'] != 'false'
+            : true,
         allowPost: parsedJson['allowPost'] == 'true',
         checkLastModifiedDate: parsedJson['checkLastModifiedDate'] == 'true',
         allowDelete: parsedJson['allowDelete'] == 'true');
