@@ -501,7 +501,7 @@ class NsgGenDataItem {
       codeList.add('public void PopulateNsgObject($databaseType nsgObject)');
       codeList.add('{');
       fields.where((f) => f != pkField).forEach((el) {
-        if (el.dbName == null || el.dbName.isEmpty) {
+        if (el.dbName == null || el.dbName.isEmpty || el.dbName.contains('.')) {
           //codeList.add('${el.name} = default;');
         } else if (el.dartType == 'int') {
           codeList.add('nsgObject.${el.dbName} = (int)${el.name};');
