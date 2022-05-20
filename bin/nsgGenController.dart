@@ -229,6 +229,10 @@ class NsgGenController {
     codeList.add('    where T : NsgServerDataItem, new();');
     codeList.add('');
     codeList.add(
+        'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Create<T>(INsgTokenExtension user, NsgFindParams findParams)');
+    codeList.add('    where T : NsgServerDataItem, new();');
+    codeList.add('');
+    codeList.add(
         'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post<T>(INsgTokenExtension user, IEnumerable<T> items)');
     codeList.add('    where T : NsgServerDataItem, new();');
     codeList.add('');
@@ -301,6 +305,13 @@ class NsgGenController {
     codeList.add('{');
     codeList.add('ApplyServerFilter<T>(user, ref findParams);');
     codeList.add('return new T().Get(user, findParams);');
+    codeList.add('}');
+    codeList.add('');
+    codeList.add(
+        'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Create<T>(INsgTokenExtension user, NsgFindParams findParams) where T : NsgServerDataItem, new()');
+    codeList.add('{');
+    codeList.add('ApplyServerFilter<T>(user, ref findParams);');
+    codeList.add('return new T().Create(user, findParams);');
     codeList.add('}');
     codeList.add('');
     codeList.add(

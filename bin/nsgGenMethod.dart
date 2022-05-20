@@ -14,6 +14,7 @@ class NsgGenMethod {
   final String getterType;
   final String dataTypeFlie;
   final bool allowGetter;
+  final bool allowCreate;
   final bool allowPost;
   final bool checkLastModifiedDate;
   final bool allowDelete;
@@ -28,6 +29,7 @@ class NsgGenMethod {
       this.getterType,
       this.dataTypeFlie,
       this.allowGetter,
+      this.allowCreate,
       this.allowPost,
       this.checkLastModifiedDate,
       this.allowDelete});
@@ -49,6 +51,7 @@ class NsgGenMethod {
         allowGetter: parsedJson.containsKey('allowGetter')
             ? parsedJson['allowGetter'] != 'false'
             : true,
+        allowCreate: parsedJson['allowCreate'] == 'true',
         allowPost: parsedJson['allowPost'] == 'true',
         checkLastModifiedDate: parsedJson['checkLastModifiedDate'] == 'true',
         allowDelete: parsedJson['allowDelete'] == 'true');
@@ -116,6 +119,37 @@ class NsgGenMethod {
       } else {
         codeList.add(
             'return await controller.Get<${method.genDataItem.typeName}>(null, findParams);');
+      }
+      codeList.add('}');
+      codeList.add('');
+    }
+    //Generate create data method
+    if (allowCreate) {
+      codeList.add('[Route("$apiPrefix/Create")]');
+      //Authorization
+      if (!controller.useAuthorization) {
+      } else if (authorize == 'anonymous') {
+        codeList.add('[Authorize]');
+      } else if (authorize == 'user') {
+        codeList.add('[Authorize(Roles = UserRoles.User)]');
+      } else if (authorize != 'none') {
+        throw Exception(
+            'Wrong authorization type in method ${method.name}([FromBody] ${method.genDataItem.typeName} items)');
+      }
+      codeList.add('[HttpPost]');
+      // codeList.add(
+      //     'public async Task<IEnumerable<${method.genDataItem.typeName}>> ${method.name}Post([FromBody] IEnumerable<${method.genDataItem.typeName}> items)');
+      codeList.add(
+          'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${method.name}Create([FromBody] NsgFindParams findParams)');
+      codeList.add('{');
+      if (controller.useAuthorization && authorize != 'none') {
+        codeList
+            .add('var user = await authController.GetUserByToken(Request);');
+        codeList.add(
+            'return await controller.Create<${method.genDataItem.typeName}>(user, findParams);');
+      } else {
+        codeList.add(
+            'return await controller.Create<${method.genDataItem.typeName}>(null, findParams);');
       }
       codeList.add('}');
       codeList.add('');

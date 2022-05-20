@@ -747,6 +747,25 @@ class NsgGenDataItem {
       codeList.add('}');
       codeList.add('');
     }
+    if (nsgMethod.allowCreate) {
+      codeList.add(
+          'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Create(INsgTokenExtension user, NsgFindParams findParams)');
+      codeList.add('{');
+      if (nsgMethod.genDataItem.databaseType != null &&
+          nsgMethod.genDataItem.databaseType.isNotEmpty) {
+        codeList
+            .add('var obj = ${nsgMethod.genDataItem.databaseType}.Новый();');
+        codeList.add('obj.New();');
+        codeList.add(
+            'var res = new ${nsgMethod.genDataItem.typeName}(GetSerializeFields(findParams?.ReadNestedField), obj);');
+        codeList
+            .add('return GetDictWithNestedFields(new[] { res }, findParams);');
+      } else {
+        codeList.add('throw new NotImplementedException();');
+      }
+      codeList.add('}');
+      codeList.add('');
+    }
     if (nsgMethod.allowPost) {
       codeList.add(
           'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post(INsgTokenExtension user, IEnumerable<NsgServerDataItem> items)');
