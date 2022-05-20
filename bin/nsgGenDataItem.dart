@@ -18,6 +18,7 @@ class NsgGenDataItem {
   final List<NsgGenDataItemField> fields;
   final List<NsgGenFunction> methods;
   bool checkLastModifiedDate = false;
+  bool allowCreate = false;
 
   NsgGenDataItem(
       {this.typeName,
@@ -925,6 +926,15 @@ class NsgGenDataItem {
     codeList.add('  @override');
     codeList.add('  NsgDataItem getNewObject() => $typeName();');
     codeList.add('');
+    if (allowCreate) {
+      codeList.add('  // @override');
+      codeList.add('  Future<NsgDataItem> createOnServer() async {');
+      codeList.add('    var request = NsgDataRequest();');
+      codeList.add(
+          '    return await request.requestItem(method: \'POST\', function: apiRequestItems + \'/Create\');');
+      codeList.add('  }');
+      codeList.add('');
+    }
 
     fields.forEach((_) {
       if (_.description != null && _.description.isNotEmpty) {

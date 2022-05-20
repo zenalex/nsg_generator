@@ -125,6 +125,7 @@ class NsgGenMethod {
     }
     //Generate create data method
     if (allowCreate) {
+      method.genDataItem.allowCreate = allowCreate;
       codeList.add('[Route("$apiPrefix/Create")]');
       //Authorization
       if (!controller.useAuthorization) {
