@@ -924,9 +924,12 @@ class NsgGenDataItem {
       }
     }
     codeList.add('  @override');
-    codeList.add('  NsgDataItem getNewObject() => $typeName();');
+    codeList.add('  bool get createOnServer => true;');
     codeList.add('');
     if (allowCreate) {
+      codeList.add('  @override');
+      codeList.add('  NsgDataItem getNewObject() => $typeName();');
+      codeList.add('');
       codeList.add('  // @override');
       codeList.add('  Future<NsgDataItem> createOnServer() async {');
       codeList.add('    var request = NsgDataRequest();');
