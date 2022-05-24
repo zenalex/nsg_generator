@@ -135,7 +135,7 @@ class NsgGenDataItemField {
       codeList.add('}');
     } else if (type == 'List<Reference>') {
       codeList.add(
-          'List<$referenceType> get $dartName => getFieldValue($fieldNameVar) as List<$referenceType>;');
+          'NsgDataTable<$referenceType> get $dartName => NsgDataTable<$referenceType>(owner: this, fieldName: $fieldNameVar);');
     } else if (type == 'List<Enum>') {
       codeList.add(
           'List<$referenceType> get $dartName => getFieldValue($fieldNameVar) as List<$referenceType>;');
@@ -170,8 +170,9 @@ class NsgGenDataItemField {
           'set ${NsgGenerator.generator.getDartName(referenceName)}($referenceType value) =>');
       codeList.add('    setFieldValue($fieldNameVar, value.id);');
     } else if (type == 'List<Reference>') {
-      codeList.add(
-          'set $dartName(List<$referenceType> value) => setFieldValue($fieldNameVar, value);');
+      //Отменил запись setter из-за смены возвращаемого типа на NsgDataTable
+      // codeList.add(
+      //     'set $dartName(List<$referenceType> value) => setFieldValue($fieldNameVar, value);');
     } else if (type == 'Enum') {
       codeList.add(
           'set $dartName($referenceType value) => setFieldValue($fieldNameVar, value);');

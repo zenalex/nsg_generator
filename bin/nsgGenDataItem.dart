@@ -923,14 +923,14 @@ class NsgGenDataItem {
         codeList.add('');
       }
     }
-    codeList.add('  @override');
-    codeList.add('  bool get createOnServer => true;');
-    codeList.add('');
     if (allowCreate) {
       codeList.add('  @override');
-      codeList.add('  NsgDataItem getNewObject() => $typeName();');
+      codeList.add('  bool get createOnServer => true;');
       codeList.add('');
     }
+    codeList.add('  @override');
+    codeList.add('  NsgDataItem getNewObject() => $typeName();');
+    codeList.add('');
 
     fields.forEach((_) {
       if (_.description != null && _.description.isNotEmpty) {
