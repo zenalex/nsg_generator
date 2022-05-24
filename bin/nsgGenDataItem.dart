@@ -930,13 +930,6 @@ class NsgGenDataItem {
       codeList.add('  @override');
       codeList.add('  NsgDataItem getNewObject() => $typeName();');
       codeList.add('');
-      codeList.add('  // @override');
-      codeList.add('  Future<NsgDataItem> createOnServer() async {');
-      codeList.add('    var request = NsgDataRequest();');
-      codeList.add(
-          '    return await request.requestItem(method: \'POST\', function: apiRequestItems + \'/Create\');');
-      codeList.add('  }');
-      codeList.add('');
     }
 
     fields.forEach((_) {
