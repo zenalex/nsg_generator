@@ -502,7 +502,13 @@ class NsgGenDataItem {
       codeList.add('public void PopulateNsgObject($databaseType nsgObject)');
       codeList.add('{');
       fields.where((f) => f != pkField).forEach((el) {
-        if (el.dbName == null || el.dbName.isEmpty || el.dbName.contains('.')) {
+        if (el.dbName == null ||
+            el.dbName.isEmpty ||
+            el.dbName.contains('.') ||
+            el.name.toLowerCase().contains('ownerid')) {
+          //Поле Владелец сериализовать не нужно для табличных частей
+          //Для справочников, его сериализация может иметь смысл, но тогда нужно
+          //Предусмотреть сериализацию неопределенных ссылок как таковых
           //codeList.add('${el.name} = default;');
         } else if (el.dartType == 'int') {
           codeList.add('nsgObject.${el.dbName} = (int)${el.name};');
@@ -520,7 +526,7 @@ class NsgGenDataItem {
           }
         } else if (el.dartType == 'Reference' || el.dartType == 'Image') {
           codeList.add(
-              'nsgObject.${el.dbName}.Value = Guid.TryParse(${el.name}, out Guid ${el.name}Guid) ? ${el.name}Guid : Guid.Empty;');
+              'nsgObject["${el.dbName}"].Value = Guid.TryParse(${el.name}, out Guid ${el.name}Guid) ? ${el.name}Guid : Guid.Empty;');
         } else if (el.dartType == 'Enum') {
           codeList.add('nsgObject.${el.dbName}.Value = ${el.name};');
         } else if (el.dartType == 'List<Reference>') {
