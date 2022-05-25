@@ -530,6 +530,7 @@ class NsgGenDataItem {
         } else if (el.dartType == 'Enum') {
           codeList.add('nsgObject.${el.dbName}.Value = ${el.name};');
         } else if (el.dartType == 'List<Reference>') {
+          codeList.add('nsgObject.${el.dbName}.DeleteAll();');
           codeList.add('foreach (var t in ${el.name})');
           codeList.add('{');
           codeList.add('var row = nsgObject.${el.dbName}.NewRow();');
