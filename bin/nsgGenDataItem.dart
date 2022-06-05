@@ -857,6 +857,8 @@ class NsgGenDataItem {
     //----------------------------------------------------------
     //generate service class for DataItem data_item.g.dart
     //----------------------------------------------------------
+    print(
+        'Geterate controller = ${nsgGenController.class_name}, method = ${nsgGenMethod.name}');
 
     var codeList = <String>[];
     codeList.add(
