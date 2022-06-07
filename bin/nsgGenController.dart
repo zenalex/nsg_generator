@@ -317,6 +317,7 @@ class NsgGenController {
     codeList.add(
         'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post<T>(INsgTokenExtension user, IEnumerable<T> items) where T : NsgServerDataItem, new()');
     codeList.add('{');
+    codeList.add('OnBeforePost(user, items);');
     codeList.add('return new T().Post(user, items);');
     codeList.add('}');
     codeList.add('');
@@ -432,6 +433,9 @@ class NsgGenController {
     codeList.add('#region Common');
     codeList.add(
         'public void OnGetControllerCompare(INsgTokenExtension user, NsgServerDataItem obj, NsgFindParams findParams) { }');
+    codeList.add('');
+    codeList.add(
+        'private void OnBeforePost<T>(INsgTokenExtension user, IEnumerable<T> items) where T : NsgServerDataItem, new() { }');
     codeList.add('');
     codeList.add(
         'public void OnApplyServerFilter(INsgTokenExtension user, NsgServerDataItem obj, NsgFindParams findParams) { }');
