@@ -858,7 +858,7 @@ class NsgGenDataItem {
     //generate service class for DataItem data_item.g.dart
     //----------------------------------------------------------
     print(
-        'Geterate controller = ${nsgGenController.class_name}, method = ${nsgGenMethod.name}');
+        'Generate controller = ${nsgGenController.class_name}, method = ${nsgGenMethod.name}');
 
     var codeList = <String>[];
     codeList.add(
@@ -867,6 +867,7 @@ class NsgGenDataItem {
     codeList.add(
         "import '../${nsgGenerator.getDartUnderscoreName(nsgGenController.class_name)}_model.dart';");
     for (var field in fields) {
+      if (!field.writeOnClient) return;
       if (field.type == 'Enum') {
         if (nsgGenerator.enums.isNotEmpty) {
           codeList.add("import '../enums.dart';");
@@ -882,12 +883,14 @@ class NsgGenDataItem {
     }
     codeList.add('class ${typeName}Generated extends NsgDataItem {');
     fields.forEach((_) {
+      if (!_.writeOnClient) return;
       codeList.add(
           " static const ${_.fieldNameVar} = '${nsgGenerator.getDartName(_.name)}';");
     });
     codeList.add('');
     codeList.add(' static final Map<String, String> fieldNameDict = {');
     fields.forEach((_) {
+      if (!_.writeOnClient) return;
       if (_.userVisibility) {
         codeList.add("   ${_.fieldNameVar}: '${_.userName}',");
       }
@@ -897,6 +900,7 @@ class NsgGenDataItem {
     codeList.add('  @override');
     codeList.add('  void initialize() {');
     fields.forEach((_) {
+      if (!_.writeOnClient) return;
       if (_.isPrimary) {
         codeList.add(
             '   addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
@@ -942,6 +946,7 @@ class NsgGenDataItem {
     codeList.add('');
 
     fields.forEach((_) {
+      if (!_.writeOnClient) return;
       if (_.description != null && _.description.isNotEmpty) {
         _.description.split('\n').forEach((descLine) {
           codeList.add('/// $descLine');

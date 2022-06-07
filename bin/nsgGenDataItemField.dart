@@ -15,6 +15,7 @@ class NsgGenDataItemField {
   final bool userVisibility;
   final String userName;
   final bool alwaysReturnNested;
+  final bool writeOnClient;
 
   NsgGenDataItemField(
       {this.name,
@@ -29,7 +30,8 @@ class NsgGenDataItemField {
       this.referenceType,
       this.userVisibility,
       this.userName,
-      this.alwaysReturnNested});
+      this.alwaysReturnNested,
+      this.writeOnClient});
 
   factory NsgGenDataItemField.fromJson(Map<String, dynamic> parsedJson) {
     var ml = parsedJson['maxLength'];
@@ -59,7 +61,10 @@ class NsgGenDataItemField {
         referenceType: parsedJson['referenceType'],
         userVisibility: parsedJson['userVisibility'] == 'true',
         userName: parsedJson['userName'],
-        alwaysReturnNested: parsedJson['alwaysReturnNested'] == 'true');
+        alwaysReturnNested: parsedJson['alwaysReturnNested'] == 'true',
+        writeOnClient: parsedJson.containsKey('writeOnClient')
+            ? parsedJson['writeOnClient'] != 'false'
+            : true);
   }
 
   static Map<String, int> defaultMaxLength = <String, int>{
