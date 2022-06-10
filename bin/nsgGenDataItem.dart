@@ -78,7 +78,7 @@ class NsgGenDataItem {
     codeList.add('public virtual NsgMultipleObject NSGObject { get; set; }');
     codeList.add('public virtual void OnSetNsgObject() { }');
     codeList.add(
-        'public virtual void OnBeforePostNsgObject<T>(T obj) where T : NsgMultipleObject { }');
+        'public virtual void OnBeforePostNsgObject<T>(INsgTokenExtension user, T obj) where T : NsgMultipleObject { }');
     codeList.add(
         'public virtual void OnAfterPostNsgObject<T>(T obj, T oldObj, bool postSuccessful = true) where T : NsgMultipleObject');
     codeList.add('{');
@@ -177,14 +177,14 @@ class NsgGenDataItem {
     codeList.add('}');
     codeList.add('}');
     codeList.add('');
-    codeList.add('public virtual bool PostNsgObject() => false;');
+    codeList.add('public virtual bool PostNsgObject(INsgTokenExtension user) => false;');
     codeList.add('');
     codeList.add(
-        'public static IEnumerable<NsgServerDataItem> PostAll<T>(IEnumerable<NsgServerDataItem> objs) where T : NsgServerMetadataItem');
+        'public static IEnumerable<NsgServerDataItem> PostAll<T>(INsgTokenExtension user, IEnumerable<NsgServerDataItem> objs) where T : NsgServerMetadataItem');
     codeList.add('{');
     codeList.add('foreach (T i in objs)');
     codeList.add('{');
-    codeList.add('var o = i.PostNsgObject();');
+    codeList.add('var o = i.PostNsgObject(user);');
     codeList.add('if (o) yield return i;');
     codeList.add('}');
     codeList.add('}');
@@ -455,7 +455,7 @@ class NsgGenDataItem {
       codeList.add('}');
       codeList.add('');
 
-      codeList.add('public override bool PostNsgObject()');
+      codeList.add('public override bool PostNsgObject(INsgTokenExtension user)');
       codeList.add('{');
       codeList.add('var nsgObject = $databaseType.Новый();');
       codeList.add('NsgMultipleObject clone = null;');
@@ -485,8 +485,8 @@ class NsgGenDataItem {
       }
       codeList.add('nsgObject.Edit();');
       codeList.add('}');
-      codeList.add('PopulateNsgObject(nsgObject);');
-      codeList.add('OnBeforePostNsgObject(nsgObject);');
+      codeList.add('PopulateNsgObject(user, nsgObject);');
+      codeList.add('OnBeforePostNsgObject(user, nsgObject);');
       codeList.add('bool posted = nsgObject.Post();');
       codeList.add('if (posted) this.NSGObject = nsgObject;');
       codeList.add('OnAfterPostNsgObject(nsgObject, clone, posted);');
@@ -499,7 +499,7 @@ class NsgGenDataItem {
       codeList.add('}');
       codeList.add('}');
       codeList.add('');
-      codeList.add('public void PopulateNsgObject($databaseType nsgObject)');
+      codeList.add('public void PopulateNsgObject(INsgTokenExtension user, $databaseType nsgObject)');
       codeList.add('{');
       fields.where((f) => f != pkField).forEach((el) {
         if (el.dbName == null ||
@@ -534,7 +534,7 @@ class NsgGenDataItem {
           codeList.add('foreach (var t in ${el.name})');
           codeList.add('{');
           codeList.add('var row = nsgObject.${el.dbName}.NewRow();');
-          codeList.add('t.PopulateNsgObject(row);');
+          codeList.add('t.PopulateNsgObject(user, row);');
           codeList.add('}');
         } else {
           codeList.add('nsgObject.${el.dbName} = ${el.name};');
@@ -543,7 +543,7 @@ class NsgGenDataItem {
       if (checkLastModifiedDate) {
         codeList.add('nsgObject["_lastModified"].Value = LastModified;');
       }
-      codeList.add('OnPopulateNsgObject(nsgObject);');
+      codeList.add('OnPopulateNsgObject(user, nsgObject);');
       codeList.add('}');
       codeList.add('');
       // codeList.add('public static Dictionary<Guid, $typeName> ItemCache =');
@@ -783,7 +783,7 @@ class NsgGenDataItem {
         codeList.add(
             'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
         codeList.add(
-            'RES["results"] = NsgServerMetadataItem.PostAll<${nsgMethod.genDataItem.typeName}>(items);');
+            'RES["results"] = NsgServerMetadataItem.PostAll<${nsgMethod.genDataItem.typeName}>(user, items);');
         codeList.add('return RES;');
       } else {
         codeList.add('throw new NotImplementedException();');
