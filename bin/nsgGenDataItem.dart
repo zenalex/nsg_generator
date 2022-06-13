@@ -80,7 +80,7 @@ class NsgGenDataItem {
     codeList.add(
         'public virtual void OnBeforePostNsgObject<T>(INsgTokenExtension user, T obj) where T : NsgMultipleObject { }');
     codeList.add(
-        'public virtual void OnAfterPostNsgObject<T>(T obj, T oldObj, bool postSuccessful = true) where T : NsgMultipleObject');
+        'public virtual void OnAfterPostNsgObject<T>(INsgTokenExtension user, T obj, T oldObj, bool postSuccessful = true) where T : NsgMultipleObject');
     codeList.add('{');
     codeList.add('if (postSuccessful)');
     codeList.add('{');
