@@ -177,7 +177,8 @@ class NsgGenDataItem {
     codeList.add('}');
     codeList.add('}');
     codeList.add('');
-    codeList.add('public virtual bool PostNsgObject(INsgTokenExtension user) => false;');
+    codeList.add(
+        'public virtual bool PostNsgObject(INsgTokenExtension user) => false;');
     codeList.add('');
     codeList.add(
         'public static IEnumerable<NsgServerDataItem> PostAll<T>(INsgTokenExtension user, IEnumerable<NsgServerDataItem> objs) where T : NsgServerMetadataItem');
@@ -455,52 +456,60 @@ class NsgGenDataItem {
       codeList.add('}');
       codeList.add('');
 
-      codeList.add('public override bool PostNsgObject(INsgTokenExtension user)');
-      codeList.add('{');
-      codeList.add('var nsgObject = $databaseType.Новый();');
-      codeList.add('NsgMultipleObject clone = null;');
       var pkField = fields.firstWhere(
           (f) => f.name.toLowerCase().contains('id') && f.isPrimary);
-      codeList.add(//'Guid g = ' + pkField.name + ';');
-          'Guid g = Guid.TryParse(${pkField.name}, out Guid ${pkField.name}Guid) ? ${pkField.name}Guid : Guid.Empty;');
-      codeList.add('try');
-      codeList.add('{');
-      codeList.add('if (Guid.Empty.Equals(g))');
-      codeList.add('{');
-      codeList.add('nsgObject.New();');
-      codeList.add('}');
-      codeList.add('else');
-      codeList.add('{');
+
       codeList.add(
-          'if (!nsgObject.Find(NsgSoft.Common.NsgDataFixedFields._ID, g))');
-      codeList.add('{');
-      codeList.add('throw new Exception("ERROR: WOI45");');
-      codeList.add('}');
-      codeList.add('clone = nsgObject.CloneObject as NsgMultipleObject;');
-      if (checkLastModifiedDate) {
-        codeList.add('if (clone["_lastModified"].ToDateTime() > LastModified)');
-        codeList.add('{');
-        codeList.add('throw new Exception("ERROR: CONFLICT");');
-        codeList.add('}');
-      }
-      codeList.add('nsgObject.Edit();');
-      codeList.add('}');
-      codeList.add('PopulateNsgObject(user, nsgObject);');
-      codeList.add('OnBeforePostNsgObject(user, nsgObject);');
-      codeList.add('bool posted = nsgObject.Post();');
-      codeList.add('if (posted) this.NSGObject = nsgObject;');
-      codeList.add('OnAfterPostNsgObject(nsgObject, clone, posted);');
-      codeList.add('return posted;');
-      codeList.add('}');
-      codeList.add('finally');
-      codeList.add('{');
-      codeList.add(
-          'if (nsgObject.ObjectState == NsgObjectStates.Edit) nsgObject.Cancel();');
-      codeList.add('}');
-      codeList.add('}');
+          'public override Guid GetId() => NsgService.StringToGuid(${pkField.name});');
+      //Метод PostNsgObject перенес в базовый класс
+      // codeList.add('public override bool PostNsgObject(INsgTokenExtension user)');
+      // codeList.add('{');
+      // codeList.add('var nsgObject = $databaseType.Новый();');
+      // codeList.add('NsgMultipleObject clone = null;');
+      // var pkField = fields.firstWhere(
+      //     (f) => f.name.toLowerCase().contains('id') && f.isPrimary);
+      // codeList.add(//'Guid g = ' + pkField.name + ';');
+      //     'Guid g = Guid.TryParse(${pkField.name}, out Guid ${pkField.name}Guid) ? ${pkField.name}Guid : Guid.Empty;');
+      // codeList.add('try');
+      // codeList.add('{');
+      // codeList.add('if (Guid.Empty.Equals(g))');
+      // codeList.add('{');
+      // codeList.add('nsgObject.New();');
+      // codeList.add('}');
+      // codeList.add('else');
+      // codeList.add('{');
+      // codeList.add(
+      //     'if (!nsgObject.Find(NsgSoft.Common.NsgDataFixedFields._ID, g))');
+      // codeList.add('{');
+      // codeList.add('throw new Exception("ERROR: WOI45");');
+      // codeList.add('}');
+      // codeList.add('clone = nsgObject.CloneObject as NsgMultipleObject;');
+      // if (checkLastModifiedDate) {
+      //   codeList.add('if (clone["_lastModified"].ToDateTime() > LastModified)');
+      //   codeList.add('{');
+      //   codeList.add('throw new Exception("ERROR: CONFLICT");');
+      //   codeList.add('}');
+      // }
+      // codeList.add('nsgObject.Edit();');
+      // codeList.add('}');
+      // codeList.add('PopulateNsgObject(user, nsgObject);');
+      // codeList.add('OnBeforePostNsgObject(user, nsgObject);');
+      // codeList.add('bool posted = nsgObject.Post();');
+      // codeList.add('if (posted) this.NSGObject = nsgObject;');
+      // codeList.add('OnAfterPostNsgObject(nsgObject, clone, posted);');
+      // codeList.add('return posted;');
+      // codeList.add('}');
+      // codeList.add('finally');
+      // codeList.add('{');
+      // codeList.add(
+      //     'if (nsgObject.ObjectState == NsgObjectStates.Edit) nsgObject.Cancel();');
+      // codeList.add('}');
+      // codeList.add('}');
       codeList.add('');
-      codeList.add('public void PopulateNsgObject(INsgTokenExtension user, $databaseType nsgObject)');
+      codeList.add(
+          'public override void PopulateNsgObject(INsgTokenExtension user, NsgMultipleObject obj)');
       codeList.add('{');
+      codeList.add('var nsgObject = obj as $databaseType;');
       fields.where((f) => f != pkField).forEach((el) {
         if (el.dbName == null ||
             el.dbName.isEmpty ||
@@ -543,7 +552,8 @@ class NsgGenDataItem {
       if (checkLastModifiedDate) {
         codeList.add('nsgObject["_lastModified"].Value = LastModified;');
       }
-      codeList.add('OnPopulateNsgObject(user, nsgObject);');
+      //Вызывается в Post в базовом классе
+      //codeList.add('OnPopulateNsgObject(user, nsgObject);');
       codeList.add('}');
       codeList.add('');
       // codeList.add('public static Dictionary<Guid, $typeName> ItemCache =');
