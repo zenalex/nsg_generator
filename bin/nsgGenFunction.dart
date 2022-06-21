@@ -162,27 +162,30 @@ class NsgGenFunction {
     if (controller.useAuthorization) {
       codeList.add('var user = await authController.GetUserByToken(Request);');
     }
-    params.forEach((p) {
-      if (p.type == 'Date' || p.type == 'DateTime') {
-        codeList.add('if (!findParams.Parameters.ContainsKey("${p.name}") ||');
-        codeList.add(
-            '    !DateTime.TryParse(findParams.Parameters["${p.name}"].ToString(), out DateTime ${p.name}))');
-        codeList.add('    ${p.name} = DateTime.Now;');
-        return;
-      }
-      //if (!body.ContainsKey("date") || !DateTime.TryParse(body["date"].ToString(), out DateTime date)) date = DateTime.Now;
-      var pStr = '${p.returnType} ${p.name} = ';
-      if (p.type == 'String') {
-        pStr += 'findParams.Parameters["${p.name}"].ToString()';
-      } else if (p.type == 'int' || p.type == 'double') {
-        pStr +=
-            '${p.type}.Parse(findParams.Parameters["${p.name}"].ToString(), System.Globalization.CultureInfo.InvariantCulture)';
-      } else {
-        pStr +=
-            '(findParams.Parameters["${p.name}"] as Newtonsoft.Json.Linq.JObject)?.ToObject<${p.returnType}>() ?? new ${p.returnType}()';
-      }
-      codeList.add(pStr + ';');
-    });
+    if (params != null && params.isNotEmpty) {
+      params.forEach((p) {
+        if (p.type == 'Date' || p.type == 'DateTime') {
+          codeList
+              .add('if (!findParams.Parameters.ContainsKey("${p.name}") ||');
+          codeList.add(
+              '    !DateTime.TryParse(findParams.Parameters["${p.name}"].ToString(), out DateTime ${p.name}))');
+          codeList.add('    ${p.name} = DateTime.Now;');
+          return;
+        }
+        //if (!body.ContainsKey("date") || !DateTime.TryParse(body["date"].ToString(), out DateTime date)) date = DateTime.Now;
+        var pStr = '${p.returnType} ${p.name} = ';
+        if (p.type == 'String') {
+          pStr += 'findParams.Parameters["${p.name}"].ToString()';
+        } else if (p.type == 'int' || p.type == 'double') {
+          pStr +=
+              '${p.type}.Parse(findParams.Parameters["${p.name}"].ToString(), System.Globalization.CultureInfo.InvariantCulture)';
+        } else {
+          pStr +=
+              '(findParams.Parameters["${p.name}"] as Newtonsoft.Json.Linq.JObject)?.ToObject<${p.returnType}>() ?? new ${p.returnType}()';
+        }
+        codeList.add(pStr + ';');
+      });
+    }
     codeList.add('return await controller.$name($paramNString);');
     codeList.add('}');
   }
@@ -251,20 +254,22 @@ class NsgGenFunction {
           '  Future<$dartType?> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
     }
     codeList.add('    var params = <String, dynamic>{};');
-    params.forEach((p) {
-      if (p.type == 'String') {
-        codeList.add('    params[\'${p.name}\'] = ${p.name};');
-      } else if (p.type == 'Date' || p.type == 'DateTime') {
-        codeList
-            .add('    params[\'${p.name}\'] = ${p.name}.toIso8601String();');
-      } else if (p.type == 'Reference') {
-        codeList.add('    params[\'${p.name}\'] = ${p.name}.toJson();');
-      } else if (p.type == 'Enum') {
-        codeList.add('    params[\'${p.name}\'] = ${p.name}.value;');
-      } else {
-        codeList.add('    params[\'${p.name}\'] = ${p.name}.toString();');
-      }
-    });
+    if (params != null && params.isNotEmpty) {
+      params.forEach((p) {
+        if (p.type == 'String') {
+          codeList.add('    params[\'${p.name}\'] = ${p.name};');
+        } else if (p.type == 'Date' || p.type == 'DateTime') {
+          codeList
+              .add('    params[\'${p.name}\'] = ${p.name}.toIso8601String();');
+        } else if (p.type == 'Reference') {
+          codeList.add('    params[\'${p.name}\'] = ${p.name}.toJson();');
+        } else if (p.type == 'Enum') {
+          codeList.add('    params[\'${p.name}\'] = ${p.name}.value;');
+        } else {
+          codeList.add('    params[\'${p.name}\'] = ${p.name}.toString();');
+        }
+      });
+    }
     codeList.add('    final filter = NsgDataRequestParams(params: params);');
     codeList.add('    try {');
     if (type == 'List<Reference>') {
