@@ -224,35 +224,30 @@ class NsgGenMethod {
       genDataItem.writeCode(nsgGenerator, this);
     }
     //Generate image tranfer methods
-    imageFieldList.forEach((element) {
-      codeList.add('[Route("${element.apiPrefix}/{file}")]');
-      codeList.add('[HttpGet]');
-      //for images authentification temporary??? disabled
-      // if (authorize == 'anonymous') {
-      //   codeList.add('    [Authorize]');
-      // } else if (authorize == 'user') {
-      //   codeList.add('    [Authorize(Roles = UserRoles.User)]');
-      // }
-      if (nsgGenerator.targetFramework == 'net5.0') {
-        codeList.add(
-            'public async Task<FileStreamResult> ${method.name}${element.apiPrefix}([FromRoute] string file)');
-      } else {
-        codeList.add(
-            'public async Task<FileStreamResult> ${method.name}${element.apiPrefix}(string file)');
-      }
-      codeList.add('{');
-      if (authorize != 'none') {
-        codeList
-            .add('var user = await authController.GetUserByToken(Request);');
-        codeList.add(
-            'return await controller.${method.name}${element.apiPrefix}(user, file);');
-      } else {
-        codeList.add(
-            'return await controller.${method.name}${element.apiPrefix}(null, file);');
-      }
-      codeList.add('}');
-      codeList.add('');
-    });
+    // imageFieldList.forEach((element) {
+    //   codeList.add('[Route("${element.apiPrefix}/{file}")]');
+    //   codeList.add('[HttpGet]');
+
+    //   if (nsgGenerator.targetFramework == 'net5.0') {
+    //     codeList.add(
+    //         'public async Task<FileStreamResult> ${method.name}${element.apiPrefix}([FromRoute] string file)');
+    //   } else {
+    //     codeList.add(
+    //         'public async Task<FileStreamResult> ${method.name}${element.apiPrefix}(string file)');
+    //   }
+    //   codeList.add('{');
+    //   if (authorize != 'none') {
+    //     codeList
+    //         .add('var user = await authController.GetUserByToken(Request);');
+    //     codeList.add(
+    //         'return await controller.${method.name}${element.apiPrefix}(user, file);');
+    //   } else {
+    //     codeList.add(
+    //         'return await controller.${method.name}${element.apiPrefix}(null, file);');
+    //   }
+    //   codeList.add('}');
+    //   codeList.add('');
+    //}
   }
 
   Future loadGenDataItem(NsgGenerator nsgGenerator) async {
@@ -270,8 +265,8 @@ class NsgGenMethod {
     }
   }
 
-  var imageFieldList = <NsgGenDataItemField>[];
-  void addImageMethod(NsgGenDataItemField element) {
-    imageFieldList.add(element);
-  }
+//   var imageFieldList = <NsgGenDataItemField>[];
+//   void addImageMethod(NsgGenDataItemField element) {
+//     imageFieldList.add(element);
+//   }
 }

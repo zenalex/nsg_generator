@@ -130,13 +130,8 @@ class NsgGenDataItemField {
       codeList.add(
           '$dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
     } else if (type == 'Image') {
-      codeList.add('String get $dartName {');
-      codeList.add('  var s = getFieldValue($fieldNameVar).toString();');
-      codeList.add("  if (!s.contains('http')){");
-      codeList.add(
-          "    return remoteProvider.serverUri + '/${nsgGenController.api_prefix}/$apiPrefix/' + s;}");
-      codeList.add('  else {');
-      codeList.add('    return s;}');
+      codeList.add('List<int> get $dartName {');
+      codeList.add('  return getFieldValue($fieldNameVar) as List<int>;');
       codeList.add('}');
     } else if (type == 'List<Reference>') {
       codeList.add(
@@ -167,7 +162,7 @@ class NsgGenDataItemField {
   void writeSetter(NsgGenController nsgGenController, List<String> codeList) {
     if (type == 'Image') {
       codeList.add(
-          'set $dartName(String value) => setFieldValue($fieldNameVar, value);');
+          'set $dartName(List<int> value) => setFieldValue($fieldNameVar, value);');
     } else if (type == 'Reference') {
       codeList.add(
           'set $dartName(String value) => setFieldValue($fieldNameVar, value);');

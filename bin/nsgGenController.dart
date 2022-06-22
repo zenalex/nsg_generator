@@ -241,15 +241,15 @@ class NsgGenController {
     codeList.add('    where T : NsgServerDataItem, new();');
     var publicMdf = (nsgGenerator.targetFramework == 'net5.0' ? 'public ' : '');
     methods.forEach((_) {
-      _.imageFieldList.forEach((el) {
-        if (_.authorize != 'none') {
-          codeList.add(
-              '${publicMdf}Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
-        } else {
-          codeList.add(
-              '${publicMdf}Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
-        }
-      });
+      // _.imageFieldList.forEach((el) {
+      //   if (_.authorize != 'none') {
+      //     codeList.add(
+      //         '${publicMdf}Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
+      //   } else {
+      //     codeList.add(
+      //         '${publicMdf}Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
+      //   }
+      // });
     });
     codeList.add('');
     await Future.forEach<NsgGenFunction>(functions, (element) async {
@@ -334,19 +334,19 @@ class NsgGenController {
           m.genDataItem.databaseType.isNotEmpty) {
         hasMetadata = true;
       }
-      m.imageFieldList.forEach((el) {
-        if (m.authorize != 'none') {
-          codeList.add(
-              'public Task<FileStreamResult> ${m.name}${el.apiPrefix}(INsgTokenExtension user, String file)');
-          codeList.add('    => On${m.name}${el.apiPrefix}(user, file);');
-          codeList.add('');
-        } else {
-          codeList.add(
-              'public Task<FileStreamResult> ${m.name}${el.apiPrefix}(INsgTokenExtension user, String file)');
-          codeList.add('    => On${m.name}${el.apiPrefix}(user, file);');
-          codeList.add('');
-        }
-      });
+      // m.imageFieldList.forEach((el) {
+      //   if (m.authorize != 'none') {
+      //     codeList.add(
+      //         'public Task<FileStreamResult> ${m.name}${el.apiPrefix}(INsgTokenExtension user, String file)');
+      //     codeList.add('    => On${m.name}${el.apiPrefix}(user, file);');
+      //     codeList.add('');
+      //   } else {
+      //     codeList.add(
+      //         'public Task<FileStreamResult> ${m.name}${el.apiPrefix}(INsgTokenExtension user, String file)');
+      //     codeList.add('    => On${m.name}${el.apiPrefix}(user, file);');
+      //     codeList.add('');
+      //   }
+      // });
     });
     await Future.forEach<NsgGenFunction>(functions, (element) async {
       element.generateControllerImplDesignerMethod(
@@ -408,23 +408,23 @@ class NsgGenController {
     // codeList.add('}');
     // codeList.add('');
     methods.forEach((m) {
-      m.imageFieldList.forEach((el) {
-        if (m.authorize != 'none') {
-          codeList.add(
-              'private Task<FileStreamResult> On${m.name}${el.apiPrefix}(INsgTokenExtension user, String file)');
-          codeList.add('{');
-          codeList.add('throw new NotImplementedException();');
-          codeList.add('}');
-          codeList.add('');
-        } else {
-          codeList.add(
-              'private Task<FileStreamResult> On${m.name}${el.apiPrefix}(INsgTokenExtension user, String file)');
-          codeList.add('{');
-          codeList.add('throw new NotImplementedException();');
-          codeList.add('}');
-          codeList.add('');
-        }
-      });
+      // m.imageFieldList.forEach((el) {
+      //   if (m.authorize != 'none') {
+      //     codeList.add(
+      //         'private Task<FileStreamResult> On${m.name}${el.apiPrefix}(INsgTokenExtension user, String file)');
+      //     codeList.add('{');
+      //     codeList.add('throw new NotImplementedException();');
+      //     codeList.add('}');
+      //     codeList.add('');
+      //   } else {
+      //     codeList.add(
+      //         'private Task<FileStreamResult> On${m.name}${el.apiPrefix}(INsgTokenExtension user, String file)');
+      //     codeList.add('{');
+      //     codeList.add('throw new NotImplementedException();');
+      //     codeList.add('}');
+      //     codeList.add('');
+      //   }
+      // });
     });
     await Future.forEach<NsgGenFunction>(functions, (element) async {
       await element.generateControllerImplMethod(codeList, nsgGenerator, this);

@@ -120,7 +120,7 @@ class NsgGenFunction {
     } else if (type == 'double') {
       codeList.add('$dartType $dartName($paramTNString) => 0;');
     } else if (type == 'Image') {
-      codeList.add('String $dartName($paramTNString) => \'\';');
+      codeList.add('List<int> $dartName($paramTNString) => [];');
     } else if (type == 'Reference') {
       codeList.add('String $dartName($paramTNString) => \'\';');
     } else {
