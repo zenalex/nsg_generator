@@ -346,13 +346,34 @@ class NsgGenDataItem {
     codeList.add('using System.ComponentModel.DataAnnotations;');
     codeList.add('using System.Linq;');
     codeList.add('using NsgServerClasses;');
+    var namespaces = <String>[];
+
     if (databaseType != null && databaseType.isNotEmpty) {
-      // NsgGenDataItem.generateNsgServerMetadataItem(nsgGenerator);
-      codeList.add('using NsgSoft.DataObjects;');
       if (databaseTypeNamespace != null && databaseTypeNamespace.isNotEmpty) {
-        codeList.add('using $databaseTypeNamespace;');
+        namespaces.add(databaseTypeNamespace);
       }
-      codeList.add('');
+    }
+    var untypedFields =
+        fields.where((field) => field.type == 'UntypedReference');
+    for (var i in untypedFields) {
+      for (var j in i.referenceTypes) {
+        if (j.containsKey('namespace')) {
+          var ns = j['namespace'].toString();
+          if (ns.isNotEmpty && !namespaces.contains(ns)) {
+            namespaces.add(ns);
+          }
+        }
+      }
+    }
+    if (namespaces.isNotEmpty) {
+      codeList.add('using NsgSoft.DataObjects;');
+      for (var i in namespaces) {
+        codeList.add('using ' + i + ';');
+      }
+    }
+    codeList.add('');
+
+    if (databaseType != null && databaseType.isNotEmpty) {
       codeList.add(
           '// --------------------------------------------------------------');
       codeList.add(
@@ -536,6 +557,14 @@ class NsgGenDataItem {
         } else if (el.dartType == 'Reference') {
           codeList.add(
               'nsgObject["${el.dbName}"].Value = Guid.TryParse(${el.name}, out Guid ${el.name}Guid) ? ${el.name}Guid : Guid.Empty;');
+        } else if (el.dartType == 'UntypedReference') {
+          codeList.add('var ${el.name}Splitted = ${el.name}.Split(\'.\');');
+          codeList.add(
+              'if (${el.name}Splitted.Length != 2) throw new Exception("$typeName, ${el.name} is not untyped reference id");');
+          codeList.add(
+              'nsgObject["${el.dbName}"].Value = (Guid.TryParse(${el.name}Splitted[0], out Guid ${el.name}Guid) ? ${el.name}Guid : Guid.Empty).ToString()');
+          codeList.add(
+              '    + "." + GetClientServerTypes()[${el.name}Splitted[1]];');
         } else if (el.dartType == 'Image') {
           codeList.add(
               'nsgObject.${el.dbName} = System.Drawing.Image.FromStream(new System.IO.MemoryStream(Convert.FromBase64String(${el.name})));');
@@ -575,7 +604,24 @@ class NsgGenDataItem {
       codeList.add('};');
       codeList.add('');
 
-      var refs = fields.where((field) => field.type == 'Reference');
+      if (untypedFields.isNotEmpty) {
+        codeList.add(
+            'public override Dictionary<string, string> GetClientServerTypes() => ClientServerTypes;');
+        codeList.add(
+            'public static Dictionary<string, string> ClientServerTypes = new Dictionary<string, string>');
+        codeList.add('{');
+        for (var i in untypedFields) {
+          for (var j in i.referenceTypes) {
+            codeList.add(
+                '["${j['alias'].toString()}"] = ${j['databaseType'].toString()}.Новый().TableName,');
+          }
+        }
+        codeList.add('};');
+        codeList.add('');
+      }
+
+      var refs = fields.where(
+          (field) => ['Reference', 'UntypedReference'].contains(field.type));
       if (refs.isNotEmpty) {
         codeList.add(
             'public override Dictionary<string, string> GetReferenceNames() => ReferenceNames;');
@@ -590,7 +636,6 @@ class NsgGenDataItem {
       }
       //ToData
     } else {
-      codeList.add('');
       codeList.add(
           '// --------------------------------------------------------------');
       codeList.add(
@@ -652,6 +697,26 @@ class NsgGenDataItem {
             'public string ${element.name} { get; set; } = "00000000-0000-0000-0000-000000000000";');
         codeList.add(
             'public ${element.referenceType} ${element.referenceName} { get; set; }');
+        if (!element.alwaysReturnNested) {
+          codeList.add('public bool ShouldSerialize${element.referenceName}()');
+          codeList.add('{');
+          codeList
+              .add('return NestReferences() && (SerializeFields == null ||');
+          codeList.add(
+              '    SerializeFields.Find(s => s.StartsWith("${element.dartName}")) != default);');
+          codeList.add('}');
+        }
+      } else if (element.dartType == 'UntypedReference') {
+        codeList.add('/// <remarks> ');
+        codeList.add(
+            '/// Untyped reference (${element.referenceTypes.map((e) => e['databaseType'].toString()).join(', ')})');
+        codeList.add('/// </remarks> ');
+        codeList.add(
+            '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000")]');
+        codeList.add(
+            'public string ${element.name} { get; set; } = "00000000-0000-0000-0000-000000000000";');
+        codeList.add(
+            'public NsgServerMetadataItem ${element.referenceName} { get; set; }');
         if (!element.alwaysReturnNested) {
           codeList.add('public bool ShouldSerialize${element.referenceName}()');
           codeList.add('{');

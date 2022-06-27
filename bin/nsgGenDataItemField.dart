@@ -16,6 +16,7 @@ class NsgGenDataItemField {
   final String userName;
   final bool alwaysReturnNested;
   final bool writeOnClient;
+  final List<Map<String, dynamic>> referenceTypes;
 
   NsgGenDataItemField(
       {this.name,
@@ -31,7 +32,8 @@ class NsgGenDataItemField {
       this.userVisibility,
       this.userName,
       this.alwaysReturnNested,
-      this.writeOnClient});
+      this.writeOnClient,
+      this.referenceTypes});
 
   factory NsgGenDataItemField.fromJson(Map<String, dynamic> parsedJson) {
     var ml = parsedJson['maxLength'];
@@ -64,7 +66,12 @@ class NsgGenDataItemField {
         alwaysReturnNested: parsedJson['alwaysReturnNested'] == 'true',
         writeOnClient: parsedJson.containsKey('writeOnClient')
             ? parsedJson['writeOnClient'] != 'false'
-            : true);
+            : true,
+        referenceTypes: (parsedJson.containsKey('referenceTypes')
+                ? parsedJson['referenceTypes'] as List
+                : List.empty())
+            .map((e) => e as Map<String, dynamic>)
+            .toList());
   }
 
   static Map<String, int> defaultMaxLength = <String, int>{
@@ -104,6 +111,8 @@ class NsgGenDataItemField {
       return 'NsgDataReferenceListField<$referenceType>';
     } else if (type == 'List<Enum>') {
       return 'NsgDataListLield<$referenceType>';
+    } else if (type == 'UntypedReference') {
+      return 'NsgDataReferenceField<NsgDataItem>';
     } else {
       print("get nsgDataType for field type $type couldn't be found");
       throw Exception();
@@ -152,6 +161,16 @@ class NsgGenDataItemField {
       codeList.add(
           ' return await getReferentAsync<$referenceType>($fieldNameVar);');
       codeList.add('}');
+    } else if (type == 'UntypedReference') {
+      codeList.add(
+          'String get $dartName => getFieldValue($fieldNameVar).toString();');
+      codeList.add(
+          'NsgDataItem get ${NsgGenerator.generator.getDartName(referenceName)} => getReferent<NsgDataItem>($fieldNameVar);');
+      codeList.add(
+          'Future<NsgDataItem> ${NsgGenerator.generator.getDartName(referenceName)}Async() async {');
+      codeList
+          .add(' return await getReferentAsync<NsgDataItem>($fieldNameVar);');
+      codeList.add('}');
     } else {
       print("write getter for field type $type couldn't be found");
       throw Exception();
@@ -168,6 +187,12 @@ class NsgGenDataItemField {
           'set $dartName(String value) => setFieldValue($fieldNameVar, value);');
       codeList.add(
           'set ${NsgGenerator.generator.getDartName(referenceName)}($referenceType value) =>');
+      codeList.add('    setFieldValue($fieldNameVar, value.id);');
+    } else if (type == 'UntypedReference') {
+      codeList.add(
+          'set $dartName(String value) => setFieldValue($fieldNameVar, value);');
+      codeList.add(
+          'set ${NsgGenerator.generator.getDartName(referenceName)}(NsgDataItem value) =>');
       codeList.add('    setFieldValue($fieldNameVar, value.id);');
     } else if (type == 'List<Reference>') {
       //Отменил запись setter из-за смены возвращаемого типа на NsgDataTable
