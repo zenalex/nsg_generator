@@ -353,6 +353,13 @@ class NsgGenDataItem {
         namespaces.add(databaseTypeNamespace);
       }
     }
+    var csTypes = <String, String>{};
+    // var typedFields = fields.where((field) => field.type == 'Reference');
+    // for (var i in typedFields) {
+    //   if (!csTypes.containsKey(i.referenceType)) {
+    //     csTypes[i.referenceType] = i.dbType;
+    //   }
+    // }
     var untypedFields =
         fields.where((field) => field.type == 'UntypedReference');
     for (var i in untypedFields) {
@@ -362,6 +369,11 @@ class NsgGenDataItem {
           if (ns.isNotEmpty && !namespaces.contains(ns)) {
             namespaces.add(ns);
           }
+        }
+        var alias = j['alias'].toString();
+        var databaseType = j['databaseType'].toString();
+        if (!csTypes.containsKey(alias)) {
+          csTypes[alias] = databaseType;
         }
       }
     }
@@ -604,24 +616,21 @@ class NsgGenDataItem {
       codeList.add('};');
       codeList.add('');
 
-      if (untypedFields.isNotEmpty) {
+      if (csTypes.isNotEmpty) {
         codeList.add(
             'public override Dictionary<string, string> GetClientServerTypes() => ClientServerTypes;');
         codeList.add(
             'public static Dictionary<string, string> ClientServerTypes = new Dictionary<string, string>');
         codeList.add('{');
-        for (var i in untypedFields) {
-          for (var j in i.referenceTypes) {
-            codeList.add(
-                '["${j['alias'].toString()}"] = ${j['databaseType'].toString()}.Новый().TableName,');
-          }
+        for (var i in csTypes.entries) {
+          codeList.add('["${i.key}"] = ${i.value}.Новый().TableName,');
         }
         codeList.add('};');
         codeList.add('');
       }
 
-      var refs = fields.where(
-          (field) => ['Reference', 'UntypedReference'].contains(field.type));
+      var refs = fields.where((field) =>
+          ['Reference' /*, 'UntypedReference'*/].contains(field.type));
       if (refs.isNotEmpty) {
         codeList.add(
             'public override Dictionary<string, string> GetReferenceNames() => ReferenceNames;');
@@ -712,20 +721,20 @@ class NsgGenDataItem {
             '/// Untyped reference (${element.referenceTypes.map((e) => e['databaseType'].toString()).join(', ')})');
         codeList.add('/// </remarks> ');
         codeList.add(
-            '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000")]');
+            '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000.NO")]');
         codeList.add(
-            'public string ${element.name} { get; set; } = "00000000-0000-0000-0000-000000000000";');
-        codeList.add(
-            'public NsgServerMetadataItem ${element.referenceName} { get; set; }');
-        if (!element.alwaysReturnNested) {
-          codeList.add('public bool ShouldSerialize${element.referenceName}()');
-          codeList.add('{');
-          codeList
-              .add('return NestReferences() && (SerializeFields == null ||');
-          codeList.add(
-              '    SerializeFields.Find(s => s.StartsWith("${element.dartName}")) != default);');
-          codeList.add('}');
-        }
+            'public string ${element.name} { get; set; } = "00000000-0000-0000-0000-000000000000.NO";');
+        // codeList.add(
+        //     'public NsgServerMetadataItem ${element.referenceName} { get; set; }');
+        // if (!element.alwaysReturnNested) {
+        //   codeList.add('public bool ShouldSerialize${element.referenceName}()');
+        //   codeList.add('{');
+        //   codeList
+        //       .add('return NestReferences() && (SerializeFields == null ||');
+        //   codeList.add(
+        //       '    SerializeFields.Find(s => s.StartsWith("${element.dartName}")) != default);');
+        //   codeList.add('}');
+        // }
       } else {
         if (element.type == 'Guid') {
           codeList
