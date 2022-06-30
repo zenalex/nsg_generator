@@ -76,7 +76,7 @@ class NsgGenDataItem {
     codeList.add('');
     codeList.add('[JsonIgnore]');
     codeList.add('public virtual NsgMultipleObject NSGObject { get; set; }');
-    codeList.add('public virtual void OnSetNsgObject() { }');
+    codeList.add('public virtual void OnNsgToServerObject() { }');
     codeList.add(
         'public virtual void OnBeforePostNsgObject<T>(INsgTokenExtension user, T obj) where T : NsgMultipleObject { }');
     codeList.add(
@@ -441,7 +441,7 @@ class NsgGenDataItem {
       codeList.add('{');
       codeList.add('nsgObject = value as $databaseType;');
       codeList.add('if (value == null) return;');
-      codeList.add('SetNsgObject(nsgObject);');
+      codeList.add('NsgToServerObject(nsgObject);');
       // fields.forEach((el) {
       //   if (el.dartType == 'List<Enum>') {
       //     codeList.add('${el.name} = ${el.referenceType}.List();');
@@ -484,7 +484,7 @@ class NsgGenDataItem {
       // if (checkLastModifiedDate) {
       //   codeList.add('LastModified = nsgObject["_lastModified"].ToDateTime();');
       // }
-      // codeList.add('OnSetNsgObject();');
+      // codeList.add('OnNsgToServerObject();');
       codeList.add('}');
       codeList.add('}');
       codeList.add('');
@@ -525,7 +525,7 @@ class NsgGenDataItem {
       // }
       // codeList.add('nsgObject.Edit();');
       // codeList.add('}');
-      // codeList.add('PopulateNsgObject(user, nsgObject);');
+      // codeList.add('ServerToNsgObject(user, nsgObject);');
       // codeList.add('OnBeforePostNsgObject(user, nsgObject);');
       // codeList.add('bool posted = nsgObject.Post();');
       // codeList.add('if (posted) this.NSGObject = nsgObject;');
@@ -540,7 +540,7 @@ class NsgGenDataItem {
       // codeList.add('}');
       codeList.add('');
       codeList.add(
-          'public override void PopulateNsgObject(INsgTokenExtension user, NsgMultipleObject obj)');
+          'public override void ServerToNsgObject(INsgTokenExtension user, NsgMultipleObject obj)');
       codeList.add('{');
       codeList.add('var nsgObject = obj as $databaseType;');
       fields.where((f) => f != pkField).forEach((el) {
@@ -593,7 +593,7 @@ class NsgGenDataItem {
           codeList.add(
               'var row = nsgObject.${el.dbName}.FindRow(NsgSoft.Common.NsgDataFixedFields._ID, t.GetId())');
           codeList.add('    ?? nsgObject.${el.dbName}.NewRow();');
-          codeList.add('t.PopulateNsgObject(user, row);');
+          codeList.add('t.ServerToNsgObject(user, row);');
           codeList.add('}');
         } else {
           codeList.add('nsgObject.${el.dbName} = ${el.name};');
@@ -603,7 +603,7 @@ class NsgGenDataItem {
         codeList.add('nsgObject["_lastModified"].Value = LastModified;');
       }
       //Вызывается в Post в базовом классе
-      //codeList.add('OnPopulateNsgObject(user, nsgObject);');
+      //codeList.add('OnServerToNsgObject(user, nsgObject);');
       codeList.add('}');
       codeList.add('');
       // codeList.add('public static Dictionary<Guid, $typeName> ItemCache =');
