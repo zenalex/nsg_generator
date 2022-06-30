@@ -957,7 +957,7 @@ class NsgGenDataItem {
     codeList.add(
         "import '../${nsgGenerator.getDartUnderscoreName(nsgGenController.class_name)}_model.dart';");
     for (var field in fields) {
-      if (!field.writeOnClient) return;
+      if (!field.writeOnClient) continue;
       if (field.type == 'Enum') {
         if (nsgGenerator.enums.isNotEmpty) {
           codeList.add("import '../enums.dart';");
