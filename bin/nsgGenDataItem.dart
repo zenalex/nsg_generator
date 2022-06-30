@@ -583,6 +583,11 @@ class NsgGenDataItem {
         } else if (el.dartType == 'Enum') {
           codeList.add('nsgObject.${el.dbName}.Value = ${el.name};');
         } else if (el.dartType == 'List<Reference>') {
+          codeList.add(
+              'var ids${el.name} = ${el.name}.Select(i => i.GetId()).ToArray();');
+          codeList.add('nsgObject.${el.dbName}.DeleteRows(new NsgCompare()');
+          codeList.add(
+              '    .Add(NsgSoft.Common.NsgDataFixedFields._ID, ids${el.name}, NsgSoft.Database.NsgComparison.NotIn));');
           codeList.add('foreach (var t in ${el.name})');
           codeList.add('{');
           codeList.add(
