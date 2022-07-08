@@ -124,21 +124,21 @@ class NsgGenController {
       codeList.add('public $className(ILogger<$className> logger)');
       codeList.add('{');
       codeList.add('_logger = logger;');
-      codeList.add('#if (Real)');
+      // codeList.add('#if (Real)');
       codeList.add('controller = new $implControllerName();');
       if (useAuthorization) {
         codeList.add('authController = new $implAuthControllerName();');
       } else {
         codeList.add('authController = AuthController.CurrentController;');
       }
-      codeList.add('#else');
-      codeList.add('controller = new ${implControllerName}Mock();');
-      if (useAuthorization) {
-        codeList.add('authController = new ${implAuthControllerName}Mock();');
-      } else {
-        codeList.add('authController = AuthController.CurrentController;');
-      }
-      codeList.add('#endif');
+      // codeList.add('#else');
+      // codeList.add('controller = new ${implControllerName}Mock();');
+      // if (useAuthorization) {
+      //   codeList.add('authController = new ${implAuthControllerName}Mock();');
+      // } else {
+      //   codeList.add('authController = AuthController.CurrentController;');
+      // }
+      // codeList.add('#endif');
       codeList.add('}');
       codeList.add('');
       if (nsgGenerator.targetFramework != 'net5.0') {
@@ -171,12 +171,12 @@ class NsgGenController {
       codeList.add('');
       codeList.add('public void Init()');
       codeList.add('{');
-      codeList.add('#region types');
-      methods.forEach((el) {
-        codeList.add(
-            'NsgServerDataItem.Types.Add("${nsgGenerator.getDartName(el.genDataItem.typeName)}", new ${el.genDataItem.typeName}());');
-      });
-      codeList.add('#endregion');
+      // codeList.add('#region types');
+      // methods.forEach((el) {
+      //   codeList.add(
+      //       'NsgServerDataItem.Types.Add("${nsgGenerator.getDartName(el.genDataItem.typeName)}", new ${el.genDataItem.typeName}());');
+      // });
+      // codeList.add('#endregion');
       codeList.add(
           'if (NsgServerClasses.AuthController.currentController == null)');
       codeList.add('{');
