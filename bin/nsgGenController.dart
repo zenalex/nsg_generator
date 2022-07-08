@@ -31,18 +31,19 @@ class NsgGenController {
       this.functions});
 
   factory NsgGenController.fromJson(Map<String, dynamic> parsedJson) {
+    var className = parsedJson.containsKey('className')
+        ? parsedJson['className']
+        : parsedJson['class_name'];
     return NsgGenController(
         apiPrefix: parsedJson.containsKey('apiPrefix')
             ? parsedJson['apiPrefix']
             : parsedJson['api_prefix'],
-        className: parsedJson.containsKey('className')
-            ? parsedJson['className']
-            : parsedJson['class_name'],
+        className: className,
         implControllerName: parsedJson.containsKey('implControllerName')
             ? parsedJson['implControllerName']
             : parsedJson.containsKey('impl_controller_name')
                 ? parsedJson['impl_controller_name']
-                : parsedJson['class_name'] + 'Implementation',
+                : className + 'Implementation',
         implAuthControllerName: parsedJson.containsKey('implAuthControllerName')
             ? parsedJson['implAuthControllerName']
             : parsedJson.containsKey('impl_auth_controller_name')
@@ -170,6 +171,12 @@ class NsgGenController {
       codeList.add('');
       codeList.add('public void Init()');
       codeList.add('{');
+      codeList.add('#region types');
+      methods.forEach((el) {
+        codeList.add(
+            'NsgServerDataItem.Types.Add("${nsgGenerator.getDartName(el.genDataItem.typeName)}", new ${el.genDataItem.typeName}());');
+      });
+      codeList.add('#endregion');
       codeList.add(
           'if (NsgServerClasses.AuthController.currentController == null)');
       codeList.add('{');
