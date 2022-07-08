@@ -309,7 +309,13 @@ class NsgGenDataItem {
         codeList.add(
             'public List<${element.referenceType}> ${element.name} { get; set; }');
         codeList.add('    = new List<${element.referenceType}>();');
-        if (!element.alwaysReturnNested) {
+        if (element.alwaysReturnNested) {
+          codeList.add('public bool ShouldSerialize${element.name}()');
+          codeList.add('{');
+          codeList
+              .add('return ${element.name} != null && ${element.name}.Any();');
+          codeList.add('}');
+        } else {
           codeList.add('public bool ShouldSerialize${element.name}()');
           codeList.add('{');
           codeList
@@ -338,6 +344,12 @@ class NsgGenDataItem {
         codeList.add(
             'public ${element.referenceType} ${element.referenceName} { get; set; }');
         if (!element.alwaysReturnNested) {
+          //   codeList.add('public bool ShouldSerialize${element.referenceName}()');
+          //   codeList.add('{');
+          //   codeList.add(
+          //       'return ${element.referenceName} != null && ${element.referenceName}.GetId() != Guid.Empty;');
+          //   codeList.add('}');
+          // } else {
           codeList.add('public bool ShouldSerialize${element.referenceName}()');
           codeList.add('{');
           codeList
