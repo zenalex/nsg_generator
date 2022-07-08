@@ -270,7 +270,7 @@ class NsgGenCSProject {
       codeList.add('});');
       codeList.add('');
       nsgGenerator.controllers.forEach((controller) {
-        codeList.add('${controller.class_name}.getController.Init();');
+        codeList.add('${controller.className}.getController.Init();');
       });
       codeList.add('}');
       codeList.add('}');
@@ -348,7 +348,7 @@ class NsgGenCSProject {
       codeList.add('app.UseWebApi(config);');
       codeList.add('');
       nsgGenerator.controllers.forEach((controller) {
-        codeList.add('${controller.class_name}.getController.Init();');
+        codeList.add('${controller.className}.getController.Init();');
       });
       codeList.add('}');
       codeList.add('}');

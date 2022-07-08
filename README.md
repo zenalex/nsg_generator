@@ -31,8 +31,8 @@ generation_config.json - Основной файл, содержащий опи�
     "applicationName": "my_app",
     "controller": [
         {
-            "api_prefix": "Api",
-            "class_name": "DataController",
+            "apiPrefix": "Api",
+            "className": "DataController",
             "useAuthorization": "true",
             "dataType": "NsgDataItem",
             "serverUri": "http://127.0.0.1:5000",
@@ -124,17 +124,17 @@ generation_config.json - Основной файл, содержащий опи�
     ],
     "enums": [
         {
-            "class_name": "EDaysOfWeek",
+            "className": "EDaysOfWeek",
             "description": "Дни недели",
             "dataTypeFile": "e_days_of_week.json"
         },
         {
-            "class_name": "ERole",
+            "className": "ERole",
             "description": "Роль",
             "dataTypeFile": "e_role.json"
         },
         {
-            "class_name": "EPriority",
+            "className": "EPriority",
             "description": "Приоритет",
             "dataTypeFile": "e_priority.json"
         }
@@ -184,22 +184,22 @@ generation_config.json - Основной файл, содержащий опи�
 
 Префикс для вызова web-api  
 ```json
-"api_prefix": "Api",
+"apiPrefix": "Api",
 ```
 
 Имя класса контроллера. По умолчанию "DataController"   
 ```json
-"class_name": "DataController",
+"className": "DataController",
 ```
 
-Имя класса, содержащего реализации функций контроллера. По умолчанию class_name + "Implementation"  
+Имя класса, содержащего реализации функций контроллера. По умолчанию className + "Implementation"  
 ```json
-"impl_controller_name": "DataControllerImplementation",
+"implControllerName": "DataControllerImplementation",
 ```
 
 Имя класса, реализующего функции аутентификации. По умолчанию "AuthControllerImplementation"  
 ```json
-"impl_auth_controller_name": "AuthControllerImplementation",
+"implAuthControllerName": "AuthControllerImplementation",
 ```
 
 Использует ли контроллер проверку пользователей  
@@ -359,7 +359,7 @@ Uri сервера
 
 Имя класса перечисления  
 ```json
-"class_name": "DaysOfWeek",
+"className": "DaysOfWeek",
 ```
 
 Описание перечисления для чтения человеком  

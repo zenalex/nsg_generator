@@ -280,7 +280,7 @@ class NsgGenFunction {
           '      var res = await NsgDataRequest<$dartType>().requestItem(');
     }
     codeList
-        .add('          function: \'/${controller.api_prefix}/$apiPrefix\',');
+        .add('          function: \'/${controller.apiPrefix}/$apiPrefix\',');
     codeList.add('          method: \'POST\',');
     codeList.add('          filter: filter,');
     codeList.add('          autoRepeate: true,');

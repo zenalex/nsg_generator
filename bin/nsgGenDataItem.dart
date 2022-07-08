@@ -576,7 +576,7 @@ class NsgGenDataItem {
     //generate service class for DataItem data_item.g.dart
     //----------------------------------------------------------
     print(
-        'Generate controller = ${nsgGenController.class_name}, method = ${nsgGenMethod.name}');
+        'Generate controller = ${nsgGenController.className}, method = ${nsgGenMethod.name}');
 
     var codeList = <String>[];
     codeList.add(
@@ -586,7 +586,7 @@ class NsgGenDataItem {
     codeList.add('// ignore: unused_import');
     codeList.add("import 'dart:typed_data';");
     codeList.add(
-        "import '../${nsgGenerator.getDartUnderscoreName(nsgGenController.class_name)}_model.dart';");
+        "import '../${nsgGenerator.getDartUnderscoreName(nsgGenController.className)}_model.dart';");
     for (var field in fields) {
       if (!field.writeOnClient) continue;
       if (field.type == 'Enum') {
@@ -691,7 +691,7 @@ class NsgGenDataItem {
     codeList.add('  @override');
     codeList.add('  String get apiRequestItems {');
     codeList.add(
-        "    return '/${nsgGenController.api_prefix}/${nsgGenMethod.apiPrefix}';");
+        "    return '/${nsgGenController.apiPrefix}/${nsgGenMethod.apiPrefix}';");
     codeList.add('  }');
 
     codeList.add('}');

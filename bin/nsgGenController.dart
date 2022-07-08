@@ -7,10 +7,10 @@ import 'nsgGenFunction.dart';
 import 'nsgGenerator.dart';
 
 class NsgGenController {
-  final String api_prefix;
-  final String class_name;
-  final String impl_controller_name;
-  final String impl_auth_controller_name;
+  final String apiPrefix;
+  final String className;
+  final String implControllerName;
+  final String implAuthControllerName;
   final String dataType;
   final String serverUri;
   final bool useAuthorization;
@@ -19,10 +19,10 @@ class NsgGenController {
   final List<NsgGenFunction> functions;
 
   NsgGenController(
-      {this.api_prefix,
-      this.class_name,
-      this.impl_controller_name,
-      this.impl_auth_controller_name,
+      {this.apiPrefix,
+      this.className,
+      this.implControllerName,
+      this.implAuthControllerName,
       this.dataType,
       this.serverUri,
       this.useAuthorization,
@@ -32,13 +32,20 @@ class NsgGenController {
 
   factory NsgGenController.fromJson(Map<String, dynamic> parsedJson) {
     return NsgGenController(
-        api_prefix: parsedJson['api_prefix'],
-        class_name: parsedJson['class_name'],
-        impl_controller_name: parsedJson.containsKey('impl_controller_name')
-            ? parsedJson['impl_controller_name']
-            : parsedJson['class_name'] + 'Implementation',
-        impl_auth_controller_name:
-            parsedJson.containsKey('impl_auth_controller_name')
+        apiPrefix: parsedJson.containsKey('apiPrefix')
+            ? parsedJson['apiPrefix']
+            : parsedJson['api_prefix'],
+        className: parsedJson.containsKey('className')
+            ? parsedJson['className']
+            : parsedJson['class_name'],
+        implControllerName: parsedJson.containsKey('implControllerName')
+            ? parsedJson['implControllerName']
+            : parsedJson.containsKey('impl_controller_name')
+                ? parsedJson['impl_controller_name']
+                : parsedJson['class_name'] + 'Implementation',
+        implAuthControllerName: parsedJson.containsKey('implAuthControllerName')
+            ? parsedJson['implAuthControllerName']
+            : parsedJson.containsKey('impl_auth_controller_name')
                 ? parsedJson['impl_auth_controller_name']
                 : 'AuthControllerImplementation',
         dataType: parsedJson['dataType'],
@@ -99,35 +106,34 @@ class NsgGenController {
       codeList.add('/// </summary>');
       if (nsgGenerator.targetFramework == 'net5.0') {
         codeList.add('[ApiController]');
-        codeList.add('[Route("$api_prefix")]');
+        codeList.add('[Route("$apiPrefix")]');
       } else {
-        codeList.add('[RoutePrefix("$api_prefix")]');
+        codeList.add('[RoutePrefix("$apiPrefix")]');
       }
-      codeList.add('public class $class_name : ' +
+      codeList.add('public class $className : ' +
           (nsgGenerator.targetFramework == 'net5.0'
               ? 'ControllerBase'
               : 'ApiController'));
       codeList.add('{');
 
-      codeList.add('${class_name}Interface controller;');
+      codeList.add('${className}Interface controller;');
       codeList.add('AuthImplInterface authController;');
 
-      codeList.add('private readonly ILogger<$class_name> _logger;');
-      codeList.add('public $class_name(ILogger<$class_name> logger)');
+      codeList.add('private readonly ILogger<$className> _logger;');
+      codeList.add('public $className(ILogger<$className> logger)');
       codeList.add('{');
       codeList.add('_logger = logger;');
       codeList.add('#if (Real)');
-      codeList.add('controller = new $impl_controller_name();');
+      codeList.add('controller = new $implControllerName();');
       if (useAuthorization) {
-        codeList.add('authController = new $impl_auth_controller_name();');
+        codeList.add('authController = new $implAuthControllerName();');
       } else {
         codeList.add('authController = AuthController.CurrentController;');
       }
       codeList.add('#else');
-      codeList.add('controller = new ${impl_controller_name}Mock();');
+      codeList.add('controller = new ${implControllerName}Mock();');
       if (useAuthorization) {
-        codeList
-            .add('authController = new ${impl_auth_controller_name}Mock();');
+        codeList.add('authController = new ${implAuthControllerName}Mock();');
       } else {
         codeList.add('authController = AuthController.CurrentController;');
       }
@@ -136,20 +142,20 @@ class NsgGenController {
       codeList.add('');
       if (nsgGenerator.targetFramework != 'net5.0') {
         codeList.add(
-            'public $class_name() : this(Program.LoggerFactory.CreateLogger<$class_name>()) { }');
+            'public $className() : this(Program.LoggerFactory.CreateLogger<$className>()) { }');
         codeList.add('');
       }
-      codeList.add('private static $class_name currentController;');
-      codeList.add('public static $class_name getController');
+      codeList.add('private static $className currentController;');
+      codeList.add('public static $className getController');
       codeList.add('{');
       codeList.add('get');
       codeList.add('{');
       if (nsgGenerator.targetFramework == 'net5.0') {
         codeList.add(
-            'if (currentController == null) currentController = new $class_name(null);');
+            'if (currentController == null) currentController = new $className(null);');
       } else {
         codeList.add(
-            'if (currentController == null) currentController = new $class_name();');
+            'if (currentController == null) currentController = new $className();');
       }
       codeList.add('return currentController;');
       codeList.add('}');
@@ -168,7 +174,7 @@ class NsgGenController {
           'if (NsgServerClasses.AuthController.currentController == null)');
       codeList.add('{');
       if (useAuthorization) {
-        codeList.add('authController = new $impl_auth_controller_name();');
+        codeList.add('authController = new $implAuthControllerName();');
       } else {
         codeList.add('authController = AuthController.CurrentController;');
       }
@@ -189,7 +195,7 @@ class NsgGenController {
       codeList.add('}');
       NsgGenCSProject.indentCode(codeList);
 
-      var fn = '${nsgGenerator.cSharpPath}/$class_name.cs';
+      var fn = '${nsgGenerator.cSharpPath}/$className.cs';
       //if (!File(fn).existsSync()) {
       await File(fn).writeAsString(codeList.join('\r\n'));
       //}
@@ -222,7 +228,7 @@ class NsgGenController {
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
     codeList.add('{');
-    codeList.add('public interface ${class_name}Interface');
+    codeList.add('public interface ${className}Interface');
     codeList.add('{');
     codeList.add(
         'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Get<T>(INsgTokenExtension user, NsgFindParams findParams)');
@@ -265,7 +271,7 @@ class NsgGenController {
     codeList.add('}');
     codeList.add('}');
     NsgGenCSProject.indentCode(codeList);
-    var fn = '${nsgGenerator.cSharpPath}/${class_name}Interface.cs';
+    var fn = '${nsgGenerator.cSharpPath}/${className}Interface.cs';
     //if (!File(fn).existsSync()) {
     await File(fn).writeAsString(codeList.join('\r\n'));
     //}
@@ -298,7 +304,7 @@ class NsgGenController {
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}.Controllers');
     codeList.add('{');
     codeList.add(
-        'public partial class $impl_controller_name : ${class_name}Interface');
+        'public partial class $implControllerName : ${className}Interface');
     codeList.add('{');
     codeList.add(
         'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Get<T>(INsgTokenExtension user, NsgFindParams findParams) where T : NsgServerDataItem, new()');
@@ -369,7 +375,7 @@ class NsgGenController {
     codeList.add('}');
     NsgGenCSProject.indentCode(codeList);
     var fn =
-        '${nsgGenerator.cSharpPath}/Controllers/$impl_controller_name.Designer.cs';
+        '${nsgGenerator.cSharpPath}/Controllers/$implControllerName.Designer.cs';
     await File(fn).writeAsString(codeList.join('\r\n'));
 
     // ${impl_controller_name}.cs
@@ -401,7 +407,7 @@ class NsgGenController {
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}.Controllers');
     codeList.add('{');
-    codeList.add('public partial class $impl_controller_name');
+    codeList.add('public partial class $implControllerName');
     codeList.add('{');
     // codeList.add('public ${impl_controller_name}()');
     // codeList.add('{');
@@ -443,7 +449,7 @@ class NsgGenController {
     codeList.add('}');
     codeList.add('}');
     NsgGenCSProject.indentCode(codeList);
-    fn = '${nsgGenerator.cSharpPath}/Controllers/$impl_controller_name.cs';
+    fn = '${nsgGenerator.cSharpPath}/Controllers/$implControllerName.cs';
     if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
       await File(fn).writeAsString(codeList.join('\r\n'));
     }
@@ -475,24 +481,24 @@ class NsgGenController {
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}.Controllers');
     codeList.add('{');
-    codeList.add('public class $impl_auth_controller_name : AuthImplInterface');
+    codeList.add('public class $implAuthControllerName : AuthImplInterface');
     codeList.add('{');
     codeList.add('}');
     codeList.add('}');
     NsgGenCSProject.indentCode(codeList);
     var fn =
-        '${nsgGenerator.cSharpPath}/Controllers/$impl_auth_controller_name.cs';
+        '${nsgGenerator.cSharpPath}/Controllers/$implAuthControllerName.cs';
     if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
       await File(fn).writeAsString(codeList.join('\r\n'));
     }
   }
 
   void load(NsgGenerator nsgGenerator) async {
-    print('load Controller $class_name start');
+    print('load Controller $className start');
     await Future.forEach<NsgGenMethod>(methods, (element) async {
       await element.loadGenDataItem(nsgGenerator);
     });
-    print('load $class_name finished');
+    print('load $className finished');
   }
 
   void generateCodeDart(NsgGenerator nsgGenerator) async {
@@ -514,7 +520,7 @@ class NsgGenController {
     });
 
     await File(
-            '${nsgGenerator.dartPath}/${nsgGenerator.getDartUnderscoreName(class_name)}_model.dart')
+            '${nsgGenerator.dartPath}/${nsgGenerator.getDartUnderscoreName(className)}_model.dart')
         .writeAsString(codeList.join('\r\n'));
   }
 
@@ -529,9 +535,9 @@ class NsgGenController {
       codeList.add("import '../enums.dart';");
     }
     codeList.add(
-        "import '../${nsgGenerator.getDartUnderscoreName(class_name)}_model.dart';");
+        "import '../${nsgGenerator.getDartUnderscoreName(className)}_model.dart';");
     codeList.add('');
-    codeList.add('class ${class_name}Generated extends NsgBaseController {');
+    codeList.add('class ${className}Generated extends NsgBaseController {');
     codeList.add('  NsgDataProvider? provider;');
     codeList.add('  @override');
     codeList.add('  Future onInit() async {');
@@ -566,7 +572,7 @@ class NsgGenController {
     codeList.add('}');
 
     await File(
-            '${nsgGenerator.dartPathGen}/${nsgGenerator.getDartUnderscoreName(class_name)}.g.dart')
+            '${nsgGenerator.dartPathGen}/${nsgGenerator.getDartUnderscoreName(className)}.g.dart')
         .writeAsString(codeList.join('\r\n'));
 
     //----------------------------------------------------------
@@ -575,9 +581,9 @@ class NsgGenController {
     codeList = <String>[];
     //codeList.add("import '${nsgGenerator.getDartName(class_name)}Model.dart';");
     codeList.add(
-        "import '${nsgGenerator.genPathName}/${nsgGenerator.getDartUnderscoreName(class_name)}.g.dart';");
+        "import '${nsgGenerator.genPathName}/${nsgGenerator.getDartUnderscoreName(className)}.g.dart';");
     codeList.add('');
-    codeList.add('class $class_name extends ${class_name}Generated {');
+    codeList.add('class $className extends ${className}Generated {');
     // codeList.add('');
     // codeList
     //     .add('  ${class_name}(NsgDataProvider provider) : super(provider);');
@@ -591,7 +597,7 @@ class NsgGenController {
     codeList.add('}');
 
     var fn =
-        '${nsgGenerator.dartPath}/${nsgGenerator.getDartUnderscoreName(class_name)}.dart';
+        '${nsgGenerator.dartPath}/${nsgGenerator.getDartUnderscoreName(className)}.dart';
     if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
       await File(fn).writeAsString(codeList.join('\r\n'));
     }

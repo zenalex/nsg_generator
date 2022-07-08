@@ -88,11 +88,11 @@ class NsgGenerator {
 
   Future generateCode() async {
     await Future.forEach<NsgGenController>(controllers, (element) async {
-      print('loading ${element.class_name}');
+      print('loading ${element.className}');
       await element.load(this);
     });
     await Future.forEach<NsgGenController>(controllers, (element) async {
-      print('generating ${element.class_name}');
+      print('generating ${element.className}');
       await element.generateCode(this);
     });
     await NsgGenEnum.generateEnums(this, enums);

@@ -15,7 +15,9 @@ class NsgGenEnum {
 
   factory NsgGenEnum.fromJson(Map<String, dynamic> parsedJson) {
     return NsgGenEnum(
-        className: parsedJson['class_name'],
+        className: parsedJson.containsKey('className')
+            ? parsedJson['className']
+            : parsedJson['class_name'],
         dataTypeFile: parsedJson['dataTypeFile'],
         description: parsedJson['description']);
   }
