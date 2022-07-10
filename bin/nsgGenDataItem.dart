@@ -288,7 +288,46 @@ class NsgGenDataItem {
       codeList.add('{');
     }
 
-    // codeList.add('protected override bool NestReferences() => false;');
+    codeList.add('public override void SetDefaultValues()');
+    codeList.add('{');
+    fields.forEach((field) {
+      if (field.type == 'int') {
+        codeList.add('ValueDictionary["${field.dartName}"] = 0;');
+      } else if (field.type == 'double') {
+        codeList.add('ValueDictionary["${field.dartName}"] = 0D;');
+      } else if (field.type == 'String') {
+        if (field.isPrimary) {
+          codeList.add(
+              'ValueDictionary["${field.dartName}"] = "00000000-0000-0000-0000-000000000000";');
+        } else {
+          codeList.add('ValueDictionary["${field.dartName}"] = string.Empty;');
+        }
+      } else if (field.type == 'Guid') {
+        codeList.add('ValueDictionary["${field.dartName}"] = Guid.Empty;');
+      } else if (field.type == 'Reference') {
+        codeList.add(
+            'ValueDictionary["${field.dartName}"] = "00000000-0000-0000-0000-000000000000";');
+        codeList.add(
+            'ValueDictionary["${nsgGenerator.getDartName(field.referenceName)}"] = null;');
+      } else if (field.type == 'UntypedReference') {
+        codeList.add(
+            'ValueDictionary["${field.dartName}"] = "00000000-0000-0000-0000-000000000000.NO";');
+      } else if (field.type == 'List<Reference>') {
+        codeList.add(
+            'ValueDictionary["${field.dartName}"] = new List<${field.referenceType}>();');
+      } else if (field.type == 'Enum') {
+        codeList.add('ValueDictionary["${field.dartName}"] = 0;');
+      } else if (field.type == 'Image') {
+        codeList.add('ValueDictionary["${field.dartName}"] = string.Empty;');
+      } else {
+        codeList.add(
+            'ValueDictionary["${field.dartName}"] = default(${field.dartType});');
+      }
+    });
+    codeList.add('}');
+    codeList.add('');
+
+    codeList.add('#region Properties');
     fields.forEach((element) {
       if (element.description != null && element.description.isNotEmpty) {
         codeList.add('/// <summary>');
@@ -298,17 +337,36 @@ class NsgGenDataItem {
         codeList.add('/// </summary>');
       }
       if (element.dartType == 'int') {
-        codeList.add('public int ${element.name} { get; set; }');
+        codeList.add('public int ${element.name}');
+        codeList.add('{');
+        codeList.add('get => Convert.ToInt32(this["${element.dartName}"]);');
+        codeList.add('set => this["${element.dartName}"] = value;');
+        codeList.add('}');
       } else if (element.dartType == 'double') {
-        codeList.add('public double ${element.name} { get; set; }');
+        codeList.add('public double ${element.name}');
+        codeList.add('{');
+        codeList.add('get => Convert.ToDouble(this["${element.dartName}"]);');
+        codeList.add('set => this["${element.dartName}"] = value;');
+        codeList.add('}');
       } else if (element.dartType == 'bool') {
-        codeList.add('public bool ${element.name} { get; set; }');
+        codeList.add('public bool ${element.name}');
+        codeList.add('{');
+        codeList.add('get => (bool)this["${element.dartName}"];');
+        codeList.add('set => this["${element.dartName}"] = value;');
+        codeList.add('}');
       } else if (element.dartType == 'DateTime') {
-        codeList.add('public DateTime ${element.name} { get; set; }');
+        codeList.add('public DateTime ${element.name}');
+        codeList.add('{');
+        codeList.add('get => (DateTime)this["${element.dartName}"];');
+        codeList.add('set => this["${element.dartName}"] = value;');
+        codeList.add('}');
       } else if (element.dartType == 'List<Reference>') {
+        codeList.add('public List<${element.referenceType}> ${element.name}');
+        codeList.add('{');
         codeList.add(
-            'public List<${element.referenceType}> ${element.name} { get; set; }');
-        codeList.add('    = new List<${element.referenceType}>();');
+            'get => this["${element.dartName}"] as List<${element.referenceType}>;');
+        codeList.add('set => this["${element.dartName}"] = value;');
+        codeList.add('}');
         if (element.alwaysReturnNested) {
           codeList.add('public bool ShouldSerialize${element.name}()');
           codeList.add('{');
@@ -332,17 +390,30 @@ class NsgGenDataItem {
         codeList.add('/// <remarks>');
         codeList.add('/// <see cref="${element.referenceType}"/> enum type');
         codeList.add('/// </remarks>');
-        codeList.add('public int ${element.name} { get; set; }');
+        codeList.add('public int ${element.name}');
+        codeList.add('{');
+        codeList.add('get => (int)this["${element.dartName}"];');
+        codeList.add('set => this["${element.dartName}"] = value;');
+        codeList.add('}');
       } else if (element.dartType == 'Reference') {
         codeList.add('/// <remarks> ');
         codeList.add('/// <see cref="${element.referenceType}"/> reference');
         codeList.add('/// </remarks> ');
         codeList.add(
             '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000")]');
+        codeList.add('public string ${element.name}');
+        codeList.add('{');
+        codeList.add('get => this["${element.dartName}"].ToString();');
+        codeList.add('set => this["${element.dartName}"] = value;');
+        codeList.add('}');
+        codeList
+            .add('public ${element.referenceType} ${element.referenceName}');
+        codeList.add('{');
         codeList.add(
-            'public string ${element.name} { get; set; } = "00000000-0000-0000-0000-000000000000";');
+            'get => this["${nsgGenerator.getDartName(element.referenceName)}"] as ${element.referenceType};');
         codeList.add(
-            'public ${element.referenceType} ${element.referenceName} { get; set; }');
+            'set => this["${nsgGenerator.getDartName(element.referenceName)}"] = value;');
+        codeList.add('}');
         if (!element.alwaysReturnNested) {
           //   codeList.add('public bool ShouldSerialize${element.referenceName}()');
           //   codeList.add('{');
@@ -365,8 +436,11 @@ class NsgGenDataItem {
         codeList.add('/// </remarks> ');
         codeList.add(
             '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000.NO")]');
-        codeList.add(
-            'public string ${element.name} { get; set; } = "00000000-0000-0000-0000-000000000000.NO";');
+        codeList.add('public string ${element.name}');
+        codeList.add('{');
+        codeList.add('get => this["${element.dartName}"].ToString();');
+        codeList.add('set => this["${element.dartName}"] = value;');
+        codeList.add('}');
         // codeList.add(
         //     'public NsgServerMetadataItem ${element.referenceName} { get; set; }');
         // if (!element.alwaysReturnNested) {
@@ -380,8 +454,11 @@ class NsgGenDataItem {
         // }
       } else {
         if (element.type == 'Guid') {
-          codeList
-              .add('public Guid ${element.name} { get; set; } = Guid.Empty;');
+          codeList.add('public Guid ${element.name}');
+          codeList.add('{');
+          codeList.add('get => (Guid)this["${element.dartName}"];');
+          codeList.add('set => this["${element.dartName}"] = value;');
+          codeList.add('}');
         } else {
           if (element.name.endsWith('Id')) {
             codeList.add(
@@ -392,13 +469,11 @@ class NsgGenDataItem {
             }
             codeList.add('[System.ComponentModel.DefaultValue("")]');
           }
-          if (element.isPrimary) {
-            codeList.add(
-                'public string ${element.name} { get; set; } = "00000000-0000-0000-0000-000000000000";');
-          } else {
-            codeList.add(
-                'public string ${element.name} { get; set; } = string.Empty;');
-          }
+          codeList.add('public string ${element.name}');
+          codeList.add('{');
+          codeList.add('get => this["${element.dartName}"].ToString();');
+          codeList.add('set => this["${element.dartName}"] = value;');
+          codeList.add('}');
         }
       }
       //if (element.type == 'Image') nsgMethod.addImageMethod(element);
@@ -408,6 +483,7 @@ class NsgGenDataItem {
       codeList.add('public DateTime LastModified { get; set; }');
       codeList.add('');
     }
+    codeList.add('#endregion Properties');
 
     methods.forEach((element) {
       var paramTNString = '';

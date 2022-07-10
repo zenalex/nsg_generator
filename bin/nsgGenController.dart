@@ -171,12 +171,12 @@ class NsgGenController {
       codeList.add('');
       codeList.add('public void Init()');
       codeList.add('{');
-      // codeList.add('#region types');
-      // methods.forEach((el) {
-      //   codeList.add(
-      //       'NsgServerDataItem.Types.Add("${nsgGenerator.getDartName(el.genDataItem.typeName)}", new ${el.genDataItem.typeName}());');
-      // });
-      // codeList.add('#endregion');
+      codeList.add('#region types');
+      methods.forEach((el) {
+        codeList.add(
+            'NsgServerDataItem.Types.Add("${nsgGenerator.getDartName(el.genDataItem.typeName)}", new ${el.genDataItem.typeName}());');
+      });
+      codeList.add('#endregion');
       codeList.add(
           'if (NsgServerClasses.AuthController.currentController == null)');
       codeList.add('{');
