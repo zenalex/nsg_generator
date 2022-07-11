@@ -728,6 +728,13 @@ class NsgGenDataItem {
         }
       }
     });
+    fields.forEach((_) {
+      if (!_.writeOnClient) return;
+      if (_.userVisibility) {
+        codeList.add(
+            "   fieldList.fields[${_.fieldNameVar}]?.presentation = '${_.userName}';");
+      }
+    });
     codeList.add('  }');
     codeList.add('');
     if (presentation != null && presentation.isNotEmpty) {
