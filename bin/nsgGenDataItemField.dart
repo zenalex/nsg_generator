@@ -75,7 +75,7 @@ class NsgGenDataItemField {
   }
 
   static Map<String, int> defaultMaxLength = <String, int>{
-    'String': 50,
+    'String': 10000,
     'double': 2
   };
 
