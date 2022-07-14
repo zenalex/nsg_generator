@@ -58,7 +58,7 @@ class NsgGenMethod {
   }
 
   Future generateCode(List<String> codeList, NsgGenerator nsgGenerator,
-      NsgGenController controller, NsgGenMethod method) async {
+      NsgGenController controller) async {
     if (allowGetter || allowPost || allowDelete) {
       codeList.add('/// <summary>');
       codeList.add('/// $description');
@@ -74,17 +74,17 @@ class NsgGenMethod {
       } else if (authorize == 'user') {
         codeList.add('[Authorize(Roles = UserRoles.User)]');
       } else if (authorize != 'none') {
-        throw Exception('Wrong authorization type in method ${method.name}()');
+        throw Exception('Wrong authorization type in method $name()');
       }
       //POST or GET
       var apiType = 'HttpGet';
       if (getterType == 'post') apiType = 'HttpPost';
       codeList.add('[$apiType]');
       codeList.add(
-          'public async Task<IEnumerable<NsgServerDataItem>> ${method.name}([FromBody] NsgFindParams findParams)');
+          'public async Task<IEnumerable<NsgServerDataItem>> $name([FromBody] NsgFindParams findParams)');
       codeList.add('{');
       codeList.add(
-          'return await Task.Run(() => ${method.name}References(findParams).Result["results"]);');
+          'return await Task.Run(() => ${name}References(findParams).Result["results"]);');
       codeList.add('}');
       codeList.add('');
       codeList.add('[Route("$apiPrefix/References")]');
@@ -97,7 +97,7 @@ class NsgGenMethod {
         codeList.add('[Authorize(Roles = UserRoles.User)]');
       } else if (authorize != 'none') {
         throw Exception(
-            'Wrong authorization type in method ${method.name}References()');
+            'Wrong authorization type in method ${name}References()');
       }
       //POST or GET
       // var apiType = '';
@@ -107,25 +107,25 @@ class NsgGenMethod {
 
       //Generate get gata method
       // codeList.add(
-      //     'public async Task<IEnumerable<${method.genDataItem.typeName}>> ${method.name}([FromBody] NsgFindParams findParams)');
+      //     'public async Task<IEnumerable<${genDataItem.typeName}>> ${name}([FromBody] NsgFindParams findParams)');
       codeList.add(
-          'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${method.name}References([FromBody] NsgFindParams findParams)');
+          'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}References([FromBody] NsgFindParams findParams)');
       codeList.add('{');
       if (controller.useAuthorization && authorize != 'none') {
         codeList
             .add('var user = await authController.GetUserByToken(Request);');
         codeList.add(
-            'return await controller.Get<${method.genDataItem.typeName}>(user, findParams);');
+            'return await controller.Get<${genDataItem.typeName}>(user, findParams);');
       } else {
         codeList.add(
-            'return await controller.Get<${method.genDataItem.typeName}>(null, findParams);');
+            'return await controller.Get<${genDataItem.typeName}>(null, findParams);');
       }
       codeList.add('}');
       codeList.add('');
     }
     //Generate create data method
     if (allowCreate) {
-      method.genDataItem.allowCreate = allowCreate;
+      genDataItem.allowCreate = allowCreate;
       codeList.add('[Route("$apiPrefix/Create")]');
       //Authorization
       if (!controller.useAuthorization) {
@@ -135,29 +135,29 @@ class NsgGenMethod {
         codeList.add('[Authorize(Roles = UserRoles.User)]');
       } else if (authorize != 'none') {
         throw Exception(
-            'Wrong authorization type in method ${method.name}([FromBody] ${method.genDataItem.typeName} items)');
+            'Wrong authorization type in method $name([FromBody] ${genDataItem.typeName} items)');
       }
       codeList.add('[HttpPost]');
       // codeList.add(
-      //     'public async Task<IEnumerable<${method.genDataItem.typeName}>> ${method.name}Post([FromBody] IEnumerable<${method.genDataItem.typeName}> items)');
+      //     'public async Task<IEnumerable<${genDataItem.typeName}>> ${name}Post([FromBody] IEnumerable<${genDataItem.typeName}> items)');
       codeList.add(
-          'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${method.name}Create([FromBody] NsgFindParams findParams)');
+          'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}Create([FromBody] NsgFindParams findParams)');
       codeList.add('{');
       if (controller.useAuthorization && authorize != 'none') {
         codeList
             .add('var user = await authController.GetUserByToken(Request);');
         codeList.add(
-            'return await controller.Create<${method.genDataItem.typeName}>(user, findParams);');
+            'return await controller.Create<${genDataItem.typeName}>(user, findParams);');
       } else {
         codeList.add(
-            'return await controller.Create<${method.genDataItem.typeName}>(null, findParams);');
+            'return await controller.Create<${genDataItem.typeName}>(null, findParams);');
       }
       codeList.add('}');
       codeList.add('');
     }
     //Generate post data method
     if (allowPost) {
-      method.genDataItem.checkLastModifiedDate = checkLastModifiedDate;
+      genDataItem.checkLastModifiedDate = checkLastModifiedDate;
       codeList.add('[Route("$apiPrefix/Post")]');
       //Authorization
       if (!controller.useAuthorization) {
@@ -167,22 +167,22 @@ class NsgGenMethod {
         codeList.add('[Authorize(Roles = UserRoles.User)]');
       } else if (authorize != 'none') {
         throw Exception(
-            'Wrong authorization type in method ${method.name}([FromBody] ${method.genDataItem.typeName} items)');
+            'Wrong authorization type in method $name([FromBody] ${genDataItem.typeName} items)');
       }
       codeList.add('[HttpPost]');
       // codeList.add(
-      //     'public async Task<IEnumerable<${method.genDataItem.typeName}>> ${method.name}Post([FromBody] IEnumerable<${method.genDataItem.typeName}> items)');
+      //     'public async Task<IEnumerable<${genDataItem.typeName}>> ${name}Post([FromBody] IEnumerable<${genDataItem.typeName}> items)');
       codeList.add(
-          'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${method.name}Post([FromBody] IEnumerable<${method.genDataItem.typeName}> items)');
+          'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}Post([FromBody] IEnumerable<${genDataItem.typeName}> items)');
       codeList.add('{');
       if (controller.useAuthorization && authorize != 'none') {
         codeList
             .add('var user = await authController.GetUserByToken(Request);');
         codeList.add(
-            'return await controller.Post<${method.genDataItem.typeName}>(user, items);');
+            'return await controller.Post<${genDataItem.typeName}>(user, items);');
       } else {
         codeList.add(
-            'return await controller.Post<${method.genDataItem.typeName}>(null, items);');
+            'return await controller.Post<${genDataItem.typeName}>(null, items);');
       }
       codeList.add('}');
       codeList.add('');
@@ -199,22 +199,22 @@ class NsgGenMethod {
         codeList.add('[Authorize(Roles = UserRoles.User)]');
       } else if (authorize != 'none') {
         throw Exception(
-            'Wrong authorization type in method ${method.name}([FromBody] ${method.genDataItem.typeName} items)');
+            'Wrong authorization type in method $name([FromBody] ${genDataItem.typeName} items)');
       }
       codeList.add('[HttpDelete]');
       // codeList.add(
-      //     'public async Task<IEnumerable<${method.genDataItem.typeName}>> ${method.name}Post([FromBody] IEnumerable<${method.genDataItem.typeName}> items)');
+      //     'public async Task<IEnumerable<${genDataItem.typeName}>> ${name}Post([FromBody] IEnumerable<${genDataItem.typeName}> items)');
       codeList.add(
-          'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${method.name}Delete([FromBody] IEnumerable<${method.genDataItem.typeName}> items)');
+          'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}Delete([FromBody] IEnumerable<${genDataItem.typeName}> items)');
       codeList.add('{');
       if (controller.useAuthorization && authorize != 'none') {
         codeList
             .add('var user = await authController.GetUserByToken(Request);');
         codeList.add(
-            'return await controller.Delete<${method.genDataItem.typeName}>(user, items);');
+            'return await controller.Delete<${genDataItem.typeName}>(user, items);');
       } else {
         codeList.add(
-            'return await controller.Delete<${method.genDataItem.typeName}>(null, items);');
+            'return await controller.Delete<${genDataItem.typeName}>(null, items);');
       }
       codeList.add('}');
       codeList.add('');
@@ -230,20 +230,20 @@ class NsgGenMethod {
 
     //   if (nsgGenerator.targetFramework == 'net5.0') {
     //     codeList.add(
-    //         'public async Task<FileStreamResult> ${method.name}${element.apiPrefix}([FromRoute] string file)');
+    //         'public async Task<FileStreamResult> ${name}${element.apiPrefix}([FromRoute] string file)');
     //   } else {
     //     codeList.add(
-    //         'public async Task<FileStreamResult> ${method.name}${element.apiPrefix}(string file)');
+    //         'public async Task<FileStreamResult> ${name}${element.apiPrefix}(string file)');
     //   }
     //   codeList.add('{');
     //   if (authorize != 'none') {
     //     codeList
     //         .add('var user = await authController.GetUserByToken(Request);');
     //     codeList.add(
-    //         'return await controller.${method.name}${element.apiPrefix}(user, file);');
+    //         'return await controller.${name}${element.apiPrefix}(user, file);');
     //   } else {
     //     codeList.add(
-    //         'return await controller.${method.name}${element.apiPrefix}(null, file);');
+    //         'return await controller.${name}${element.apiPrefix}(null, file);');
     //   }
     //   codeList.add('}');
     //   codeList.add('');

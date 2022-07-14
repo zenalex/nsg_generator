@@ -191,7 +191,7 @@ class NsgGenController {
       codeList.add('}');
       codeList.add('');
       await Future.forEach<NsgGenMethod>(methods, (element) async {
-        await element.generateCode(codeList, nsgGenerator, this, element);
+        await element.generateCode(codeList, nsgGenerator, this);
       });
 
       await Future.forEach<NsgGenFunction>(functions, (element) async {

@@ -130,7 +130,7 @@ class NsgGenFunction {
     codeList.add('');
   }
 
-  void generateControllerMethod(List<String> codeList,
+  Future generateControllerMethod(List<String> codeList,
       NsgGenerator nsgGenerator, NsgGenController controller) async {
     var paramNString =
         controller.useAuthorization ? 'user, findParams' : 'null, findParams';
