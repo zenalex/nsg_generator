@@ -167,76 +167,6 @@ class NsgGenDataItem {
       codeList.add(
           'public override Guid GetId() => NsgService.StringToGuid(${pkField.name});');
       codeList.add('');
-      // codeList.add(
-      //     'public override void ServerToNsgObject(INsgTokenExtension user, NsgMultipleObject obj)');
-      // codeList.add('{');
-      // codeList.add('var nsgObject = obj as $databaseType;');
-      // fields.where((f) => f != pkField).forEach((el) {
-      //   if (el.dbName == null ||
-      //       el.dbName.isEmpty ||
-      //       el.dbName.contains('.') ||
-      //       el.name.toLowerCase().contains('ownerid')) {
-      //     //Поле Владелец сериализовать не нужно для табличных частей
-      //     //Для справочников, его сериализация может иметь смысл, но тогда нужно
-      //     //Предусмотреть сериализацию неопределенных ссылок как таковых
-      //     //codeList.add('${el.name} = default;');
-      //   } else if (el.dartType == 'int') {
-      //     codeList.add('nsgObject.${el.dbName} = (int)${el.name};');
-      //   } else if (el.dartType == 'double') {
-      //     codeList.add('nsgObject.${el.dbName} = (decimal)${el.name};');
-      //   } else if (['String', 'string'].contains(el.dartType)) {
-      //     if (el.dbType != null && el.dbType.isNotEmpty) {
-      //       codeList.add(
-      //           'nsgObject.${el.dbName}.Value = Guid.TryParse(${el.name}, out Guid ${el.name}Guid) ? ${el.name}Guid : Guid.Empty;');
-      //     } else if (el.isPrimary) {
-      //       codeList.add(
-      //           'nsgObject.${el.dbName} = Guid.TryParse(${el.name}, out Guid ${el.name}Guid) ? ${el.name}Guid : Guid.Empty;');
-      //     } else {
-      //       codeList.add('nsgObject.${el.dbName} = ${el.name};');
-      //     }
-      //   } else if (el.dartType == 'Reference') {
-      //     codeList.add(
-      //         'nsgObject["${el.dbName}"].Value = Guid.TryParse(${el.name}, out Guid ${el.name}Guid) ? ${el.name}Guid : Guid.Empty;');
-      //   } else if (el.dartType == 'UntypedReference') {
-      //     codeList.add('var ${el.name}Splitted = ${el.name}.Split(\'.\');');
-      //     codeList.add(
-      //         'if (${el.name}Splitted.Length != 2) throw new Exception("$typeName, ${el.name} is not untyped reference id");');
-      //     codeList.add(
-      //         'nsgObject["${el.dbName}"].Value = (Guid.TryParse(${el.name}Splitted[0], out Guid ${el.name}Guid) ? ${el.name}Guid : Guid.Empty).ToString()');
-      //     codeList.add(
-      //         '    + "." + GetClientServerTypes()[${el.name}Splitted[1]];');
-      //   } else if (el.dartType == 'Image') {
-      //     codeList.add(
-      //         'nsgObject.${el.dbName} = System.Drawing.Image.FromStream(new System.IO.MemoryStream(Convert.FromBase64String(${el.name})));');
-      //   } else if (el.dartType == 'Enum') {
-      //     codeList.add('nsgObject.${el.dbName}.Value = ${el.name};');
-      //   } else if (el.dartType == 'List<Reference>') {
-      //     codeList.add(
-      //         'var ids${el.name} = ${el.name}.Select(i => i.GetId()).ToArray();');
-      //     codeList.add('nsgObject.${el.dbName}.DeleteRows(new NsgCompare()');
-      //     codeList.add(
-      //         '    .Add(NsgSoft.Common.NsgDataFixedFields._ID, ids${el.name}, NsgSoft.Database.NsgComparison.NotIn));');
-      //     codeList.add('foreach (var t in ${el.name})');
-      //     codeList.add('{');
-      //     codeList.add(
-      //         'var row = nsgObject.${el.dbName}.FindRow(NsgSoft.Common.NsgDataFixedFields._ID, t.GetId())');
-      //     codeList.add('    ?? nsgObject.${el.dbName}.NewRow();');
-      //     codeList.add('t.ServerToNsgObject(user, row);');
-      //     codeList.add('}');
-      //   } else {
-      //     codeList.add('nsgObject.${el.dbName} = ${el.name};');
-      //   }
-      // });
-      // if (checkLastModifiedDate) {
-      //   codeList.add('nsgObject["_lastModified"].Value = LastModified;');
-      // }
-      // //Вызывается в Post в базовом классе
-      // //codeList.add('OnServerToNsgObject(user, nsgObject);');
-      // codeList.add('}');
-      // codeList.add('');
-      // codeList.add('public static Dictionary<Guid, $typeName> ItemCache =');
-      // codeList.add('    new Dictionary<Guid, $typeName>();');
-      // codeList.add('');
       codeList.add(
           'public override Dictionary<string, string> GetClientServerNames() => ClientServerNames;');
       codeList.add(
@@ -264,23 +194,6 @@ class NsgGenDataItem {
         codeList.add('};');
         codeList.add('');
       }
-
-      var refs = fields.where((field) =>
-          field.writeOnServer &&
-          ['Reference' /*, 'UntypedReference'*/].contains(field.type));
-      if (refs.isNotEmpty) {
-        codeList.add(
-            'public override Dictionary<string, string> GetReferenceNames() => ReferenceNames;');
-        codeList.add(
-            'public static Dictionary<string, string> ReferenceNames = new Dictionary<string, string>');
-        codeList.add('{');
-        refs.forEach((field) {
-          codeList.add('["${field.dartName}"] = "${field.referenceName}",');
-        });
-        codeList.add('};');
-        codeList.add('');
-      }
-      //ToData
     } else {
       codeList.add(
           '// --------------------------------------------------------------');
@@ -294,6 +207,34 @@ class NsgGenDataItem {
       codeList.add('{');
     }
 
+    var refs = fields.where((field) =>
+        field.writeOnServer &&
+        ['Reference' /*, 'UntypedReference'*/].contains(field.type));
+    if (refs.isNotEmpty) {
+      codeList.add(
+          'public override Dictionary<string, string> GetReferenceNames() => ReferenceNames;');
+      codeList.add(
+          'public static Dictionary<string, string> ReferenceNames = new Dictionary<string, string>');
+      codeList.add('{');
+      refs.forEach((field) {
+        codeList.add('["${field.dartName}"] = "${field.referenceName}",');
+      });
+      codeList.add('};');
+      codeList.add('');
+    }
+
+    var fieldsNotToPost = fields.where((f) => f.writeOnServer && !f.allowPost);
+    if (fieldsNotToPost.isNotEmpty) {
+      codeList.add(
+          'public override IEnumerable<string> GetFieldsNotToPost() => FieldsNotToPost;');
+      codeList.add('public static IEnumerable<string> FieldsNotToPost = new[]');
+      codeList.add('{');
+      fieldsNotToPost.forEach((field) {
+        codeList.add('"' + field.dartName + '",');
+      });
+      codeList.add('};');
+      codeList.add('');
+    }
     codeList.add('public override void SetDefaultValues()');
     codeList.add('{');
     fields.forEach((field) {
