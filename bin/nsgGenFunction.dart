@@ -263,6 +263,9 @@ class NsgGenFunction {
               .add('    params[\'${p.name}\'] = ${p.name}.toIso8601String();');
         } else if (p.type == 'Reference') {
           codeList.add('    params[\'${p.name}\'] = ${p.name}.toJson();');
+        } else if (p.type.startsWith('List<')) {
+          codeList.add(
+              '    params[\'${p.name}\'] = ${p.name}.map((obj) => obj.toJson());');
         } else if (p.type == 'Enum') {
           codeList.add('    params[\'${p.name}\'] = ${p.name}.value;');
         } else {
@@ -314,6 +317,9 @@ class NsgGenMethodParam {
   String get returnType {
     if (type == 'Reference') {
       return referenceType;
+    }
+    if (type == 'List<Reference>') {
+      return 'List<$referenceType>';
     }
     return type;
   }
