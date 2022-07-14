@@ -450,6 +450,11 @@ Uri сервера
 "maxHttpGetItems": 100,
 ```
 
+Стандартное название поля для поиска по периоду  
+```json
+"periodFieldName": "period",
+```
+
 Поля объекта  
 ```json
 "fields": []
