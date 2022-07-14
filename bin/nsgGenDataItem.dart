@@ -72,8 +72,8 @@ class NsgGenDataItem {
     //     csTypes[i.referenceType] = i.dbType;
     //   }
     // }
-    var untypedFields =
-        fields.where((field) => field.type == 'UntypedReference');
+    var untypedFields = fields.where(
+        (field) => field.writeOnServer && field.type == 'UntypedReference');
     for (var i in untypedFields) {
       for (var j in i.referenceTypes) {
         if (j.containsKey('namespace')) {
@@ -135,8 +135,9 @@ class NsgGenDataItem {
       if (presentation != null && presentation.isNotEmpty) {
         codeList.add('public override string ToString() => $presentation;');
         codeList.add('');
-      } else if (fields != null && fields.isNotEmpty) {
-        var nameField = fields.firstWhere((f) => f.name.toLowerCase() == 'name',
+      } else if (fields != null && fields.any((f) => f.writeOnServer)) {
+        var nameField = fields.firstWhere(
+            (f) => f.writeOnServer && f.name.toLowerCase() == 'name',
             orElse: () => null);
         if (nameField != null) {
           codeList
@@ -158,8 +159,10 @@ class NsgGenDataItem {
       codeList.add('}');
       codeList.add('');
 
-      var pkField = fields.firstWhere(
-          (f) => f.name.toLowerCase().contains('id') && f.isPrimary);
+      var pkField = fields.firstWhere((f) =>
+          f.writeOnServer &&
+          f.name.toLowerCase().contains('id') &&
+          f.isPrimary);
 
       codeList.add(
           'public override Guid GetId() => NsgService.StringToGuid(${pkField.name});');
@@ -240,7 +243,9 @@ class NsgGenDataItem {
           'public static Dictionary<string, string> ClientServerNames = new Dictionary<string, string>');
       codeList.add('{');
       fields.forEach((field) {
-        if (field.dbName != null && field.dbName.isNotEmpty) {
+        if (field.writeOnServer &&
+            field.dbName != null &&
+            field.dbName.isNotEmpty) {
           codeList.add('["${field.dartName}"] = "${field.dbName}",');
         }
       });
@@ -261,6 +266,7 @@ class NsgGenDataItem {
       }
 
       var refs = fields.where((field) =>
+          field.writeOnServer &&
           ['Reference' /*, 'UntypedReference'*/].contains(field.type));
       if (refs.isNotEmpty) {
         codeList.add(
@@ -291,6 +297,7 @@ class NsgGenDataItem {
     codeList.add('public override void SetDefaultValues()');
     codeList.add('{');
     fields.forEach((field) {
+      if (!field.writeOnServer) return;
       if (field.type == 'int') {
         codeList.add('ValueDictionary["${field.dartName}"] = 0;');
       } else if (field.type == 'double') {
@@ -328,118 +335,117 @@ class NsgGenDataItem {
     codeList.add('');
 
     codeList.add('#region Properties');
-    fields.forEach((element) {
-      if (element.description != null && element.description.isNotEmpty) {
+    fields.forEach((field) {
+      if (!field.writeOnServer) return;
+      if (field.description != null && field.description.isNotEmpty) {
         codeList.add('/// <summary>');
-        element.description.split('\n').forEach((descLine) {
+        field.description.split('\n').forEach((descLine) {
           codeList.add('/// $descLine');
         });
         codeList.add('/// </summary>');
       }
-      if (element.dartType == 'int') {
-        codeList.add('public int ${element.name}');
+      if (field.dartType == 'int') {
+        codeList.add('public int ${field.name}');
         codeList.add('{');
-        codeList.add('get => Convert.ToInt32(this["${element.dartName}"]);');
-        codeList.add('set => this["${element.dartName}"] = value;');
+        codeList.add('get => Convert.ToInt32(this["${field.dartName}"]);');
+        codeList.add('set => this["${field.dartName}"] = value;');
         codeList.add('}');
-      } else if (element.dartType == 'double') {
-        codeList.add('public double ${element.name}');
+      } else if (field.dartType == 'double') {
+        codeList.add('public double ${field.name}');
         codeList.add('{');
-        codeList.add('get => Convert.ToDouble(this["${element.dartName}"]);');
-        codeList.add('set => this["${element.dartName}"] = value;');
+        codeList.add('get => Convert.ToDouble(this["${field.dartName}"]);');
+        codeList.add('set => this["${field.dartName}"] = value;');
         codeList.add('}');
-      } else if (element.dartType == 'bool') {
-        codeList.add('public bool ${element.name}');
+      } else if (field.dartType == 'bool') {
+        codeList.add('public bool ${field.name}');
         codeList.add('{');
-        codeList.add('get => (bool)this["${element.dartName}"];');
-        codeList.add('set => this["${element.dartName}"] = value;');
+        codeList.add('get => (bool)this["${field.dartName}"];');
+        codeList.add('set => this["${field.dartName}"] = value;');
         codeList.add('}');
-      } else if (element.dartType == 'DateTime') {
-        codeList.add('public DateTime ${element.name}');
+      } else if (field.dartType == 'DateTime') {
+        codeList.add('public DateTime ${field.name}');
         codeList.add('{');
-        codeList.add('get => (DateTime)this["${element.dartName}"];');
-        codeList.add('set => this["${element.dartName}"] = value;');
+        codeList.add('get => (DateTime)this["${field.dartName}"];');
+        codeList.add('set => this["${field.dartName}"] = value;');
         codeList.add('}');
-      } else if (element.dartType == 'List<Reference>') {
-        codeList.add('public List<${element.referenceType}> ${element.name}');
+      } else if (field.dartType == 'List<Reference>') {
+        codeList.add('public List<${field.referenceType}> ${field.name}');
         codeList.add('{');
         codeList.add(
-            'get => this["${element.dartName}"] as List<${element.referenceType}>;');
-        codeList.add('set => this["${element.dartName}"] = value;');
+            'get => this["${field.dartName}"] as List<${field.referenceType}>;');
+        codeList.add('set => this["${field.dartName}"] = value;');
         codeList.add('}');
-        if (element.alwaysReturnNested) {
-          codeList.add('public bool ShouldSerialize${element.name}()');
+        if (field.alwaysReturnNested) {
+          codeList.add('public bool ShouldSerialize${field.name}()');
           codeList.add('{');
-          codeList
-              .add('return ${element.name} != null && ${element.name}.Any();');
+          codeList.add('return ${field.name} != null && ${field.name}.Any();');
           codeList.add('}');
         } else {
-          codeList.add('public bool ShouldSerialize${element.name}()');
+          codeList.add('public bool ShouldSerialize${field.name}()');
           codeList.add('{');
           codeList
               .add('return NestReferences() && (SerializeFields == null ||');
           codeList.add(
-              '    SerializeFields.Find(s => s.StartsWith("${element.dartName}")) != default);');
+              '    SerializeFields.Find(s => s.StartsWith("${field.dartName}")) != default);');
           codeList.add('}');
         }
-      } else if (element.dartType == 'List<Enum>') {
+      } else if (field.dartType == 'List<Enum>') {
         codeList.add(
-            'public IEnumerable<${element.referenceType}> ${element.name} { get; set; }');
-        codeList.add('    = ${element.referenceType}.List();');
-      } else if (element.dartType == 'Enum') {
+            'public IEnumerable<${field.referenceType}> ${field.name} { get; set; }');
+        codeList.add('    = ${field.referenceType}.List();');
+      } else if (field.dartType == 'Enum') {
         codeList.add('/// <remarks>');
-        codeList.add('/// <see cref="${element.referenceType}"/> enum type');
+        codeList.add('/// <see cref="${field.referenceType}"/> enum type');
         codeList.add('/// </remarks>');
-        codeList.add('public int ${element.name}');
+        codeList.add('public int ${field.name}');
         codeList.add('{');
-        codeList.add('get => (int)this["${element.dartName}"];');
-        codeList.add('set => this["${element.dartName}"] = value;');
+        codeList.add('get => (int)this["${field.dartName}"];');
+        codeList.add('set => this["${field.dartName}"] = value;');
         codeList.add('}');
-      } else if (element.dartType == 'Reference') {
+      } else if (field.dartType == 'Reference') {
         codeList.add('/// <remarks> ');
-        codeList.add('/// <see cref="${element.referenceType}"/> reference');
+        codeList.add('/// <see cref="${field.referenceType}"/> reference');
         codeList.add('/// </remarks> ');
         codeList.add(
             '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000")]');
-        codeList.add('public string ${element.name}');
+        codeList.add('public string ${field.name}');
         codeList.add('{');
-        codeList.add('get => this["${element.dartName}"].ToString();');
-        codeList.add('set => this["${element.dartName}"] = value;');
+        codeList.add('get => this["${field.dartName}"].ToString();');
+        codeList.add('set => this["${field.dartName}"] = value;');
         codeList.add('}');
-        codeList
-            .add('public ${element.referenceType} ${element.referenceName}');
+        codeList.add('public ${field.referenceType} ${field.referenceName}');
         codeList.add('{');
         codeList.add(
-            'get => this["${nsgGenerator.getDartName(element.referenceName)}"] as ${element.referenceType};');
+            'get => this["${nsgGenerator.getDartName(field.referenceName)}"] as ${field.referenceType};');
         codeList.add(
-            'set => this["${nsgGenerator.getDartName(element.referenceName)}"] = value;');
+            'set => this["${nsgGenerator.getDartName(field.referenceName)}"] = value;');
         codeList.add('}');
-        if (!element.alwaysReturnNested) {
+        if (!field.alwaysReturnNested) {
           //   codeList.add('public bool ShouldSerialize${element.referenceName}()');
           //   codeList.add('{');
           //   codeList.add(
           //       'return ${element.referenceName} != null && ${element.referenceName}.GetId() != Guid.Empty;');
           //   codeList.add('}');
           // } else {
-          codeList.add('public bool ShouldSerialize${element.referenceName}()');
+          codeList.add('public bool ShouldSerialize${field.referenceName}()');
           codeList.add('{');
           codeList
               .add('return NestReferences() && (SerializeFields == null ||');
           codeList.add(
-              '    SerializeFields.Find(s => s.StartsWith("${element.dartName}")) != default);');
+              '    SerializeFields.Find(s => s.StartsWith("${field.dartName}")) != default);');
           codeList.add('}');
         }
-      } else if (element.dartType == 'UntypedReference') {
+      } else if (field.dartType == 'UntypedReference') {
         codeList.add('/// <remarks> ');
         codeList.add(
-            '/// Untyped reference (${element.referenceTypes.map((e) => e['databaseType'].toString()).join(', ')})');
+            '/// Untyped reference (${field.referenceTypes.map((e) => e['databaseType'].toString()).join(', ')})');
         codeList.add('/// </remarks> ');
         codeList.add(
             '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000.NO")]');
-        codeList.add('public string ${element.name}');
+        codeList.add('public string ${field.name}');
         codeList.add('{');
-        codeList.add('get => this["${element.dartName}"].ToString();');
-        codeList.add('set => this["${element.dartName}"] = value;');
+        codeList.add('get => this["${field.dartName}"].ToString();');
+        codeList.add('set => this["${field.dartName}"] = value;');
         codeList.add('}');
         // codeList.add(
         //     'public NsgServerMetadataItem ${element.referenceName} { get; set; }');
@@ -453,26 +459,26 @@ class NsgGenDataItem {
         //   codeList.add('}');
         // }
       } else {
-        if (element.type == 'Guid') {
-          codeList.add('public Guid ${element.name}');
+        if (field.type == 'Guid') {
+          codeList.add('public Guid ${field.name}');
           codeList.add('{');
-          codeList.add('get => (Guid)this["${element.dartName}"];');
-          codeList.add('set => this["${element.dartName}"] = value;');
+          codeList.add('get => (Guid)this["${field.dartName}"];');
+          codeList.add('set => this["${field.dartName}"] = value;');
           codeList.add('}');
         } else {
-          if (element.name.endsWith('Id')) {
+          if (field.name.endsWith('Id')) {
             codeList.add(
                 '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000")]');
           } else {
-            if (element.maxLength > 0) {
-              codeList.add('[StringLength(${element.maxLength})]');
+            if (field.maxLength > 0) {
+              codeList.add('[StringLength(${field.maxLength})]');
             }
             codeList.add('[System.ComponentModel.DefaultValue("")]');
           }
-          codeList.add('public string ${element.name}');
+          codeList.add('public string ${field.name}');
           codeList.add('{');
-          codeList.add('get => this["${element.dartName}"].ToString();');
-          codeList.add('set => this["${element.dartName}"] = value;');
+          codeList.add('get => this["${field.dartName}"].ToString();');
+          codeList.add('set => this["${field.dartName}"] = value;');
           codeList.add('}');
         }
       }

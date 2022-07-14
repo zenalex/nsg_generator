@@ -16,6 +16,7 @@ class NsgGenDataItemField {
   final String userName;
   final bool alwaysReturnNested;
   final bool writeOnClient;
+  final bool writeOnServer;
   final List<Map<String, dynamic>> referenceTypes;
 
   NsgGenDataItemField(
@@ -33,6 +34,7 @@ class NsgGenDataItemField {
       this.userName,
       this.alwaysReturnNested,
       this.writeOnClient,
+      this.writeOnServer,
       this.referenceTypes});
 
   factory NsgGenDataItemField.fromJson(Map<String, dynamic> parsedJson) {
@@ -66,6 +68,9 @@ class NsgGenDataItemField {
         alwaysReturnNested: parsedJson['alwaysReturnNested'] == 'true',
         writeOnClient: parsedJson.containsKey('writeOnClient')
             ? parsedJson['writeOnClient'] != 'false'
+            : true,
+        writeOnServer: parsedJson.containsKey('writeOnServer')
+            ? parsedJson['writeOnServer'] != 'false'
             : true,
         referenceTypes: (parsedJson.containsKey('referenceTypes')
                 ? parsedJson['referenceTypes'] as List
