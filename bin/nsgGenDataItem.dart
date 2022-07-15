@@ -166,6 +166,8 @@ class NsgGenDataItem {
 
       codeList.add(
           'public override Guid GetId() => NsgService.StringToGuid(${pkField.name});');
+      codeList.add(
+          'public override void SetId(object value) => ${pkField.name} = value.ToString();');
       codeList.add('');
       codeList.add(
           'public override Dictionary<string, string> GetClientServerNames() => ClientServerNames;');
