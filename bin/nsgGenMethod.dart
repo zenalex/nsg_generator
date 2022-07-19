@@ -79,27 +79,6 @@ class NsgGenMethod {
       //POST or GET
       var apiType = 'HttpGet';
       if (getterType == 'post') apiType = 'HttpPost';
-      codeList.add('[$apiType]');
-      codeList.add(
-          'public async Task<IEnumerable<NsgServerDataItem>> $name([FromBody] NsgFindParams findParams)');
-      codeList.add('{');
-      codeList.add(
-          'return await Task.Run(() => ${name}References(findParams).Result["results"]);');
-      codeList.add('}');
-      codeList.add('');
-      codeList.add('[Route("$apiPrefix/References")]');
-
-      //Authorization
-      if (!controller.useAuthorization) {
-      } else if (authorize == 'anonymous') {
-        codeList.add('[Authorize]');
-      } else if (authorize == 'user') {
-        codeList.add('[Authorize(Roles = UserRoles.User)]');
-      } else if (authorize != 'none') {
-        throw Exception(
-            'Wrong authorization type in method ${name}References()');
-      }
-      //POST or GET
       // var apiType = '';
       // if (type == 'get') apiType = 'HttpGet';
       // if (type == 'post') apiType = 'HttpPost';
@@ -109,7 +88,7 @@ class NsgGenMethod {
       // codeList.add(
       //     'public async Task<IEnumerable<${genDataItem.typeName}>> ${name}([FromBody] NsgFindParams findParams)');
       codeList.add(
-          'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}References([FromBody] NsgFindParams findParams)');
+          'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name([FromBody] NsgFindParams findParams)');
       codeList.add('{');
       if (controller.useAuthorization && authorize != 'none') {
         codeList
