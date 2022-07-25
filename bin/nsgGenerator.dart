@@ -98,11 +98,20 @@ class NsgGenerator {
     await NsgGenEnum.generateEnums(this, enums);
   }
 
+  RegExp nonUpperCaseRE = RegExp(r'[^A-Z]');
   String getDartName(String dn) {
     if (dn == null || dn.isEmpty) return dn;
-    var fc = dn.substring(0, 1);
-    if (fc.toLowerCase() != fc) {
-      dn = fc.toLowerCase() + dn.substring(1);
+    var firstLowerCaseIndex = dn.indexOf(nonUpperCaseRE);
+    if (firstLowerCaseIndex == -1) {
+      return dn.toLowerCase();
+    }
+    if (firstLowerCaseIndex == 0) {
+      return dn;
+    }
+    if (firstLowerCaseIndex > 1) firstLowerCaseIndex--;
+    var fc = dn.substring(0, firstLowerCaseIndex);
+    if (fc.length != dn.length) {
+      dn = fc.toLowerCase() + dn.substring(firstLowerCaseIndex);
     }
     return dn;
   }

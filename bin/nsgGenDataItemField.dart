@@ -91,8 +91,8 @@ class NsgGenDataItemField {
 
   String get dartName => NsgGenerator.generator.getDartName(name);
 
-  String get fieldNameVar =>
-      'name' + dartName[0].toUpperCase() + dartName.substring(1);
+  String get fieldNameVar => NsgGenerator.generator
+      .getDartName('name' + name[0].toUpperCase() + name.substring(1));
 
   String get dartType {
     if (type == 'Date') return 'DateTime';
