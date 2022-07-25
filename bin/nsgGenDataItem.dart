@@ -158,44 +158,6 @@ class NsgGenDataItem {
       codeList.add('}');
       codeList.add('}');
       codeList.add('');
-
-      var pkField = fields.firstWhere((f) =>
-          f.writeOnServer &&
-          f.name.toLowerCase().contains('id') &&
-          f.isPrimary);
-
-      codeList.add(
-          'public override Guid GetId() => NsgService.StringToGuid(${pkField.name});');
-      codeList.add(
-          'public override void SetId(object value) => ${pkField.name} = value.ToString();');
-      codeList.add('');
-      codeList.add(
-          'public override Dictionary<string, string> GetClientServerNames() => ClientServerNames;');
-      codeList.add(
-          'public static Dictionary<string, string> ClientServerNames = new Dictionary<string, string>');
-      codeList.add('{');
-      fields.forEach((field) {
-        if (field.writeOnServer &&
-            field.dbName != null &&
-            field.dbName.isNotEmpty) {
-          codeList.add('["${field.dartName}"] = "${field.dbName}",');
-        }
-      });
-      codeList.add('};');
-      codeList.add('');
-
-      if (csTypes.isNotEmpty) {
-        codeList.add(
-            'public override Dictionary<string, string> GetClientServerTypes() => ClientServerTypes;');
-        codeList.add(
-            'public static Dictionary<string, string> ClientServerTypes = new Dictionary<string, string>');
-        codeList.add('{');
-        for (var i in csTypes.entries) {
-          codeList.add('["${i.key}"] = ${i.value}.Новый().TableName,');
-        }
-        codeList.add('};');
-        codeList.add('');
-      }
     } else {
       codeList.add(
           '// --------------------------------------------------------------');
@@ -207,6 +169,42 @@ class NsgGenDataItem {
       codeList.add('{');
       codeList.add('public partial class $typeName : NsgServerDataItem');
       codeList.add('{');
+    }
+
+    var pkField = fields.firstWhere((f) =>
+        f.writeOnServer && f.name.toLowerCase().contains('id') && f.isPrimary);
+
+    codeList.add(
+        'public override Guid GetId() => NsgService.StringToGuid(${pkField.name});');
+    codeList.add(
+        'public override void SetId(object value) => ${pkField.name} = value.ToString();');
+    codeList.add('');
+    codeList.add(
+        'public override Dictionary<string, string> GetClientServerNames() => ClientServerNames;');
+    codeList.add(
+        'public static Dictionary<string, string> ClientServerNames = new Dictionary<string, string>');
+    codeList.add('{');
+    fields.forEach((field) {
+      if (field.writeOnServer &&
+          field.dbName != null &&
+          field.dbName.isNotEmpty) {
+        codeList.add('["${field.dartName}"] = "${field.dbName}",');
+      }
+    });
+    codeList.add('};');
+    codeList.add('');
+
+    if (csTypes.isNotEmpty) {
+      codeList.add(
+          'public override Dictionary<string, string> GetClientServerTypes() => ClientServerTypes;');
+      codeList.add(
+          'public static Dictionary<string, string> ClientServerTypes = new Dictionary<string, string>');
+      codeList.add('{');
+      for (var i in csTypes.entries) {
+        codeList.add('["${i.key}"] = ${i.value}.Новый().TableName,');
+      }
+      codeList.add('};');
+      codeList.add('');
     }
 
     var refs = fields.where((field) =>
