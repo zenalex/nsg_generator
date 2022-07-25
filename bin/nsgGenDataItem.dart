@@ -267,7 +267,7 @@ class NsgGenDataItem {
             'ValueDictionary["${field.dartName}"] = new List<${field.referenceType}>();');
       } else if (field.type == 'Enum') {
         codeList.add('ValueDictionary["${field.dartName}"] = 0;');
-      } else if (field.type == 'Image') {
+      } else if (['Image', 'Binary'].contains(field.type)) {
         codeList.add('ValueDictionary["${field.dartName}"] = string.Empty;');
       } else {
         codeList.add(

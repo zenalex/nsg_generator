@@ -113,6 +113,8 @@ class NsgGenDataItemField {
       return 'NsgDataBoolField';
     } else if (type == 'Image') {
       return 'NsgDataImageField';
+    } else if (type == 'Binary') {
+      return 'NsgDataBinaryField';
     } else if (type == 'Enum') {
       return 'NsgDataEnumReferenceField<$referenceType>';
     } else if (type == 'Reference') {
@@ -148,7 +150,7 @@ class NsgGenDataItemField {
     } else if (type == 'double') {
       codeList.add(
           '$dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
-    } else if (type == 'Image') {
+    } else if (['Image', 'Binary'].contains(type)) {
       codeList.add('List<int> get $dartName {');
       codeList.add('  return getFieldValue($fieldNameVar) as List<int>;');
       codeList.add('}');
@@ -190,6 +192,9 @@ class NsgGenDataItemField {
 
   void writeSetter(NsgGenController nsgGenController, List<String> codeList) {
     if (type == 'Image') {
+      codeList.add(
+          'set $dartName(List<int> value) => setFieldValue($fieldNameVar, value);');
+    } else if (type == 'Binary') {
       codeList.add(
           'set $dartName(List<int> value) => setFieldValue($fieldNameVar, value);');
     } else if (type == 'Reference') {

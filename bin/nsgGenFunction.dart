@@ -74,6 +74,8 @@ class NsgGenFunction {
       return 'NsgDataBoolField';
     } else if (type == 'Image') {
       return 'NsgDataImageField';
+    } else if (type == 'Binary') {
+      return 'NsgDataBinaryField';
     } else if (type == 'Reference') {
       return 'NsgDataReferenceField<$referenceType>';
     } else if (type == 'List<Reference>') {
@@ -119,7 +121,7 @@ class NsgGenFunction {
       codeList.add('$dartType $dartName($paramTNString) => false;');
     } else if (type == 'double') {
       codeList.add('$dartType $dartName($paramTNString) => 0;');
-    } else if (type == 'Image') {
+    } else if (['Image', 'Binary'].contains(type)) {
       codeList.add('List<int> $dartName($paramTNString) => [];');
     } else if (type == 'Reference') {
       codeList.add('String $dartName($paramTNString) => \'\';');
