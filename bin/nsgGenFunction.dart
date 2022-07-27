@@ -238,14 +238,11 @@ class NsgGenFunction {
 
   void generateCodeDart(List<String> codeList, NsgGenerator nsgGenerator,
       NsgGenController controller) async {
-    var paramTNString = '';
+    var paramTNString = 'NsgDataRequestParams? filter';
     if (params != null && params.isNotEmpty) {
       params.forEach((p) {
-        paramTNString += p.returnType + ' ' + p.name + ', ';
+        paramTNString += ', ' + p.returnType + ' ' + p.name;
       });
-    }
-    if (paramTNString.isNotEmpty) {
-      paramTNString = paramTNString.substring(0, paramTNString.length - 2);
     }
 
     if (type == 'List<Reference>') {
@@ -255,27 +252,31 @@ class NsgGenFunction {
       codeList.add(
           '  Future<$dartType?> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
     }
-    codeList.add('    var params = <String, dynamic>{};');
+    codeList.add('    if (filter == null) {');
+    codeList.add(
+        '      filter = NsgDataRequestParams(params: <String, dynamic>{});');
+    codeList.add('    }');
     if (params != null && params.isNotEmpty) {
       params.forEach((p) {
         if (p.type == 'String') {
-          codeList.add('    params[\'${p.name}\'] = ${p.name};');
+          codeList.add('    filter.params[\'${p.name}\'] = ${p.name};');
         } else if (p.type == 'Date' || p.type == 'DateTime') {
-          codeList
-              .add('    params[\'${p.name}\'] = ${p.name}.toIso8601String();');
+          codeList.add(
+              '    filter.params[\'${p.name}\'] = ${p.name}.toIso8601String();');
         } else if (p.type == 'Reference') {
-          codeList.add('    params[\'${p.name}\'] = ${p.name}.toJson();');
+          codeList
+              .add('    filter.params[\'${p.name}\'] = ${p.name}.toJson();');
         } else if (p.type.startsWith('List<')) {
           codeList.add(
-              '    params[\'${p.name}\'] = ${p.name}.map((obj) => obj.toJson());');
+              '    filter.params[\'${p.name}\'] = ${p.name}.map((obj) => obj.toJson());');
         } else if (p.type == 'Enum') {
-          codeList.add('    params[\'${p.name}\'] = ${p.name}.value;');
+          codeList.add('    filter.params[\'${p.name}\'] = ${p.name}.value;');
         } else {
-          codeList.add('    params[\'${p.name}\'] = ${p.name}.toString();');
+          codeList
+              .add('    filter.params[\'${p.name}\'] = ${p.name}.toString();');
         }
       });
     }
-    codeList.add('    final filter = NsgDataRequestParams(params: params);');
     codeList.add('    try {');
     if (type == 'List<Reference>') {
       codeList.add(
