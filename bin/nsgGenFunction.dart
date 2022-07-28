@@ -238,12 +238,13 @@ class NsgGenFunction {
 
   void generateCodeDart(List<String> codeList, NsgGenerator nsgGenerator,
       NsgGenController controller) async {
-    var paramTNString = 'NsgDataRequestParams? filter';
+    var paramTNString = ''; //NsgDataRequestParams? filter';
     if (params != null && params.isNotEmpty) {
       params.forEach((p) {
-        paramTNString += ', ' + p.returnType + ' ' + p.name;
+        paramTNString += p.returnType + ' ' + p.name + ', ';
       });
     }
+    paramTNString += '{NsgDataRequestParams? filter}';
 
     if (type == 'List<Reference>') {
       codeList.add(
@@ -252,28 +253,26 @@ class NsgGenFunction {
       codeList.add(
           '  Future<$dartType?> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
     }
-    codeList.add('    if (filter == null) {');
     codeList.add(
-        '      filter = NsgDataRequestParams(params: <String, dynamic>{});');
-    codeList.add('    }');
+        '    filter ??= NsgDataRequestParams(params: <String, dynamic>{});');
     if (params != null && params.isNotEmpty) {
       params.forEach((p) {
         if (p.type == 'String') {
-          codeList.add('    filter.params[\'${p.name}\'] = ${p.name};');
+          codeList.add('    filter.params![\'${p.name}\'] = ${p.name};');
         } else if (p.type == 'Date' || p.type == 'DateTime') {
           codeList.add(
-              '    filter.params[\'${p.name}\'] = ${p.name}.toIso8601String();');
+              '    filter.params![\'${p.name}\'] = ${p.name}.toIso8601String();');
         } else if (p.type == 'Reference') {
           codeList
-              .add('    filter.params[\'${p.name}\'] = ${p.name}.toJson();');
+              .add('    filter.params![\'${p.name}\'] = ${p.name}.toJson();');
         } else if (p.type.startsWith('List<')) {
           codeList.add(
-              '    filter.params[\'${p.name}\'] = ${p.name}.map((obj) => obj.toJson());');
+              '    filter.params![\'${p.name}\'] = ${p.name}.map((obj) => obj.toJson());');
         } else if (p.type == 'Enum') {
-          codeList.add('    filter.params[\'${p.name}\'] = ${p.name}.value;');
+          codeList.add('    filter.params![\'${p.name}\'] = ${p.name}.value;');
         } else {
           codeList
-              .add('    filter.params[\'${p.name}\'] = ${p.name}.toString();');
+              .add('    filter.params![\'${p.name}\'] = ${p.name}.toString();');
         }
       });
     }
