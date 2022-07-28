@@ -170,9 +170,13 @@ class NsgGenDataItem {
       codeList.add('public partial class $typeName : NsgServerDataItem');
       codeList.add('{');
     }
-
-    var pkField = fields.firstWhere((f) =>
-        f.writeOnServer && f.name.toLowerCase().contains('id') && f.isPrimary);
+    //print(typeName);
+    var pkField = fields.firstWhere(
+        (f) =>
+            f.writeOnServer &&
+            (f.name.toLowerCase().contains('id') || f.isPrimary), orElse: () {
+      throw Exception('There is no Primary key in $typeName');
+    });
 
     codeList.add(
         'public override Guid GetId() => NsgService.StringToGuid(${pkField.name});');
