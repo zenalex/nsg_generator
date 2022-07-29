@@ -3,20 +3,22 @@ import 'nsgGenerator.dart';
 
 class NsgGenFunction {
   final String name;
-  final String type;
+  final String apiType;
   final String description;
   final String apiPrefix;
   final String authorize;
+  final String type;
   final String referenceName;
   final String referenceType;
   final List<NsgGenMethodParam> params;
 
   NsgGenFunction(
       {this.name,
-      this.type,
+      this.apiType,
       this.description,
       this.apiPrefix,
       this.authorize,
+      this.type,
       this.referenceName,
       this.referenceType,
       this.params});
@@ -24,7 +26,7 @@ class NsgGenFunction {
   factory NsgGenFunction.fromJson(Map<String, dynamic> parsedJson) {
     return NsgGenFunction(
         name: parsedJson['name'],
-        type: parsedJson['type'],
+        apiType: (parsedJson['apiType'] ?? 'post').toLowerCase(),
         description: parsedJson['description'],
         apiPrefix: parsedJson.containsKey('apiPrefix')
             ? parsedJson['apiPrefix']
@@ -32,6 +34,7 @@ class NsgGenFunction {
                 ? parsedJson['api_prefix']
                 : parsedJson['name'],
         authorize: parsedJson['authorize'] ?? 'none',
+        type: parsedJson['type'],
         referenceName: parsedJson['referenceName'],
         referenceType: parsedJson['referenceType'],
         params: parsedJson.containsKey('params')
@@ -155,9 +158,9 @@ class NsgGenFunction {
       throw Exception('Wrong authorization type in method $name()');
     }
     //POST or GET
-    var apiType = 'HttpPost';
-    if (type == 'get') apiType = 'HttpGet';
-    codeList.add('[$apiType]');
+    var httpApiType = 'HttpPost';
+    if (apiType == 'get') httpApiType = 'HttpGet';
+    codeList.add('[$httpApiType]');
     codeList.add(
         'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name([FromBody] NsgFindParams findParams)');
     codeList.add('{');

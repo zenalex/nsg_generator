@@ -296,6 +296,11 @@ Uri сервера
 "name": "UserData",
 ```
 
+Тип метода HTTP. По умолчанию POST
+```json
+"apiType": "get",
+```
+
 Тип выходных данных функции  
 ```json
 "type": "int",
