@@ -161,8 +161,17 @@ class NsgGenFunction {
     var httpApiType = 'HttpPost';
     if (apiType == 'get') httpApiType = 'HttpGet';
     codeList.add('[$httpApiType]');
-    codeList.add(
-        'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name([FromBody] NsgFindParams findParams)');
+    if (['Reference', 'List<Reference>'].contains(type)) {
+      codeList.add(
+          'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name([FromBody] NsgFindParams findParams)');
+    } else {
+      var primType = type;
+      if (type == 'Enum') {
+        primType = 'int';
+      }
+      codeList.add(
+          'public async Task<Dictionary<string, IEnumerable<$primType>>> $name([FromBody] NsgFindParams findParams)');
+    }
     codeList.add('{');
     if (controller.useAuthorization) {
       codeList.add('var user = await authController.GetUserByToken(Request);');
@@ -204,8 +213,17 @@ class NsgGenFunction {
         paramTNString += ', ' + p.returnType + ' ' + p.name;
       });
     }
-    codeList.add(
-        'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name($paramTNString);');
+    if (['Reference', 'List<Reference>'].contains(type)) {
+      codeList.add(
+          'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name($paramTNString);');
+    } else {
+      var primType = type;
+      if (type == 'Enum') {
+        primType = 'int';
+      }
+      codeList.add(
+          'Task<Dictionary<string, IEnumerable<$primType>>> $name($paramTNString);');
+    }
     codeList.add('');
   }
 
@@ -219,11 +237,21 @@ class NsgGenFunction {
         paramNString += ', ' + p.name;
       });
     }
-    codeList.add(
-        'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name($paramTNString)');
-    codeList.add(
-        '    => NsgServerMetadataItem.GetDictWithNestedFields<$returnType>(');
-    codeList.add('        await On$name($paramNString), findParams);');
+    if (['Reference', 'List<Reference>'].contains(type)) {
+      codeList.add(
+          'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name($paramTNString)');
+      codeList.add(
+          '    => NsgServerMetadataItem.GetDictWithNestedFields<$returnType>(');
+      codeList.add('        await On$name($paramNString), findParams);');
+    } else {
+      var primType = type;
+      if (type == 'Enum') {
+        primType = 'int';
+      }
+      codeList.add(
+          'public async Task<Dictionary<string, IEnumerable<$primType>>> $name($paramTNString)');
+      codeList.add('    => await On$name($paramNString);');
+    }
   }
 
   void generateControllerImplMethod(List<String> codeList,
@@ -234,11 +262,28 @@ class NsgGenFunction {
         paramTNString += ', ' + p.returnType + ' ' + p.name;
       });
     }
-    codeList
-        .add('public Task<IEnumerable<$returnType>> On$name($paramTNString)');
-    codeList.add('{');
-    codeList.add('throw new NotImplementedException();');
-    codeList.add('}');
+    if (['Reference', 'List<Reference>'].contains(type)) {
+      codeList
+          .add('public Task<IEnumerable<$returnType>> On$name($paramTNString)');
+      codeList.add('{');
+      codeList.add('throw new NotImplementedException();');
+      codeList.add('}');
+    } else {
+      var primType = type;
+      if (type == 'Enum') {
+        primType = 'int';
+      }
+      codeList.add(
+          'public Task<Dictionary<string, IEnumerable<$primType>>> On$name($paramTNString)');
+      codeList.add('{');
+      codeList
+          .add('var RES = new Dictionary<string, IEnumerable<$primType>>();');
+      codeList.add('');
+      codeList.add('var res = new $primType[0];');
+      codeList.add('RES["results"] = res;');
+      codeList.add('return RES;');
+      codeList.add('}');
+    }
   }
 
   void generateCodeDart(List<String> codeList, NsgGenerator nsgGenerator,
@@ -290,13 +335,19 @@ class NsgGenFunction {
     if (type == 'List<Reference>') {
       codeList.add(
           '      var res = await NsgDataRequest<$dartType>().requestItems(');
-    } else {
+    } else if (type == 'Reference') {
       codeList.add(
           '      var res = await NsgDataRequest<$dartType>().requestItem(');
+    } else if (type.startsWith('List')) {
+      codeList
+          .add('      var res = await NsgRequest<$dartType>().requestItems(');
+    } else {
+      codeList
+          .add('      var res = await NsgRequest<$dartType>().requestItem(');
     }
     codeList
         .add('          function: \'/${controller.apiPrefix}/$apiPrefix\',');
-    codeList.add('          method: \'POST\',');
+    codeList.add('          method: \'${apiType.toUpperCase()}\',');
     codeList.add('          filter: filter,');
     codeList.add('          autoRepeate: true,');
     codeList.add('          autoRepeateCount: 3);');

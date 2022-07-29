@@ -402,10 +402,11 @@ class NsgGenController {
       codeList.add('using NsgSoft.DataObjects;');
       var usedNSs = <String>[];
       methods.forEach((m) {
-        if (!usedNSs.contains(m.genDataItem.databaseTypeNamespace)) {
-          codeList.add('using ${m.genDataItem.databaseTypeNamespace};');
-          usedNSs.add(m.genDataItem.databaseTypeNamespace);
-        }
+        if (m.genDataItem.databaseTypeNamespace == null) return;
+        if (m.genDataItem.databaseTypeNamespace.isEmpty) return;
+        if (usedNSs.contains(m.genDataItem.databaseTypeNamespace)) return;
+        codeList.add('using ${m.genDataItem.databaseTypeNamespace};');
+        usedNSs.add(m.genDataItem.databaseTypeNamespace);
       });
     }
     codeList.add('');
