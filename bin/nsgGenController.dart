@@ -269,9 +269,6 @@ class NsgGenController {
       await element.generateControllerInterfaceMethod(
           codeList, nsgGenerator, this);
     });
-    if (functions.isNotEmpty) {
-      codeList.add('');
-    }
     codeList.add(
         'void ApplyServerFilter<T>(INsgTokenExtension user, ref NsgFindParams findParams) where T : NsgServerDataItem, new();');
 

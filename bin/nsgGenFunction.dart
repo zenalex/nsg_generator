@@ -190,6 +190,7 @@ class NsgGenFunction {
     }
     codeList.add('return await controller.$name($paramNString);');
     codeList.add('}');
+    codeList.add('');
   }
 
   void generateControllerInterfaceMethod(List<String> codeList,
@@ -202,6 +203,7 @@ class NsgGenFunction {
     }
     codeList.add(
         'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name($paramTNString);');
+    codeList.add('');
   }
 
   void generateControllerImplDesignerMethod(List<String> codeList,
@@ -238,6 +240,11 @@ class NsgGenFunction {
 
   void generateCodeDart(List<String> codeList, NsgGenerator nsgGenerator,
       NsgGenController controller) async {
+    if (description.isNotEmpty) {
+      description.split('\n').forEach((descLine) {
+        codeList.add('  /// $descLine');
+      });
+    }
     var paramTNString = ''; //NsgDataRequestParams? filter';
     if (params != null && params.isNotEmpty) {
       params.forEach((p) {
