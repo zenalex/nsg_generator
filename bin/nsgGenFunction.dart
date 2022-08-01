@@ -301,12 +301,16 @@ class NsgGenFunction {
     }
     paramTNString += '{NsgDataRequestParams? filter}';
 
-    if (type == 'List<Reference>') {
-      codeList.add(
-          '  Future<List<$dartType>> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
-    } else {
+    // if (type == 'List<Reference>') {
+    //   codeList.add(
+    //       '  Future<List<$dartType>> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
+    // } else
+    if (type == 'Reference') {
       codeList.add(
           '  Future<$dartType?> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
+    } else {
+      codeList.add(
+          '  Future<List<$dartType>> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
     }
     codeList.add('    var params = <String, dynamic>{};');
     if (params != null && params.isNotEmpty) {
@@ -337,12 +341,13 @@ class NsgGenFunction {
     } else if (type == 'Reference') {
       codeList.add(
           '      var res = await NsgDataRequest<$dartType>().requestItem(');
-    } else if (type.startsWith('List')) {
-      codeList
-          .add('      var res = await NsgRequest<$dartType>().requestItems(');
-    } else {
-      codeList
-          .add('      var res = await NsgRequest<$dartType>().requestItem(');
+    } else /*if (type.startsWith('List'))*/ {
+      codeList.add(
+          '      var res = await NsgSimpleRequest<$dartType>().requestItems(');
+      codeList.add('          provider: provider!,');
+      // } else {
+      //   codeList.add(
+      //       '      var res = await NsgSimpleRequest<$dartType>().requestItem(');
     }
     codeList
         .add('          function: \'/${controller.apiPrefix}/$apiPrefix\',');
@@ -354,8 +359,10 @@ class NsgGenFunction {
     codeList.add('    } catch (e) {');
     if (type == 'List<Reference>') {
       codeList.add('      return [];');
-    } else {
+    } else if (type == 'Reference') {
       codeList.add('      return null;');
+    } else {
+      codeList.add('      return <$dartType>[];');
     }
     codeList.add('    }');
     codeList.add('  }');
