@@ -226,51 +226,106 @@ class NsgGenDataItem {
       codeList.add('};');
       codeList.add('');
     }
-
-    codeList.add('public override void SetDefaultValues()');
-    codeList.add('{');
-    fields.forEach((field) {
-      if (!field.writeOnServer) return;
-      var argsStr = '';
-      var refField = '';
-      if (field.type == 'int') {
-        argsStr = 'typeof(int), 0';
-      } else if (field.type == 'double') {
-        argsStr = 'typeof(double), 0D';
-      } else if (field.type == 'String') {
-        if (field.isPrimary) {
+    var useNsgServerField = false;
+    if (useNsgServerField) {
+      codeList.add('public override void SetDefaultValues()');
+      codeList.add('{');
+      fields.forEach((field) {
+        if (!field.writeOnServer) return;
+        var argsStr = '';
+        var refField = '';
+        if (field.type == 'int') {
+          argsStr = 'typeof(int), 0';
+        } else if (field.type == 'double') {
+          argsStr = 'typeof(double), 0D';
+        } else if (field.type == 'String') {
+          if (field.isPrimary) {
+            argsStr = 'typeof(string), "00000000-0000-0000-0000-000000000000"';
+          } else {
+            argsStr = 'typeof(string), string.Empty';
+          }
+        } else if (field.type == 'Guid') {
+          argsStr = 'typeof(Guid), Guid.Empty';
+        } else if (field.type == 'Reference') {
           argsStr = 'typeof(string), "00000000-0000-0000-0000-000000000000"';
-        } else {
+          refField =
+              'ValueDictionary["${nsgGenerator.getDartName(field.referenceName)}"] = '
+              'new NsgServerField(typeof(${field.referenceType}), null);';
+        } else if (field.type == 'UntypedReference') {
+          argsStr = 'typeof(string), "00000000-0000-0000-0000-000000000000.NO"';
+        } else if (field.type == 'List<Reference>') {
+          argsStr =
+              'typeof(IEnumerable<${field.referenceType}>), new List<${field.referenceType}>()';
+        } else if (field.type == 'Enum') {
+          argsStr = 'typeof(int), 0';
+        } else if (['Image', 'Binary'].contains(field.type)) {
           argsStr = 'typeof(string), string.Empty';
+        } else {
+          argsStr = 'typeof(${field.dartType}), default(${field.dartType})';
         }
-      } else if (field.type == 'Guid') {
-        argsStr = 'typeof(Guid), Guid.Empty';
-      } else if (field.type == 'Reference') {
-        argsStr = 'typeof(string), "00000000-0000-0000-0000-000000000000"';
-        refField =
-            'ValueDictionary["${nsgGenerator.getDartName(field.referenceName)}"] = '
-            'new NsgServerField(typeof(${field.referenceType}), null);';
-      } else if (field.type == 'UntypedReference') {
-        argsStr = 'typeof(string), "00000000-0000-0000-0000-000000000000.NO"';
-      } else if (field.type == 'List<Reference>') {
-        argsStr =
-            'typeof(IEnumerable<${field.referenceType}>), new List<${field.referenceType}>()';
-      } else if (field.type == 'Enum') {
-        argsStr = 'typeof(int), 0';
-      } else if (['Image', 'Binary'].contains(field.type)) {
-        argsStr = 'typeof(string), string.Empty';
-      } else {
-        argsStr = 'typeof(${field.dartType}), default(${field.dartType})';
+        if (!field.allowPost) {
+          argsStr += ', false';
+        }
+        codeList.add(
+            'ValueDictionary["${field.dartName}"] = new NsgServerField($argsStr);');
+        if (refField.isNotEmpty) {
+          codeList.add(refField);
+        }
+      });
+    } else {
+      var fieldsNotToPost =
+          fields.where((f) => f.writeOnServer && !f.allowPost);
+      if (fieldsNotToPost.isNotEmpty) {
+        codeList.add(
+            'public override IEnumerable<string> GetFieldsNotToPost() => FieldsNotToPost;');
+        codeList
+            .add('public static IEnumerable<string> FieldsNotToPost = new[]');
+        codeList.add('{');
+        fieldsNotToPost.forEach((field) {
+          codeList.add('"' + field.dartName + '",');
+        });
+        codeList.add('};');
+        codeList.add('');
       }
-      if (!field.allowPost) {
-        argsStr += ', false';
-      }
-      codeList.add(
-          'ValueDictionary["${field.dartName}"] = new NsgServerField($argsStr);');
-      if (refField.isNotEmpty) {
-        codeList.add(refField);
-      }
-    });
+      codeList.add('public override void SetDefaultValues()');
+      codeList.add('{');
+      fields.forEach((field) {
+        if (!field.writeOnServer) return;
+        if (field.type == 'int') {
+          codeList.add('ValueDictionary["${field.dartName}"] = 0;');
+        } else if (field.type == 'double') {
+          codeList.add('ValueDictionary["${field.dartName}"] = 0D;');
+        } else if (field.type == 'String') {
+          if (field.isPrimary) {
+            codeList.add(
+                'ValueDictionary["${field.dartName}"] = "00000000-0000-0000-0000-000000000000";');
+          } else {
+            codeList
+                .add('ValueDictionary["${field.dartName}"] = string.Empty;');
+          }
+        } else if (field.type == 'Guid') {
+          codeList.add('ValueDictionary["${field.dartName}"] = Guid.Empty;');
+        } else if (field.type == 'Reference') {
+          codeList.add(
+              'ValueDictionary["${field.dartName}"] = "00000000-0000-0000-0000-000000000000";');
+          codeList.add(
+              'ValueDictionary["${nsgGenerator.getDartName(field.referenceName)}"] = null;');
+        } else if (field.type == 'UntypedReference') {
+          codeList.add(
+              'ValueDictionary["${field.dartName}"] = "00000000-0000-0000-0000-000000000000.NO";');
+        } else if (field.type == 'List<Reference>') {
+          codeList.add(
+              'ValueDictionary["${field.dartName}"] = new List<${field.referenceType}>();');
+        } else if (field.type == 'Enum') {
+          codeList.add('ValueDictionary["${field.dartName}"] = 0;');
+        } else if (['Image', 'Binary'].contains(field.type)) {
+          codeList.add('ValueDictionary["${field.dartName}"] = string.Empty;');
+        } else {
+          codeList.add(
+              'ValueDictionary["${field.dartName}"] = default(${field.dartType});');
+        }
+      });
+    }
     codeList.add('}');
     codeList.add('');
 
