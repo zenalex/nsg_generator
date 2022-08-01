@@ -308,29 +308,28 @@ class NsgGenFunction {
       codeList.add(
           '  Future<$dartType?> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
     }
-    codeList.add(
-        '    filter ??= NsgDataRequestParams(params: <String, dynamic>{});');
+    codeList.add('    var params = <String, dynamic>{};');
     if (params != null && params.isNotEmpty) {
       params.forEach((p) {
         if (p.type == 'String') {
-          codeList.add('    filter.params![\'${p.name}\'] = ${p.name};');
+          codeList.add('    params[\'${p.name}\'] = ${p.name};');
         } else if (p.type == 'Date' || p.type == 'DateTime') {
-          codeList.add(
-              '    filter.params![\'${p.name}\'] = ${p.name}.toIso8601String();');
-        } else if (p.type == 'Reference') {
           codeList
-              .add('    filter.params![\'${p.name}\'] = ${p.name}.toJson();');
+              .add('    params[\'${p.name}\'] = ${p.name}.toIso8601String();');
+        } else if (p.type == 'Reference') {
+          codeList.add('    params[\'${p.name}\'] = ${p.name}.toJson();');
         } else if (p.type.startsWith('List<')) {
           codeList.add(
-              '    filter.params![\'${p.name}\'] = ${p.name}.map((obj) => obj.toJson());');
+              '    params[\'${p.name}\'] = ${p.name}.map((obj) => obj.toJson());');
         } else if (p.type == 'Enum') {
-          codeList.add('    filter.params![\'${p.name}\'] = ${p.name}.value;');
+          codeList.add('    params[\'${p.name}\'] = ${p.name}.value;');
         } else {
-          codeList
-              .add('    filter.params![\'${p.name}\'] = ${p.name}.toString();');
+          codeList.add('    params[\'${p.name}\'] = ${p.name}.toString();');
         }
       });
     }
+    codeList.add('    filter ??= NsgDataRequestParams();');
+    codeList.add('    filter.params = params;');
     codeList.add('    try {');
     if (type == 'List<Reference>') {
       codeList.add(
