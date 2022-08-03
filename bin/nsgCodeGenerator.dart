@@ -17,10 +17,14 @@ void main(List<String> args) async {
     if (args.contains('-force') ||
         args.contains('-overwrite') ||
         args.contains('-forceoverwrite')) {
-      print('Overwrite all files? (y/n/cancel)');
-      var yn = stdin.readLineSync(encoding: utf8).toLowerCase();
-      if (yn != 'y' && yn != 'n') return;
-      nsgArgs.forceOverwrite = yn == 'y';
+      if (args.contains('-dontAsk')) {
+        nsgArgs.forceOverwrite = true;
+      } else {
+        print('Overwrite all files? (y/n/cancel)');
+        var yn = stdin.readLineSync(encoding: utf8).toLowerCase();
+        if (yn != 'y' && yn != 'n') return;
+        nsgArgs.forceOverwrite = yn == 'y';
+      }
     }
     nsgArgs.copyCsproj = args.contains('-copyCsproj');
     nsgArgs.copyProgramCs = args.contains('-copyProgramCs');

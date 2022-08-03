@@ -699,6 +699,10 @@ dart bin\nsgCodeGenerator.dart C:\GeneratorConfig [-csharp] [-dart] [-force|-ove
 ```
 -copyStartupCs
 ```
+- Не переспрашивать. По умолчанию при использовании forceOverwrite потребуется подтверждение перезаписи
+```
+-dontAsk
+```
 - Указать путь для генерации проекта C# (вместо указанного в [generation_config.json](#1-описание-структуры-generation_config))
 ```
 csharp:C:\Server
