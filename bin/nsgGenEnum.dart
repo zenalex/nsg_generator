@@ -135,6 +135,9 @@ class NsgGenEnum {
     var codeList = <String>[];
     codeList.add('import \'package:nsg_data/nsg_data.dart\';');
     codeList.add('');
+    if (description != null && description.isNotEmpty) {
+      codeList.add('/// $description');
+    }
     codeList.add('class $className extends NsgEnum {');
     values.forEach((i) {
       codeList.add(
