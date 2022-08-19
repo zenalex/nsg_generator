@@ -164,6 +164,18 @@ class NsgGenFunction {
     if (['Reference', 'List<Reference>'].contains(type)) {
       codeList.add(
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name([FromBody] NsgFindParams findParams)');
+    } else if (['Image', 'Binary'].contains(type)) {
+      var uriParamTNString = '';
+      var uriParamNString = '';
+      if (params != null && params.isNotEmpty) {
+        for (var p in params) {
+          uriParamTNString += '[FromUri] ' + p.returnType + ' ' + p.name;
+          uriParamNString += p.name;
+        }
+      }
+      paramNString = uriParamNString;
+      codeList.add(
+          'public async Task<HttpResponseMessage> $name($uriParamTNString)');
     } else {
       var primType = type;
       if (type == 'Enum') {
@@ -176,7 +188,9 @@ class NsgGenFunction {
     if (controller.useAuthorization) {
       codeList.add('var user = await authController.GetUserByToken(Request);');
     }
-    if (params != null && params.isNotEmpty) {
+    if (params != null &&
+        params.isNotEmpty &&
+        !(['Image', 'Binary'].contains(type))) {
       params.forEach((p) {
         if (p.type == 'Date' || p.type == 'DateTime') {
           codeList
@@ -219,6 +233,15 @@ class NsgGenFunction {
     if (['Reference', 'List<Reference>'].contains(type)) {
       codeList.add(
           'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name($paramTNString);');
+    } else if (['Image', 'Binary'].contains(type)) {
+      var uriParamTNString = '';
+      if (params != null && params.isNotEmpty) {
+        for (var p in params) {
+          uriParamTNString += '[FromUri] ' + p.returnType + ' ' + p.name;
+        }
+      }
+      codeList.add(
+          'Task<System.Net.Http.HttpResponseMessage> $name($uriParamTNString);');
     } else {
       var primType = type;
       if (type == 'Enum') {
@@ -246,6 +269,18 @@ class NsgGenFunction {
       codeList.add(
           '    => NsgServerMetadataItem.GetDictWithNestedFields<$returnType>(');
       codeList.add('        await On$name($paramNString), findParams);');
+    } else if (['Image', 'Binary'].contains(type)) {
+      var uriParamTNString = '';
+      var uriParamNString = '';
+      if (params != null && params.isNotEmpty) {
+        for (var p in params) {
+          uriParamTNString += p.returnType + ' ' + p.name;
+          uriParamNString += p.name;
+        }
+      }
+      codeList.add(
+          'public async Task<System.Net.Http.HttpResponseMessage> $name($uriParamTNString)');
+      codeList.add('    => await On$name($uriParamNString);');
     } else {
       var primType = type;
       if (type == 'Enum') {
@@ -270,6 +305,29 @@ class NsgGenFunction {
           .add('public Task<IEnumerable<$returnType>> On$name($paramTNString)');
       codeList.add('{');
       codeList.add('throw new NotImplementedException();');
+      codeList.add('}');
+    } else if (['Image', 'Binary'].contains(type)) {
+      var uriParamTNString = '';
+      if (params != null && params.isNotEmpty) {
+        for (var p in params) {
+          uriParamTNString += p.returnType + ' ' + p.name;
+        }
+      }
+      codeList
+          .add('public Task<HttpResponseMessage> On$name($uriParamTNString)');
+      codeList.add('{');
+      codeList.add(
+          'HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);');
+      codeList.add(
+          '//response.Content = new StreamContent(new FileStream(fileName, FileMode.Open, FileAccess.Read));');
+      codeList.add(
+          '//response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment");');
+      codeList.add(
+          '//response.Content.Headers.ContentDisposition.FileName = fileName;');
+      codeList.add(
+          '//response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");');
+      codeList.add('');
+      codeList.add('return response;');
       codeList.add('}');
     } else {
       var primType = type;

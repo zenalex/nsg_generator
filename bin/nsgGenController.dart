@@ -389,6 +389,10 @@ class NsgGenController {
     codeList.add('using System.IO;');
     codeList.add('using System.Linq;');
     codeList.add('using System.Net;');
+    if (functions.any((f) => ['Image', 'Binary'].contains(f.type))) {
+      codeList.add('using System.Net.Http;');
+      codeList.add('using System.Net.Http.Headers;');
+    }
     codeList.add('using ${nsgGenerator.cSharpNamespace};');
     codeList.add('using NsgServerClasses;');
     codeList.add('using System.Threading.Tasks;');
@@ -536,6 +540,9 @@ class NsgGenController {
     var codeList = <String>[];
     codeList.add("import 'package:get/get.dart';");
     codeList.add("import 'package:nsg_data/nsg_data.dart';");
+    // if (functions.any((f) => ['Image', 'Binary'].contains(f.type))) {
+    //   codeList.add("import 'dart:io';");
+    // }
     if (nsgGenerator.enums.isNotEmpty) {
       codeList.add("import '../enums.dart';");
     }
@@ -565,6 +572,7 @@ class NsgGenController {
 
     await Future.forEach<NsgGenFunction>(functions, (_) async {
       codeList.add('');
+      if (['Image', 'Binary'].contains(_.type)) return;
       await _.generateCodeDart(codeList, nsgGenerator, this);
     });
 
