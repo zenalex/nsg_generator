@@ -190,9 +190,12 @@ class NsgGenFunction {
         var pStr = '${p.returnType} ${p.name} = ';
         if (p.type == 'String') {
           pStr += 'findParams.Parameters["${p.name}"].ToString()';
-        } else if (p.type == 'int' || p.type == 'double') {
+        } else if (['int', 'double', 'Date', 'DateTime'].contains(p.type)) {
           pStr +=
               '${p.type}.Parse(findParams.Parameters["${p.name}"].ToString(), System.Globalization.CultureInfo.InvariantCulture)';
+        } else if (p.type == 'bool') {
+          pStr +=
+              '${p.type}.Parse(findParams.Parameters["${p.name}"].ToString())';
         } else {
           pStr +=
               '(findParams.Parameters["${p.name}"] as Newtonsoft.Json.Linq.JObject)?.ToObject<${p.returnType}>() ?? new ${p.returnType}()';
