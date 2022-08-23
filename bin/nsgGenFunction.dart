@@ -394,7 +394,8 @@ class NsgGenFunction {
       });
     }
     codeList.add('    filter ??= NsgDataRequestParams();');
-    codeList.add('    filter.params = params;');
+    codeList.add('    filter.params?.addAll(params);');
+    codeList.add('    filter.params ??= params;');
     codeList.add('    try {');
     if (type == 'List<Reference>') {
       codeList.add(
