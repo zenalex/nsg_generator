@@ -556,7 +556,8 @@ class NsgGenController {
     codeList.add(
         '    provider ??= NsgDataProvider(applicationName: \'${nsgGenerator.applicationName}\', firebaseToken: \'\');');
     codeList.add(
-        "  provider!.serverUri = NsgDataOptions.instance.serverUri?.toString() ?? '$serverUri';");
+        // "  provider!.serverUri = NsgDataOptions.instance.serverUri?.toString() ?? '$serverUri';");
+        "  provider!.serverUri = '$serverUri';");
     codeList.add('  ');
     addRegisterDataItems(nsgGenerator, codeList);
     codeList.add('    provider!.useNsgAuthorization = $useAuthorization;');
