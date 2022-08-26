@@ -708,6 +708,9 @@ class NsgGenDataItem {
     codeList.add(' };');
     codeList.add('');
     codeList.add('  @override');
+    codeList.add('  String get typeName => \'$typeName\';');
+    codeList.add('');
+    codeList.add('  @override');
     codeList.add('  void initialize() {');
     fields.forEach((_) {
       if (!_.writeOnClient) return;
