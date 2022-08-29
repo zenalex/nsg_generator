@@ -360,7 +360,8 @@ class NsgGenFunction {
         paramTNString += p.returnType + ' ' + p.name + ', ';
       });
     }
-    paramTNString += '{NsgDataRequestParams? filter}';
+    paramTNString +=
+        '{NsgDataRequestParams? filter, bool showProgress = false, bool isStoppable = false}';
 
     // if (type == 'List<Reference>') {
     //   codeList.add(
@@ -373,30 +374,32 @@ class NsgGenFunction {
       codeList.add(
           '  Future<List<$dartType>> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
     }
-    codeList.add('    var params = <String, dynamic>{};');
+    codeList.add(
+        '  var progress = NsgProgressDialogHelper(showProgress: showProgress, isStoppable: isStoppable);');
+    codeList.add('    try {');
+    codeList.add('      var params = <String, dynamic>{};');
     if (params != null && params.isNotEmpty) {
       params.forEach((p) {
         if (p.type == 'String') {
-          codeList.add('    params[\'${p.name}\'] = ${p.name};');
+          codeList.add('      params[\'${p.name}\'] = ${p.name};');
         } else if (p.type == 'Date' || p.type == 'DateTime') {
-          codeList
-              .add('    params[\'${p.name}\'] = ${p.name}.toIso8601String();');
+          codeList.add(
+              '      params[\'${p.name}\'] = ${p.name}.toIso8601String();');
         } else if (p.type == 'Reference') {
-          codeList.add('    params[\'${p.name}\'] = ${p.name}.toJson();');
+          codeList.add('      params[\'${p.name}\'] = ${p.name}.toJson();');
         } else if (p.type.startsWith('List<')) {
           codeList.add(
-              '    params[\'${p.name}\'] = ${p.name}.map((obj) => obj.toJson());');
+              '      params[\'${p.name}\'] = ${p.name}.map((obj) => obj.toJson());');
         } else if (p.type == 'Enum') {
-          codeList.add('    params[\'${p.name}\'] = ${p.name}.value;');
+          codeList.add('      params[\'${p.name}\'] = ${p.name}.value;');
         } else {
-          codeList.add('    params[\'${p.name}\'] = ${p.name}.toString();');
+          codeList.add('      params[\'${p.name}\'] = ${p.name}.toString();');
         }
       });
     }
-    codeList.add('    filter ??= NsgDataRequestParams();');
-    codeList.add('    filter.params?.addAll(params);');
-    codeList.add('    filter.params ??= params;');
-    codeList.add('    try {');
+    codeList.add('      filter ??= NsgDataRequestParams();');
+    codeList.add('      filter.params?.addAll(params);');
+    codeList.add('      filter.params ??= params;');
     if (type == 'List<Reference>') {
       codeList.add(
           '      var res = await NsgDataRequest<$dartType>().requestItems(');
@@ -416,16 +419,19 @@ class NsgGenFunction {
     codeList.add('          method: \'${apiType.toUpperCase()}\',');
     codeList.add('          filter: filter,');
     codeList.add('          autoRepeate: true,');
-    codeList.add('          autoRepeateCount: 3);');
+    codeList.add('          autoRepeateCount: 3,');
+    codeList.add('          cancelToken: progress.cancelToken);');
     codeList.add('      return res;');
-    codeList.add('    } catch (e) {');
-    if (type == 'List<Reference>') {
-      codeList.add('      return [];');
-    } else if (type == 'Reference') {
-      codeList.add('      return null;');
-    } else {
-      codeList.add('      return <$dartType>[];');
-    }
+    // codeList.add('    } catch (e) {');
+    // if (type == 'List<Reference>') {
+    //   codeList.add('      return [];');
+    // } else if (type == 'Reference') {
+    //   codeList.add('      return null;');
+    // } else {
+    //   codeList.add('      return <$dartType>[];');
+    // }
+    codeList.add('    } finally {');
+    codeList.add('      progress.hide();');
     codeList.add('    }');
     codeList.add('  }');
   }
