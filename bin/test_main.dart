@@ -4,7 +4,7 @@ import 'nsgGeneratorArgs.dart';
 void main(List<String> args) async {
   var nsgArgs = NsgGeneratorArgs();
 
-  var project = Project.Scif;
+  var project = Project.Tech2Server;
 
   nsgArgs.serviceConfigPath = project.configPath;
   nsgArgs.cSharpPath = project.csPath;
@@ -32,10 +32,8 @@ class Project {
       'C:/Users/pro5/source/repos/FootballersDiary_Server/FootballersDiary/GeneratorConfig',
       'C:/Users/pro5/source/repos/FootballersDiary_Server/FootballersDiary',
       'C:/Users/pro5/source/repos/footballers_diary_app/lib/model');
-  static Project Tech2Server = Project(
-      'C:/Users/pro5/source/repos/Tech2Server/json',
-      'C:/Users/pro5/source/repos/Tech2Server',
-      'C:/Users/pro5/source/repos/tech2_app/lib/model');
+  static Project Tech2Server = Project('D:/NSG/GIT/Tech2Server/json',
+      'D:/NSG/GIT/Tech2Server/', 'D:/NSG/GIT/tech2_app/lib/model');
   static Project Storekeeper = Project(
       'C:/Users/pro5/source/repos/StorekeeperServer/model_config',
       'C:/Users/pro5/source/repos/StorekeeperServer',
