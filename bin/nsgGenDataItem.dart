@@ -334,6 +334,11 @@ class NsgGenDataItem {
       codeList.add(
           'public static readonly string ${field.name} = "${field.dartName}";');
       if (field.referenceName != null && field.referenceName.isNotEmpty) {
+        codeList.add('');
+        if (field.description != null && field.description.isNotEmpty) {
+          Misc.writeDescription(
+              codeList, field.description + ' - reference', true);
+        }
         codeList.add(
             'public static readonly string ${field.referenceName} = "${nsgGenerator.getDartName(field.referenceName)}";');
       }
@@ -421,9 +426,8 @@ class NsgGenDataItem {
         codeList.add('public ${field.referenceType} ${field.referenceName}');
         codeList.add('{');
         codeList.add(
-            'get => this["${nsgGenerator.getDartName(field.referenceName)}"] as ${field.referenceType};');
-        codeList.add(
-            'set => this["${nsgGenerator.getDartName(field.referenceName)}"] = value;');
+            'get => this[Names.${field.referenceName}] as ${field.referenceType};');
+        codeList.add('set => this[Names.${field.referenceName}] = value;');
         codeList.add('}');
         if (!field.alwaysReturnNested) {
           //   codeList.add('public bool ShouldSerialize${element.referenceName}()');
