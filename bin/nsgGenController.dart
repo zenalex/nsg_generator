@@ -556,9 +556,7 @@ class NsgGenController {
     codeList.add('  Future onInit() async {');
     codeList.add(
         '    provider ??= NsgDataProvider(applicationName: \'${nsgGenerator.applicationName}\', firebaseToken: \'\');');
-    codeList.add(
-        // "  provider!.serverUri = NsgDataOptions.instance.serverUri?.toString() ?? '$serverUri';");
-        "  provider!.serverUri = '$serverUri';");
+    codeList.add('  provider!.serverUri = serverUri;');
     codeList.add('  ');
     addRegisterDataItems(nsgGenerator, codeList);
     codeList.add('    provider!.useNsgAuthorization = $useAuthorization;');
@@ -600,16 +598,10 @@ class NsgGenController {
         "import '${nsgGenerator.genPathName}/${nsgGenerator.getDartUnderscoreName(className)}.g.dart';");
     codeList.add('');
     codeList.add('class $className extends ${className}Generated {');
-    // codeList.add('');
-    // codeList
-    //     .add('  ${class_name}(NsgDataProvider provider) : super(provider);');
-    // codeList.add('');
-    // codeList.add('  @override');
-    // codeList.add('  Future loadData() async {');
-    // codeList.add('    super.loadData();');
-    // codeList.add('  }');
+    codeList.add('  @override');
+    codeList.add("  String get serverUri => '$serverUri';");
+    codeList.add('');
     codeList.add('  DataController() : super();');
-
     codeList.add('}');
 
     var fn =
