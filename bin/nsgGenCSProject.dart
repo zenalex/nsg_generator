@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'misc.dart';
 import 'nsgGenerator.dart';
 
 class NsgGenCSProject {
@@ -184,7 +185,7 @@ class NsgGenCSProject {
       codeList.add('}');
       codeList.add('}');
     }
-    indentCode(codeList);
+    Misc.indentCSharpCode(codeList);
     file.writeAsString(codeList.join('\r\n'));
   }
 
@@ -354,24 +355,7 @@ class NsgGenCSProject {
       codeList.add('}');
       codeList.add('}');
     }
-    indentCode(codeList);
+    Misc.indentCSharpCode(codeList);
     file.writeAsString(codeList.join('\r\n'));
-  }
-
-  static void indentCode(List<String> codeList) {
-    var indentMultiplier = 0;
-    for (var i = 0; i < codeList.length; i++) {
-      if (codeList[i].startsWith('}')) {
-        indentMultiplier--;
-        codeList[i] = ('    ' * indentMultiplier) + codeList[i];
-      } else {
-        var isComment = codeList[i].startsWith('//');
-        codeList[i] = ('    ' * indentMultiplier) + codeList[i];
-        if (!isComment) {
-          if (codeList[i].contains('{')) indentMultiplier++;
-          if (codeList[i].contains('}')) indentMultiplier--;
-        }
-      }
-    }
   }
 }

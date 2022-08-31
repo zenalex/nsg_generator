@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'nsgGenCSProject.dart';
+import 'misc.dart';
 import 'nsgGenDataItemField.dart';
 import 'nsgGenFunction.dart';
 import 'nsgGenMethod.dart';
@@ -107,11 +107,7 @@ class NsgGenDataItem {
       codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
       codeList.add('{');
       if (description != null && description.isNotEmpty) {
-        codeList.add('/// <summary>');
-        description.split('\n').forEach((descLine) {
-          codeList.add('/// $descLine');
-        });
-        codeList.add('/// </summary>');
+        Misc.writeDescription(codeList, description, true);
       }
       codeList.add('public partial class $typeName : NsgServerMetadataItem');
       codeList.add('{');
@@ -333,11 +329,7 @@ class NsgGenDataItem {
     fields.forEach((field) {
       if (!field.writeOnServer) return;
       if (field.description != null && field.description.isNotEmpty) {
-        codeList.add('/// <summary>');
-        field.description.split('\n').forEach((descLine) {
-          codeList.add('/// $descLine');
-        });
-        codeList.add('/// </summary>');
+        Misc.writeDescription(codeList, field.description, true);
       }
       if (field.dartType == 'int') {
         codeList.add('public int ${field.name}');
@@ -500,11 +492,7 @@ class NsgGenDataItem {
         paramNString = paramNString.substring(0, paramNString.length - 2);
       }
       if (element.description != null && element.description.isNotEmpty) {
-        codeList.add('/// <summary>');
-        element.description.split('\n').forEach((descLine) {
-          codeList.add('/// $descLine');
-        });
-        codeList.add('/// </summary>');
+        Misc.writeDescription(codeList, element.description, true);
       }
       if (element.dartType == null) {
         codeList.add(
@@ -529,7 +517,7 @@ class NsgGenDataItem {
 
     var fn = '${nsgGenerator.cSharpPath}/Models/$typeName.Designer.cs';
     //if (!File(fn).existsSync()) {
-    NsgGenCSProject.indentCode(codeList);
+    Misc.indentCSharpCode(codeList);
     await File(fn).writeAsString(codeList.join('\r\n'));
     //}
 
@@ -628,11 +616,7 @@ class NsgGenDataItem {
         paramTNString = paramTNString.substring(0, paramTNString.length - 2);
       }
       if (element.description != null && element.description.isNotEmpty) {
-        codeList.add('/// <summary>');
-        element.description.split('\n').forEach((descLine) {
-          codeList.add('/// $descLine');
-        });
-        codeList.add('/// </summary>');
+        Misc.writeDescription(codeList, element.description, true);
       }
       if (element.dartType == null) {
         codeList.add('public void On${element.name}($paramTNString) { }');
@@ -654,7 +638,7 @@ class NsgGenDataItem {
     codeList.add('}');
     fn = '${nsgGenerator.cSharpPath}/Models/$typeName.cs';
     if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
-      NsgGenCSProject.indentCode(codeList);
+      Misc.indentCSharpCode(codeList);
       await File(fn).writeAsString(codeList.join('\r\n'));
     }
   }
@@ -687,9 +671,7 @@ class NsgGenDataItem {
     }
     if (description != null && description.isNotEmpty) {
       codeList.add('');
-      description.split('\n').forEach((descLine) {
-        codeList.add('/// $descLine');
-      });
+      Misc.writeDescription(codeList, description, false);
     }
     codeList.add('class ${typeName}Generated extends NsgDataItem {');
     fields.forEach((_) {
@@ -768,9 +750,7 @@ class NsgGenDataItem {
     fields.forEach((_) {
       if (!_.writeOnClient) return;
       if (_.description != null && _.description.isNotEmpty) {
-        _.description.split('\n').forEach((descLine) {
-          codeList.add('/// $descLine');
-        });
+        Misc.writeDescription(codeList, _.description, false);
       }
       _.writeGetter(nsgGenController, codeList);
       _.writeSetter(nsgGenController, codeList);

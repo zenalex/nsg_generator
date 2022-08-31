@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 
-import 'nsgGenCSProject.dart';
+import 'misc.dart';
 import 'nsgGenerator.dart';
 
 class NsgGenEnum {
@@ -45,9 +45,7 @@ class NsgGenEnum {
       codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
       codeList.add('{');
       if (description != null && description.isNotEmpty) {
-        codeList.add('/// <summary>');
-        codeList.add('/// $description');
-        codeList.add('/// </summary>');
+        Misc.writeDescription(codeList, description, true);
       }
       codeList.add('public class $className : NsgServerEnum');
       codeList.add('{');
@@ -87,7 +85,7 @@ class NsgGenEnum {
       codeList.add('}');
       codeList.add('}');
       codeList.add('}');
-      NsgGenCSProject.indentCode(codeList);
+      Misc.indentCSharpCode(codeList);
 
       var fn = '${nsgGenerator.cSharpPath}/Enums/$className.cs';
       //if (!File(fn).existsSync()) {
@@ -136,7 +134,7 @@ class NsgGenEnum {
     codeList.add('import \'package:nsg_data/nsg_data.dart\';');
     codeList.add('');
     if (description != null && description.isNotEmpty) {
-      codeList.add('/// $description');
+      Misc.writeDescription(codeList, description, false);
     }
     codeList.add('class $className extends NsgEnum {');
     values.forEach((i) {

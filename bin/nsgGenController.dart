@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 
-import 'nsgGenCSProject.dart';
+import 'misc.dart';
 import 'nsgGenMethod.dart';
 import 'nsgGenFunction.dart';
 import 'nsgGenerator.dart';
@@ -102,9 +102,7 @@ class NsgGenController {
       codeList.add('');
       codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
       codeList.add('{');
-      codeList.add('/// <summary>');
-      codeList.add('///${dataType}Interface Controller');
-      codeList.add('/// </summary>');
+      Misc.writeDescription(codeList, '${dataType}Interface Controller', true);
       if (nsgGenerator.targetFramework == 'net5.0') {
         codeList.add('[ApiController]');
         codeList.add('[Route("$apiPrefix")]');
@@ -200,7 +198,7 @@ class NsgGenController {
 
       codeList.add('}');
       codeList.add('}');
-      NsgGenCSProject.indentCode(codeList);
+      Misc.indentCSharpCode(codeList);
 
       var fn = '${nsgGenerator.cSharpPath}/$className.cs';
       //if (!File(fn).existsSync()) {
@@ -274,7 +272,7 @@ class NsgGenController {
 
     codeList.add('}');
     codeList.add('}');
-    NsgGenCSProject.indentCode(codeList);
+    Misc.indentCSharpCode(codeList);
     var fn = '${nsgGenerator.cSharpPath}/${className}Interface.cs';
     //if (!File(fn).existsSync()) {
     await File(fn).writeAsString(codeList.join('\r\n'));
@@ -377,7 +375,7 @@ class NsgGenController {
 
     codeList.add('}');
     codeList.add('}');
-    NsgGenCSProject.indentCode(codeList);
+    Misc.indentCSharpCode(codeList);
     var fn =
         '${nsgGenerator.cSharpPath}/Controllers/$implControllerName.Designer.cs';
     await File(fn).writeAsString(codeList.join('\r\n'));
@@ -457,7 +455,7 @@ class NsgGenController {
     codeList.add('#endregion');
     codeList.add('}');
     codeList.add('}');
-    NsgGenCSProject.indentCode(codeList);
+    Misc.indentCSharpCode(codeList);
     fn = '${nsgGenerator.cSharpPath}/Controllers/$implControllerName.cs';
     if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
       await File(fn).writeAsString(codeList.join('\r\n'));
@@ -494,7 +492,7 @@ class NsgGenController {
     codeList.add('{');
     codeList.add('}');
     codeList.add('}');
-    NsgGenCSProject.indentCode(codeList);
+    Misc.indentCSharpCode(codeList);
     var fn =
         '${nsgGenerator.cSharpPath}/Controllers/$implAuthControllerName.cs';
     if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {

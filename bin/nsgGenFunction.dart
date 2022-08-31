@@ -1,3 +1,4 @@
+import 'misc.dart';
 import 'nsgGenController.dart';
 import 'nsgGenerator.dart';
 
@@ -91,9 +92,7 @@ class NsgGenFunction {
 
   void writeMethod(NsgGenController nsgGenController, List<String> codeList) {
     if (description != null && description.isNotEmpty) {
-      description.split('\n').forEach((descLine) {
-        codeList.add('/// $descLine');
-      });
+      Misc.writeDescription(codeList, description, false);
     }
     var paramTNString = '';
     var paramNString = '';
@@ -144,9 +143,7 @@ class NsgGenFunction {
         paramNString += ', ' + p.name;
       });
     }
-    codeList.add('/// <summary>');
-    codeList.add('/// $description');
-    codeList.add('/// </summary>');
+    Misc.writeDescription(codeList, description, true);
     codeList.add('[Route("$apiPrefix")]');
     //Authorization
     if (!controller.useAuthorization) {
@@ -350,9 +347,7 @@ class NsgGenFunction {
   void generateCodeDart(List<String> codeList, NsgGenerator nsgGenerator,
       NsgGenController controller) async {
     if (description.isNotEmpty) {
-      description.split('\n').forEach((descLine) {
-        codeList.add('  /// $descLine');
-      });
+      Misc.writeDescription(codeList, description, false);
     }
     var paramTNString = ''; //NsgDataRequestParams? filter';
     if (params != null && params.isNotEmpty) {

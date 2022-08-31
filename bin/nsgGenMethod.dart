@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'misc.dart';
 import 'nsgGenController.dart';
 import 'nsgGenDataItem.dart';
-import 'nsgGenDataItemField.dart';
 import 'nsgGenerator.dart';
 
 class NsgGenMethod {
@@ -60,9 +60,7 @@ class NsgGenMethod {
   Future generateCode(List<String> codeList, NsgGenerator nsgGenerator,
       NsgGenController controller) async {
     if (allowGetter || allowPost || allowDelete) {
-      codeList.add('/// <summary>');
-      codeList.add('/// $description');
-      codeList.add('/// </summary>');
+      Misc.writeDescription(codeList, description, true);
     }
     if (allowGetter) {
       codeList.add('[Route("$apiPrefix")]');
