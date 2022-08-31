@@ -188,7 +188,7 @@ class NsgGenDataItem {
       if (field.writeOnServer &&
           field.dbName != null &&
           field.dbName.isNotEmpty) {
-        codeList.add('["${field.dartName}"] = "${field.dbName}",');
+        codeList.add('[Names.${field.name}] = "${field.dbName}",');
       }
     });
     codeList.add('};');
@@ -217,7 +217,7 @@ class NsgGenDataItem {
           'public static Dictionary<string, string> ReferenceNames = new Dictionary<string, string>');
       codeList.add('{');
       refs.forEach((field) {
-        codeList.add('["${field.dartName}"] = "${field.referenceName}",');
+        codeList.add('[Names.${field.name}] = "${field.referenceName}",');
       });
       codeList.add('};');
       codeList.add('');
@@ -244,8 +244,7 @@ class NsgGenDataItem {
           argsStr = 'typeof(Guid), Guid.Empty';
         } else if (field.type == 'Reference') {
           argsStr = 'typeof(string), "00000000-0000-0000-0000-000000000000"';
-          refField =
-              'ValueDictionary["${nsgGenerator.getDartName(field.referenceName)}"] = '
+          refField = 'ValueDictionary[Names.${field.referenceName}] = '
               'new NsgServerField(typeof(${field.referenceType}), null);';
         } else if (field.type == 'UntypedReference') {
           argsStr = 'typeof(string), "00000000-0000-0000-0000-000000000000.NO"';
@@ -263,7 +262,7 @@ class NsgGenDataItem {
           argsStr += ', false';
         }
         codeList.add(
-            'ValueDictionary["${field.dartName}"] = new NsgServerField($argsStr);');
+            'ValueDictionary[Names.${field.name}] = new NsgServerField($argsStr);');
         if (refField.isNotEmpty) {
           codeList.add(refField);
         }
@@ -278,7 +277,7 @@ class NsgGenDataItem {
             .add('public static IEnumerable<string> FieldsNotToPost = new[]');
         codeList.add('{');
         fieldsNotToPost.forEach((field) {
-          codeList.add('"' + field.dartName + '",');
+          codeList.add('Names.${field.name},');
         });
         codeList.add('};');
         codeList.add('');
@@ -288,42 +287,61 @@ class NsgGenDataItem {
       fields.forEach((field) {
         if (!field.writeOnServer) return;
         if (field.type == 'int') {
-          codeList.add('ValueDictionary["${field.dartName}"] = 0;');
+          codeList.add('ValueDictionary[Names.${field.name}] = 0;');
         } else if (field.type == 'double') {
-          codeList.add('ValueDictionary["${field.dartName}"] = 0D;');
+          codeList.add('ValueDictionary[Names.${field.name}] = 0D;');
         } else if (field.type == 'String') {
           if (field.isPrimary) {
             codeList.add(
-                'ValueDictionary["${field.dartName}"] = "00000000-0000-0000-0000-000000000000";');
+                'ValueDictionary[Names.${field.name}] = "00000000-0000-0000-0000-000000000000";');
           } else {
             codeList
-                .add('ValueDictionary["${field.dartName}"] = string.Empty;');
+                .add('ValueDictionary[Names.${field.name}] = string.Empty;');
           }
         } else if (field.type == 'Guid') {
-          codeList.add('ValueDictionary["${field.dartName}"] = Guid.Empty;');
+          codeList.add('ValueDictionary[Names.${field.name}] = Guid.Empty;');
         } else if (field.type == 'Reference') {
           codeList.add(
-              'ValueDictionary["${field.dartName}"] = "00000000-0000-0000-0000-000000000000";');
-          codeList.add(
-              'ValueDictionary["${nsgGenerator.getDartName(field.referenceName)}"] = null;');
+              'ValueDictionary[Names.${field.name}] = "00000000-0000-0000-0000-000000000000";');
+          codeList.add('ValueDictionary[Names.${field.referenceName}] = null;');
         } else if (field.type == 'UntypedReference') {
           codeList.add(
-              'ValueDictionary["${field.dartName}"] = "00000000-0000-0000-0000-000000000000.NO";');
+              'ValueDictionary[Names.${field.name}] = "00000000-0000-0000-0000-000000000000.NO";');
         } else if (field.type == 'List<Reference>') {
           codeList.add(
-              'ValueDictionary["${field.dartName}"] = new List<${field.referenceType}>();');
+              'ValueDictionary[Names.${field.name}] = new List<${field.referenceType}>();');
         } else if (field.type == 'Enum') {
-          codeList.add('ValueDictionary["${field.dartName}"] = 0;');
+          codeList.add('ValueDictionary[Names.${field.name}] = 0;');
         } else if (['Image', 'Binary'].contains(field.type)) {
-          codeList.add('ValueDictionary["${field.dartName}"] = string.Empty;');
+          codeList.add('ValueDictionary[Names.${field.name}] = string.Empty;');
         } else {
           codeList.add(
-              'ValueDictionary["${field.dartName}"] = default(${field.dartType});');
+              'ValueDictionary[Names.${field.name}] = default(${field.dartType});');
         }
       });
     }
     codeList.add('}');
     codeList.add('');
+
+    codeList.add('#region Names');
+    codeList.add('public static class Names');
+    codeList.add('{');
+    fields.forEach((field) {
+      if (!field.writeOnServer) return;
+      if (field.description != null && field.description.isNotEmpty) {
+        Misc.writeDescription(codeList, field.description, true);
+      }
+      codeList.add(
+          'public static readonly string ${field.name} = "${field.dartName}";');
+      if (field.referenceName != null && field.referenceName.isNotEmpty) {
+        codeList.add(
+            'public static readonly string ${field.referenceName} = "${nsgGenerator.getDartName(field.referenceName)}";');
+      }
+      codeList.add('');
+    });
+    codeList.add('}');
+    codeList.add('');
+    codeList.add('#endregion Names');
 
     codeList.add('#region Properties');
     fields.forEach((field) {
@@ -334,33 +352,33 @@ class NsgGenDataItem {
       if (field.dartType == 'int') {
         codeList.add('public int ${field.name}');
         codeList.add('{');
-        codeList.add('get => Convert.ToInt32(this["${field.dartName}"]);');
-        codeList.add('set => this["${field.dartName}"] = value;');
+        codeList.add('get => Convert.ToInt32(this[Names.${field.name}]);');
+        codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
       } else if (field.dartType == 'double') {
         codeList.add('public double ${field.name}');
         codeList.add('{');
-        codeList.add('get => Convert.ToDouble(this["${field.dartName}"]);');
-        codeList.add('set => this["${field.dartName}"] = value;');
+        codeList.add('get => Convert.ToDouble(this[Names.${field.name}]);');
+        codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
       } else if (field.dartType == 'bool') {
         codeList.add('public bool ${field.name}');
         codeList.add('{');
-        codeList.add('get => (bool)this["${field.dartName}"];');
-        codeList.add('set => this["${field.dartName}"] = value;');
+        codeList.add('get => (bool)this[Names.${field.name}];');
+        codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
       } else if (field.dartType == 'DateTime') {
         codeList.add('public DateTime ${field.name}');
         codeList.add('{');
-        codeList.add('get => (DateTime)this["${field.dartName}"];');
-        codeList.add('set => this["${field.dartName}"] = value;');
+        codeList.add('get => (DateTime)this[Names.${field.name}];');
+        codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
       } else if (field.dartType == 'List<Reference>') {
         codeList.add('public List<${field.referenceType}> ${field.name}');
         codeList.add('{');
         codeList.add(
-            'get => this["${field.dartName}"] as List<${field.referenceType}>;');
-        codeList.add('set => this["${field.dartName}"] = value;');
+            'get => this[Names.${field.name}] as List<${field.referenceType}>;');
+        codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
         if (field.alwaysReturnNested) {
           codeList.add('public bool ShouldSerialize${field.name}()');
@@ -373,7 +391,7 @@ class NsgGenDataItem {
           codeList
               .add('return NestReferences() && (SerializeFields == null ||');
           codeList.add(
-              '    SerializeFields.Find(s => s.StartsWith("${field.dartName}")) != default);');
+              '    SerializeFields.Find(s => s.StartsWith(Names.${field.name})) != default);');
           codeList.add('}');
         }
       } else if (field.dartType == 'List<Enum>') {
@@ -386,8 +404,8 @@ class NsgGenDataItem {
         codeList.add('/// </remarks>');
         codeList.add('public int ${field.name}');
         codeList.add('{');
-        codeList.add('get => (int)this["${field.dartName}"];');
-        codeList.add('set => this["${field.dartName}"] = value;');
+        codeList.add('get => (int)this[Names.${field.name}];');
+        codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
       } else if (field.dartType == 'Reference') {
         codeList.add('/// <remarks> ');
@@ -397,8 +415,8 @@ class NsgGenDataItem {
             '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000")]');
         codeList.add('public string ${field.name}');
         codeList.add('{');
-        codeList.add('get => this["${field.dartName}"].ToString();');
-        codeList.add('set => this["${field.dartName}"] = value;');
+        codeList.add('get => this[Names.${field.name}].ToString();');
+        codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
         codeList.add('public ${field.referenceType} ${field.referenceName}');
         codeList.add('{');
@@ -419,7 +437,7 @@ class NsgGenDataItem {
           codeList
               .add('return NestReferences() && (SerializeFields == null ||');
           codeList.add(
-              '    SerializeFields.Find(s => s.StartsWith("${field.dartName}")) != default);');
+              '    SerializeFields.Find(s => s.StartsWith(Names.${field.name})) != default);');
           codeList.add('}');
         }
       } else if (field.dartType == 'UntypedReference') {
@@ -431,8 +449,8 @@ class NsgGenDataItem {
             '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000.NO")]');
         codeList.add('public string ${field.name}');
         codeList.add('{');
-        codeList.add('get => this["${field.dartName}"].ToString();');
-        codeList.add('set => this["${field.dartName}"] = value;');
+        codeList.add('get => this[Names.${field.name}].ToString();');
+        codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
         // codeList.add(
         //     'public NsgServerMetadataItem ${element.referenceName} { get; set; }');
@@ -449,8 +467,8 @@ class NsgGenDataItem {
         if (field.type == 'Guid') {
           codeList.add('public Guid ${field.name}');
           codeList.add('{');
-          codeList.add('get => (Guid)this["${field.dartName}"];');
-          codeList.add('set => this["${field.dartName}"] = value;');
+          codeList.add('get => (Guid)this[Names.${field.name}];');
+          codeList.add('set => this[Names.${field.name}] = value;');
           codeList.add('}');
         } else {
           if (field.name.endsWith('Id')) {
@@ -464,8 +482,8 @@ class NsgGenDataItem {
           }
           codeList.add('public string ${field.name}');
           codeList.add('{');
-          codeList.add('get => this["${field.dartName}"].ToString();');
-          codeList.add('set => this["${field.dartName}"] = value;');
+          codeList.add('get => this[Names.${field.name}].ToString();');
+          codeList.add('set => this[Names.${field.name}] = value;');
           codeList.add('}');
         }
       }
