@@ -95,6 +95,9 @@ class NsgGenerator {
       print('generating ${element.className}');
       await element.generateCode(this);
     });
+    if (doDart) {
+      await NsgGenController.generateControllerOptions(this, controllers);
+    }
     await NsgGenEnum.generateEnums(this, enums);
   }
 

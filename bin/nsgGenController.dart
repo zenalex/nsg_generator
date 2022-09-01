@@ -539,6 +539,7 @@ class NsgGenController {
     codeList.add("import 'package:get/get.dart';");
     codeList.add("import 'package:nsg_controls/nsg_controls.dart';");
     codeList.add("import 'package:nsg_data/nsg_data.dart';");
+    codeList.add("import '../_nsg_server_options.dart';");
     // if (functions.any((f) => ['Image', 'Binary'].contains(f.type))) {
     //   codeList.add("import 'dart:io';");
     // }
@@ -554,7 +555,8 @@ class NsgGenController {
     codeList.add('  Future onInit() async {');
     codeList.add(
         '    provider ??= NsgDataProvider(applicationName: \'${nsgGenerator.applicationName}\', firebaseToken: \'\');');
-    codeList.add('  provider!.serverUri = serverUri;');
+    codeList.add(
+        '  provider!.serverUri = NsgServerOptions.DataControllerServerUri;');
     codeList.add('  ');
     addRegisterDataItems(nsgGenerator, codeList);
     codeList.add('    provider!.useNsgAuthorization = $useAuthorization;');
@@ -607,6 +609,21 @@ class NsgGenController {
     if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
       await File(fn).writeAsString(codeList.join('\r\n'));
     }
+  }
+
+  static Future generateControllerOptions(
+      NsgGenerator nsgGenerator, List<NsgGenController> controllers) async {
+    var codeList = <String>[];
+    codeList.add('class NsgServerOptions {');
+    controllers.forEach((c) {
+      codeList.add(
+          '  static const String ${c.className}ServerUri = \'${c.serverUri}\';');
+    });
+    codeList.add('}');
+
+    var file = File('${nsgGenerator.dartPath}/_nsg_server_options.dart');
+    if (await file.exists()) return;
+    await file.writeAsString(codeList.join('\r\n'));
   }
 
   void addRegisterDataItems(NsgGenerator nsgGenerator, List<String> codeList) {
