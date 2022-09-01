@@ -208,7 +208,7 @@ class NsgGenDataItemField {
           'set $dartName(String value) => setFieldValue($fieldNameVar, value);');
       codeList.add(
           'set ${NsgGenerator.generator.getDartName(referenceName)}(NsgDataItem value) =>');
-      codeList.add('    setFieldValue($fieldNameVar, value.id);');
+      codeList.add('    setFieldValue($fieldNameVar, value);');
     } else if (type == 'List<Reference>') {
       //Отменил запись setter из-за смены возвращаемого типа на NsgDataTable
       // codeList.add(
