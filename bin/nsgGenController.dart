@@ -448,7 +448,7 @@ class NsgGenController {
         'public void OnGetControllerCompare(INsgTokenExtension user, NsgServerDataItem obj, NsgFindParams findParams) { }');
     codeList.add('');
     codeList.add(
-        'private void OnBeforePost<T>(INsgTokenExtension user, IEnumerable<T> items) where T : NsgServerDataItem, new() { }');
+        'private void OnBeforePost(INsgTokenExtension user, IEnumerable<NsgServerDataItem> items) { }');
     codeList.add('');
     codeList.add(
         'public void OnApplyServerFilter(INsgTokenExtension user, NsgServerDataItem obj, NsgFindParams findParams) { }');
@@ -555,8 +555,8 @@ class NsgGenController {
     codeList.add('  Future onInit() async {');
     codeList.add(
         '    provider ??= NsgDataProvider(applicationName: \'${nsgGenerator.applicationName}\', firebaseToken: \'\');');
-    codeList.add(
-        '  provider!.serverUri = NsgServerOptions.DataControllerServerUri;');
+    codeList
+        .add('  provider!.serverUri = NsgServerOptions.serverUri$className;');
     codeList.add('  ');
     addRegisterDataItems(nsgGenerator, codeList);
     codeList.add('    provider!.useNsgAuthorization = $useAuthorization;');
@@ -598,9 +598,6 @@ class NsgGenController {
         "import '${nsgGenerator.genPathName}/${nsgGenerator.getDartUnderscoreName(className)}.g.dart';");
     codeList.add('');
     codeList.add('class $className extends ${className}Generated {');
-    codeList.add('  @override');
-    codeList.add("  String get serverUri => '$serverUri';");
-    codeList.add('');
     codeList.add('  DataController() : super();');
     codeList.add('}');
 
@@ -617,12 +614,12 @@ class NsgGenController {
     codeList.add('class NsgServerOptions {');
     controllers.forEach((c) {
       codeList.add(
-          '  static const String ${c.className}ServerUri = \'${c.serverUri}\';');
+          '  static const String serverUri${c.className} = \'${c.serverUri}\';');
     });
     codeList.add('}');
 
     var file = File('${nsgGenerator.dartPath}/_nsg_server_options.dart');
-    if (await file.exists()) return;
+    if (await file.exists() && !nsgGenerator.forceOverwrite) return;
     await file.writeAsString(codeList.join('\r\n'));
   }
 

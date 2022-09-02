@@ -18,6 +18,7 @@ class Misc {
 
   static void writeDescription(
       List<String> codeList, String text, bool xmlWrap) {
+    if (text == null || text.isEmpty) return;
     if (xmlWrap) {
       codeList.add('/// <summary>');
     }
