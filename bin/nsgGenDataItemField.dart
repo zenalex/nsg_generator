@@ -191,6 +191,9 @@ class NsgGenDataItemField {
   }
 
   void writeSetter(NsgGenController nsgGenController, List<String> codeList) {
+    if (['id' /*, 'ownerid'*/].contains(name.toLowerCase())) {
+      codeList.add('@override');
+    }
     if (type == 'Image') {
       codeList.add(
           'set $dartName(List<int> value) => setFieldValue($fieldNameVar, value);');
