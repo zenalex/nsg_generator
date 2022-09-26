@@ -714,6 +714,22 @@ class NsgGenDataItem {
             _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
           codeList.add(
               '   addField(${_.nsgDataType}(${_.fieldNameVar}, maxDecimalPlaces: ${_.maxLength}), primaryKey: ${_.isPrimary});');
+        } else if (_.type == 'UntypedReference') {
+          var defaultReferenceType = _.referenceType;
+          if ((defaultReferenceType == null || defaultReferenceType.isEmpty) &&
+              _.referenceTypes != null &&
+              _.referenceTypes.isNotEmpty) {
+            defaultReferenceType = _.referenceTypes.first['alias'].toString();
+            defaultReferenceType = defaultReferenceType[0].toUpperCase() +
+                defaultReferenceType.substring(1);
+          }
+          if (defaultReferenceType != null && defaultReferenceType.isNotEmpty) {
+            codeList.add(
+                '   addField(${_.nsgDataType}(${_.fieldNameVar}, defaultReferentType: $defaultReferenceType), primaryKey: ${_.isPrimary});');
+          } else {
+            codeList.add(
+                '   addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+          }
         } else {
           codeList.add(
               '   addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');

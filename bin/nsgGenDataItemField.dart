@@ -64,7 +64,9 @@ class NsgGenDataItemField {
                 : parsedJson['name'],
         isPrimary: parsedJson['isPrimary'] == 'true',
         referenceName: parsedJson['referenceName'] ?? '',
-        referenceType: parsedJson['referenceType'] ?? '',
+        referenceType: parsedJson.containsKey('defaultReferenceType')
+            ? parsedJson['defaultReferenceType'] ?? ''
+            : parsedJson['referenceType'] ?? '',
         userVisibility: parsedJson['userVisibility'] == 'true',
         userName: parsedJson['userName'] ?? '',
         alwaysReturnNested: parsedJson['alwaysReturnNested'] == 'true',
