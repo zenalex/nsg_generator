@@ -24,7 +24,7 @@ class NsgGenCSProject {
         return;
       }
     }
-    var targetFramework = nsgGenerator.targetFramework ?? 'net5.0';
+    var targetFramework = nsgGenerator.targetFramework;
     if (targetFramework.isEmpty) targetFramework = 'net5.0';
     print('generating .csproj');
     var codeList = <String>[];
@@ -53,7 +53,7 @@ class NsgGenCSProject {
     codeList.add('  <ItemGroup>');
     codeList.add('    <Folder Include="Controllers\\" />');
     codeList.add('    <Folder Include="Models\\" />');
-    if (nsgGenerator.enums != null && nsgGenerator.enums.isNotEmpty) {
+    if (nsgGenerator.enums.isNotEmpty) {
       codeList.add('    <Folder Include="Enums\\" />');
     }
     codeList.add('  </ItemGroup>');

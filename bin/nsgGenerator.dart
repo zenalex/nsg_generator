@@ -12,24 +12,24 @@ class NsgGenerator {
   final String applicationName;
   final List<NsgGenController> controllers;
   final List<NsgGenEnum> enums;
-  bool doCSharp;
-  bool doDart;
-  bool forceOverwrite;
-  bool copyCsproj;
-  bool copyProgramCs;
-  bool copyStartupCs;
+  bool doCSharp = true;
+  bool doDart = true;
+  bool forceOverwrite = false;
+  bool copyCsproj = false;
+  bool copyProgramCs = false;
+  bool copyStartupCs = false;
 
-  String jsonPath;
-  static NsgGenerator generator;
+  String? jsonPath;
+  static late NsgGenerator generator;
 
   NsgGenerator(
-      {this.targetFramework,
-      this.cSharpPath,
-      this.cSharpNamespace,
-      this.dartPath,
-      this.applicationName,
-      this.controllers,
-      this.enums});
+      {this.targetFramework = 'net5.0',
+      required this.cSharpPath,
+      required this.cSharpNamespace,
+      required this.dartPath,
+      required this.applicationName,
+      this.controllers = const [],
+      this.enums = const []});
 
   factory NsgGenerator.fromJson(Map<String, dynamic> parsedJson) {
     var targetFramework = parsedJson['targetFramework'] ?? 'net5.0';
@@ -42,9 +42,9 @@ class NsgGenerator {
     }
     generator = NsgGenerator(
         targetFramework: targetFramework,
-        cSharpPath: parsedJson['cSharpPath'],
-        cSharpNamespace: parsedJson['cSharpNamespace'],
-        dartPath: parsedJson['dartPath'],
+        cSharpPath: parsedJson['cSharpPath'] ?? '',
+        cSharpNamespace: parsedJson['cSharpNamespace'] ?? '',
+        dartPath: parsedJson['dartPath'] ?? '',
         applicationName: parsedJson['applicationName'] ?? 'application',
         controllers: (parsedJson['controller'] as List)
             .map((i) => NsgGenController.fromJson(i))
@@ -67,7 +67,7 @@ class NsgGenerator {
       await dir.create();
       dir = Directory(cSharpPath + '/Models/');
       await dir.create();
-      if (enums != null && enums.isNotEmpty) {
+      if (enums.isNotEmpty) {
         dir = Directory(cSharpPath + '/Enums/');
         await dir.create();
       }
@@ -77,7 +77,7 @@ class NsgGenerator {
       await dir.create();
       dir = Directory(dartPathGen);
       await dir.create();
-      if (enums != null && enums.isNotEmpty) {
+      if (enums.isNotEmpty) {
         dir = Directory(dartPath + '/enums/');
         await dir.create();
       }
@@ -103,7 +103,7 @@ class NsgGenerator {
 
   RegExp nonUpperCaseRE = RegExp(r'[^A-Z]');
   String getDartName(String dn) {
-    if (dn == null || dn.isEmpty) return dn;
+    if (dn.isEmpty) return dn;
     var firstLowerCaseIndex = dn.indexOf(nonUpperCaseRE);
     if (firstLowerCaseIndex == -1) {
       return dn.toLowerCase();
@@ -120,10 +120,10 @@ class NsgGenerator {
   }
 
   String getDartUnderscoreName(String dn) {
-    if (dn == null || dn.isEmpty) return dn;
+    if (dn.isEmpty) return dn;
     var exp = RegExp(r'(?<=[a-zA-Z])((?<=[a-z])|(?=[A-Z][a-z]))[A-Z]');
     dn =
-        dn.replaceAllMapped(exp, (Match m) => ('_' + m.group(0))).toLowerCase();
+        dn.replaceAllMapped(exp, (Match m) => ('_' + (m.group(0) ?? ''))).toLowerCase();
     return dn;
   }
 }

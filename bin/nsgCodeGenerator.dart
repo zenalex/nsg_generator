@@ -21,7 +21,7 @@ void main(List<String> args) async {
         nsgArgs.forceOverwrite = true;
       } else {
         print('Overwrite all files? (y/n/cancel)');
-        var yn = stdin.readLineSync(encoding: utf8).toLowerCase();
+        var yn = stdin.readLineSync(encoding: utf8)?.toLowerCase() ?? 'n';
         if (yn != 'y' && yn != 'n') return;
         nsgArgs.forceOverwrite = yn == 'y';
       }
@@ -39,7 +39,8 @@ void main(List<String> args) async {
     }
   } else {
     print('Enter path: ');
-    nsgArgs.serviceConfigPath = stdin.readLineSync(encoding: utf8);
+    nsgArgs.serviceConfigPath =
+        stdin.readLineSync(encoding: utf8) ?? nsgArgs.serviceConfigPath;
   }
   startGenerator(nsgArgs);
 }

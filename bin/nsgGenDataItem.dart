@@ -21,28 +21,28 @@ class NsgGenDataItem {
   bool allowCreate = false;
 
   NsgGenDataItem(
-      {this.typeName,
-      this.description,
-      this.databaseType,
-      this.databaseTypeNamespace,
-      this.presentation,
-      this.maxHttpGetItems,
-      this.periodFieldName,
-      this.fields,
-      this.methods});
+      {required this.typeName,
+      this.description = '',
+      this.databaseType = '',
+      this.databaseTypeNamespace = '',
+      this.presentation = '',
+      this.maxHttpGetItems = 100,
+      this.periodFieldName = '',
+      this.fields = const [],
+      this.methods = const []});
 
   factory NsgGenDataItem.fromJson(Map<String, dynamic> parsedJson) {
-    var methods = parsedJson['methods'] as List ?? List.empty();
+    var methods = (parsedJson['methods'] ?? []) as List;
     return NsgGenDataItem(
-        typeName: parsedJson['typeName'],
+        typeName: parsedJson['typeName'] ?? '',
         description: parsedJson.containsKey('description')
-            ? parsedJson['description']
-            : parsedJson['databaseType'],
-        databaseType: parsedJson['databaseType'],
-        databaseTypeNamespace: parsedJson['databaseTypeNamespace'],
-        presentation: parsedJson['presentation'],
-        maxHttpGetItems: parsedJson['maxHttpGetItems'],
-        periodFieldName: parsedJson['periodFieldName'],
+            ? parsedJson['description'] ??''
+            : parsedJson['databaseType'] ?? '',
+        databaseType: parsedJson['databaseType'] ?? '',
+        databaseTypeNamespace: parsedJson['databaseTypeNamespace'] ?? '',
+        presentation: parsedJson['presentation'] ?? '',
+        maxHttpGetItems: parsedJson['maxHttpGetItems'] ?? 100,
+        periodFieldName: parsedJson['periodFieldName'] ?? '',
         fields: (parsedJson['fields'] as List)
             .map((i) => NsgGenDataItemField.fromJson(i))
             .toList(),
@@ -60,8 +60,8 @@ class NsgGenDataItem {
     codeList.add('using NsgServerClasses;');
     var namespaces = <String>[];
 
-    if (databaseType != null && databaseType.isNotEmpty) {
-      if (databaseTypeNamespace != null && databaseTypeNamespace.isNotEmpty) {
+    if (databaseType.isNotEmpty) {
+      if (databaseTypeNamespace.isNotEmpty) {
         namespaces.add(databaseTypeNamespace);
       }
     }
@@ -75,7 +75,8 @@ class NsgGenDataItem {
     var untypedFields = fields.where(
         (field) => field.writeOnServer && field.type == 'UntypedReference');
     for (var i in untypedFields) {
-      for (var j in i.referenceTypes) {
+      assert(i.referenceTypes != null);
+      for (var j in i.referenceTypes!) {
         if (j.containsKey('namespace')) {
           var ns = j['namespace'].toString();
           if (ns.isNotEmpty && !namespaces.contains(ns)) {
@@ -97,7 +98,7 @@ class NsgGenDataItem {
     }
     codeList.add('');
 
-    if (databaseType != null && databaseType.isNotEmpty) {
+    if (databaseType.isNotEmpty) {
       codeList.add(
           '// --------------------------------------------------------------');
       codeList.add(
@@ -106,7 +107,7 @@ class NsgGenDataItem {
           '// --------------------------------------------------------------');
       codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
       codeList.add('{');
-      if (description != null && description.isNotEmpty) {
+      if (description.isNotEmpty) {
         Misc.writeDescription(codeList, description, true);
       }
       codeList.add('public partial class $typeName : NsgServerMetadataItem');
@@ -115,27 +116,23 @@ class NsgGenDataItem {
       //FromData
       codeList.add('public $typeName() : this(null, null) { }');
       codeList.add('');
-      if (maxHttpGetItems == null) {
-        codeList.add(
-            'public $typeName(IEnumerable<string> serializeFields, $databaseType dataObject)');
-        codeList.add('    : base(serializeFields, dataObject) { }');
-      } else {
-        codeList.add(
-            'public $typeName(IEnumerable<string> serializeFields, $databaseType dataObject)');
-        codeList.add('    : base(serializeFields, dataObject)');
-        codeList.add('{');
-        codeList.add('MaxHttpGetItems = $maxHttpGetItems;');
-        codeList.add('}');
-      }
+
+      codeList.add(
+          'public $typeName(IEnumerable<string> serializeFields, $databaseType dataObject)');
+      codeList.add('    : base(serializeFields, dataObject)');
+      codeList.add('{');
+      codeList.add('MaxHttpGetItems = $maxHttpGetItems;');
+      codeList.add('}');
+
       codeList.add('');
-      if (presentation != null && presentation.isNotEmpty) {
+      if (presentation.isNotEmpty) {
         codeList.add('public override string ToString() => $presentation;');
         codeList.add('');
-      } else if (fields != null && fields.any((f) => f.writeOnServer)) {
+      } else if (fields.any((f) => f.writeOnServer)) {
         var nameField = fields.firstWhere(
             (f) => f.writeOnServer && f.name.toLowerCase() == 'name',
-            orElse: () => null);
-        if (nameField != null) {
+            orElse: () => NsgGenDataItemField(name: '', type: ''));
+        if (nameField.name.isNotEmpty) {
           codeList
               .add('public override string ToString() => ${nameField.name};');
           codeList.add('');
@@ -185,9 +182,7 @@ class NsgGenDataItem {
         'public static Dictionary<string, string> ClientServerNames = new Dictionary<string, string>');
     codeList.add('{');
     fields.forEach((field) {
-      if (field.writeOnServer &&
-          field.dbName != null &&
-          field.dbName.isNotEmpty) {
+      if (field.writeOnServer && field.dbName.isNotEmpty) {
         codeList.add('[Names.${field.name}] = "${field.dbName}",');
       }
     });
@@ -328,14 +323,14 @@ class NsgGenDataItem {
     codeList.add('{');
     fields.forEach((field) {
       if (!field.writeOnServer) return;
-      if (field.description != null && field.description.isNotEmpty) {
+      if (field.description.isNotEmpty) {
         Misc.writeDescription(codeList, field.description, true);
       }
       codeList.add(
           'public static readonly string ${field.name} = "${field.dartName}";');
-      if (field.referenceName != null && field.referenceName.isNotEmpty) {
+      if (field.referenceName.isNotEmpty) {
         codeList.add('');
-        if (field.description != null && field.description.isNotEmpty) {
+        if (field.description.isNotEmpty) {
           Misc.writeDescription(
               codeList, field.description + ' - reference', true);
         }
@@ -351,7 +346,7 @@ class NsgGenDataItem {
     codeList.add('#region Properties');
     fields.forEach((field) {
       if (!field.writeOnServer) return;
-      if (field.description != null && field.description.isNotEmpty) {
+      if (field.description.isNotEmpty) {
         Misc.writeDescription(codeList, field.description, true);
       }
       if (field.dartType == 'int') {
@@ -447,7 +442,7 @@ class NsgGenDataItem {
       } else if (field.dartType == 'UntypedReference') {
         codeList.add('/// <remarks> ');
         codeList.add(
-            '/// Untyped reference (${field.referenceTypes.map((e) => e['databaseType'].toString()).join(', ')})');
+            '/// Untyped reference (${field.referenceTypes!.map((e) => e['databaseType'].toString()).join(', ')})');
         codeList.add('/// </remarks> ');
         codeList.add(
             '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000.NO")]');
@@ -503,7 +498,7 @@ class NsgGenDataItem {
     methods.forEach((element) {
       var paramTNString = '';
       var paramNString = '';
-      if (element.params != null && element.params.isNotEmpty) {
+      if (element.params.isNotEmpty) {
         element.params.forEach((p) {
           paramTNString += p.returnType + ' ' + p.name + ', ';
           paramNString += p.name + ', ';
@@ -513,14 +508,10 @@ class NsgGenDataItem {
         paramTNString = paramTNString.substring(0, paramTNString.length - 2);
         paramNString = paramNString.substring(0, paramNString.length - 2);
       }
-      if (element.description != null && element.description.isNotEmpty) {
+      if (element.description.isNotEmpty) {
         Misc.writeDescription(codeList, element.description, true);
       }
-      if (element.dartType == null) {
-        codeList.add(
-            'public void ${element.name}($paramTNString) => On${element.name}($paramNString);');
-      } else if (['int', 'double', 'bool', 'DateTime']
-          .contains(element.dartType)) {
+      if (['int', 'double', 'bool', 'DateTime'].contains(element.dartType)) {
         codeList.add(
             'public ${element.dartType} ${element.name}($paramTNString) => On${element.name}($paramNString);');
       } else if (element.dartType == 'Duration') {
@@ -562,8 +553,7 @@ class NsgGenDataItem {
       codeList.add(
           'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Get(INsgTokenExtension user, NsgFindParams findParams)');
       codeList.add('{');
-      if (nsgMethod.genDataItem.databaseType != null &&
-          nsgMethod.genDataItem.databaseType.isNotEmpty) {
+      if (nsgMethod.genDataItem.databaseType.isNotEmpty) {
         NsgGenController.generateImplMetadataGetMethodBody(
             nsgGenerator, codeList, nsgMethod);
       } else {
@@ -576,8 +566,7 @@ class NsgGenDataItem {
       codeList.add(
           'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Create(INsgTokenExtension user, NsgFindParams findParams)');
       codeList.add('{');
-      if (nsgMethod.genDataItem.databaseType != null &&
-          nsgMethod.genDataItem.databaseType.isNotEmpty) {
+      if (nsgMethod.genDataItem.databaseType.isNotEmpty) {
         codeList
             .add('var obj = ${nsgMethod.genDataItem.databaseType}.Новый();');
         codeList.add('obj.New();');
@@ -595,8 +584,7 @@ class NsgGenDataItem {
       codeList.add(
           'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post(INsgTokenExtension user, IEnumerable<NsgServerDataItem> items)');
       codeList.add('{');
-      if (nsgMethod.genDataItem.databaseType != null &&
-          nsgMethod.genDataItem.databaseType.isNotEmpty) {
+      if (nsgMethod.genDataItem.databaseType.isNotEmpty) {
         codeList.add(
             'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
         codeList.add(
@@ -612,8 +600,7 @@ class NsgGenDataItem {
       codeList.add(
           'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Delete(INsgTokenExtension user, IEnumerable<NsgServerDataItem> items)');
       codeList.add('{');
-      if (nsgMethod.genDataItem.databaseType != null &&
-          nsgMethod.genDataItem.databaseType.isNotEmpty) {
+      if (nsgMethod.genDataItem.databaseType.isNotEmpty) {
         codeList.add(
             'NsgServerMetadataItem.SetDeleteMarkAll<${nsgMethod.genDataItem.typeName}>(items);');
         codeList.add(
@@ -629,7 +616,7 @@ class NsgGenDataItem {
     // });
     methods.forEach((element) {
       var paramTNString = '';
-      if (element.params != null && element.params.isNotEmpty) {
+      if (element.params.isNotEmpty) {
         element.params.forEach((p) {
           paramTNString += p.returnType + ' ' + p.name + ', ';
         });
@@ -637,13 +624,10 @@ class NsgGenDataItem {
       if (paramTNString.isNotEmpty) {
         paramTNString = paramTNString.substring(0, paramTNString.length - 2);
       }
-      if (element.description != null && element.description.isNotEmpty) {
+      if (element.description.isNotEmpty) {
         Misc.writeDescription(codeList, element.description, true);
       }
-      if (element.dartType == null) {
-        codeList.add('public void On${element.name}($paramTNString) { }');
-      } else if (['int', 'double', 'bool', 'DateTime']
-          .contains(element.dartType)) {
+      if (['int', 'double', 'bool', 'DateTime'].contains(element.dartType)) {
         codeList.add(
             'public ${element.dartType} On${element.name}($paramTNString) => default;');
       } else if (element.dartType == 'Duration') {
@@ -691,7 +675,7 @@ class NsgGenDataItem {
         break;
       }
     }
-    if (description != null && description.isNotEmpty) {
+    if (description.isNotEmpty) {
       codeList.add('');
       Misc.writeDescription(codeList, description, false);
     }
@@ -745,15 +729,15 @@ class NsgGenDataItem {
     });
     codeList.add('  }');
     codeList.add('');
-    if (presentation != null && presentation.isNotEmpty) {
+    if (presentation.isNotEmpty) {
       codeList.add('  @override');
       codeList.add(
           '  String toString() => ${nsgGenerator.getDartName(presentation.replaceAll('\"', '\''))};');
       codeList.add('');
-    } else if (fields != null && fields.isNotEmpty) {
+    } else if (fields.isNotEmpty) {
       var nameField = fields.firstWhere((f) => f.name.toLowerCase() == 'name',
-          orElse: () => null);
-      if (nameField != null) {
+          orElse: () => NsgGenDataItemField(name: '', type: ''));
+      if (nameField.name.isNotEmpty) {
         codeList.add('  @override');
         codeList.add(
             '  String toString() => ${nsgGenerator.getDartName(nameField.name)};');
@@ -771,7 +755,7 @@ class NsgGenDataItem {
 
     fields.forEach((_) {
       if (!_.writeOnClient) return;
-      if (_.description != null && _.description.isNotEmpty) {
+      if (_.description.isNotEmpty) {
         Misc.writeDescription(codeList, _.description, false);
       }
       _.writeGetter(nsgGenController, codeList);
@@ -784,7 +768,7 @@ class NsgGenDataItem {
       lm.writeSetter(nsgGenController, codeList);
       codeList.add('');
     }
-    if (periodFieldName != null && periodFieldName.isNotEmpty) {
+    if (periodFieldName.isNotEmpty) {
       codeList.add('  @override');
       codeList.add('  String get periodFieldName => name$periodFieldName;');
       codeList.add('');

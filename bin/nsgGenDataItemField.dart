@@ -18,25 +18,25 @@ class NsgGenDataItemField {
   final bool writeOnClient;
   final bool writeOnServer;
   final bool allowPost;
-  final List<Map<String, dynamic>> referenceTypes;
+  final List<Map<String, dynamic>>? referenceTypes;
 
   NsgGenDataItemField(
-      {this.name,
-      this.type,
-      this.dbName,
-      this.dbType,
-      this.maxLength,
-      this.description,
-      this.apiPrefix,
-      this.isPrimary,
-      this.referenceName,
-      this.referenceType,
-      this.userVisibility,
-      this.userName,
-      this.alwaysReturnNested,
-      this.writeOnClient,
-      this.writeOnServer,
-      this.allowPost,
+      {required this.name,
+      required this.type,
+      this.dbName = '',
+      this.dbType = '',
+      this.maxLength = 0,
+      this.description = '',
+      this.apiPrefix= '',
+      this.isPrimary = false,
+      this.referenceName = '',
+      this.referenceType = '',
+      this.userVisibility = false,
+      this.userName = '',
+      this.alwaysReturnNested = false,
+      this.writeOnClient = true,
+      this.writeOnServer = true,
+      this.allowPost = true,
       this.referenceTypes});
 
   factory NsgGenDataItemField.fromJson(Map<String, dynamic> parsedJson) {
@@ -46,27 +46,27 @@ class NsgGenDataItemField {
     //     ? defaultMaxLength[parsedJson['type']]
     //     : 0);
     return NsgGenDataItemField(
-        name: parsedJson['name'],
-        type: parsedJson['type'],
-        dbName: parsedJson['databaseName'],
-        dbType: parsedJson['databaseType'],
+        name: parsedJson['name'] ?? '',
+        type: parsedJson['type'] ?? '',
+        dbName: parsedJson['databaseName'] ?? '',
+        dbType: parsedJson['databaseType'] ?? '',
         maxLength: ml ??
             (defaultMaxLength.containsKey(parsedJson['type'])
                 ? defaultMaxLength[parsedJson['type']]
                 : 0),
         description: parsedJson.containsKey('description')
-            ? parsedJson['description']
-            : parsedJson['databaseName'],
+            ? parsedJson['description'] ?? ''
+            : parsedJson['databaseName'] ?? '',
         apiPrefix: parsedJson.containsKey('apiPrefix')
             ? parsedJson['apiPrefix']
             : parsedJson.containsKey('api_prefix')
                 ? parsedJson['api_prefix']
                 : parsedJson['name'],
         isPrimary: parsedJson['isPrimary'] == 'true',
-        referenceName: parsedJson['referenceName'],
-        referenceType: parsedJson['referenceType'],
+        referenceName: parsedJson['referenceName'] ?? '',
+        referenceType: parsedJson['referenceType'] ?? '',
         userVisibility: parsedJson['userVisibility'] == 'true',
-        userName: parsedJson['userName'],
+        userName: parsedJson['userName'] ?? '',
         alwaysReturnNested: parsedJson['alwaysReturnNested'] == 'true',
         writeOnClient: parsedJson.containsKey('writeOnClient')
             ? parsedJson['writeOnClient'] != 'false'

@@ -9,17 +9,20 @@ class NsgGenEnum {
   final String className;
   final String dataTypeFile;
   String description;
-  List<NsgGenEnumItem> values;
+  List<NsgGenEnumItem>? values;
 
-  NsgGenEnum({this.className, this.dataTypeFile, this.description = ''});
+  NsgGenEnum(
+      {required this.className,
+      required this.dataTypeFile,
+      this.description = ''});
 
   factory NsgGenEnum.fromJson(Map<String, dynamic> parsedJson) {
     return NsgGenEnum(
         className: parsedJson.containsKey('className')
             ? parsedJson['className']
             : parsedJson['class_name'],
-        dataTypeFile: parsedJson['dataTypeFile'],
-        description: parsedJson['description']);
+        dataTypeFile: parsedJson['dataTypeFile'] ?? '',
+        description: parsedJson['description'] ?? '');
   }
 
   Future load(NsgGenerator nsgGenerator) async {
@@ -34,7 +37,7 @@ class NsgGenEnum {
     //print('$class_name Enum initialized');
   }
 
-  void generateCode(NsgGenerator nsgGenerator) async {
+  Future generateCode(NsgGenerator nsgGenerator) async {
     if (nsgGenerator.doCSharp) {
       var codeList = <String>[];
       codeList.add('using System;');
@@ -44,12 +47,13 @@ class NsgGenEnum {
       codeList.add('');
       codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
       codeList.add('{');
-      if (description != null && description.isNotEmpty) {
+      if (description.isNotEmpty) {
         Misc.writeDescription(codeList, description, true);
       }
       codeList.add('public class $className : NsgServerEnum');
       codeList.add('{');
-      values.forEach((i) {
+      assert(values != null);
+      values!.forEach((i) {
         codeList.add(
             'public static $className ${i.codeName} { get; } = new $className(${i.value}, "${i.name}");');
       });
@@ -60,7 +64,7 @@ class NsgGenEnum {
       codeList.add('public static IEnumerable<$className> List()');
       codeList.add('{');
       codeList
-          .add('return new[] { ${values.map((e) => e.codeName).join(', ')} };');
+          .add('return new[] { ${values!.map((e) => e.codeName).join(', ')} };');
       codeList.add('}');
       codeList.add('');
       codeList.add('public static explicit operator $className(string name)');
@@ -97,13 +101,13 @@ class NsgGenEnum {
     }
   }
 
-  void generateCodeDart(NsgGenerator nsgGenerator) async {
+  Future generateCodeDart(NsgGenerator nsgGenerator) async {
     await generateEnumDart(nsgGenerator);
   }
 
   static Future generateEnums(
       NsgGenerator nsgGenerator, List<NsgGenEnum> enums) async {
-    if (enums == null || enums.isEmpty) return;
+    if (enums.isEmpty) return;
     await Future.forEach<NsgGenEnum>(enums, (element) async {
       print('loading ${element.className}');
       await element.load(nsgGenerator);
@@ -133,11 +137,11 @@ class NsgGenEnum {
     var codeList = <String>[];
     codeList.add('import \'package:nsg_data/nsg_data.dart\';');
     codeList.add('');
-    if (description != null && description.isNotEmpty) {
+    if (description.isNotEmpty) {
       Misc.writeDescription(codeList, description, false);
     }
     codeList.add('class $className extends NsgEnum {');
-    values.forEach((i) {
+    values!.forEach((i) {
       codeList.add(
           '  static $className ${nsgGenerator.getDartName(i.codeName)} = $className(${i.value}, \'${i.name}\');');
     });
@@ -148,7 +152,7 @@ class NsgGenEnum {
     codeList.add('  @override');
     codeList.add('  void initialize() {');
     codeList.add('    NsgEnum.listAllValues[runtimeType] = <int, $className>{');
-    values.forEach((v) {
+    values!.forEach((v) {
       codeList
           .add('      ${v.value}: ${nsgGenerator.getDartName(v.codeName)},');
     });
@@ -167,5 +171,5 @@ class NsgGenEnumItem {
   final String name;
   final dynamic value;
 
-  NsgGenEnumItem({this.codeName, this.name, this.value});
+  NsgGenEnumItem({required this.codeName, required this.name, required this.value});
 }

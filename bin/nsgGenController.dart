@@ -19,16 +19,16 @@ class NsgGenController {
   final List<NsgGenFunction> functions;
 
   NsgGenController(
-      {this.apiPrefix,
-      this.className,
-      this.implControllerName,
-      this.implAuthControllerName,
-      this.dataType,
-      this.serverUri,
-      this.useAuthorization,
-      this.uploadEnabled,
-      this.methods,
-      this.functions});
+      {required this.apiPrefix,
+      required this.className,
+      required this.implControllerName,
+      required this.implAuthControllerName,
+      required this.dataType,
+      required this.serverUri,
+      this.useAuthorization = false,
+      this.uploadEnabled = false,
+      this.methods = const [],
+      this.functions = const []});
 
   factory NsgGenController.fromJson(Map<String, dynamic> parsedJson) {
     var className = parsedJson.containsKey('className')
@@ -49,8 +49,8 @@ class NsgGenController {
             : parsedJson.containsKey('impl_auth_controller_name')
                 ? parsedJson['impl_auth_controller_name']
                 : 'AuthControllerImplementation',
-        dataType: parsedJson['dataType'],
-        serverUri: parsedJson['serverUri'],
+        dataType: parsedJson['dataType'] ?? '',
+        serverUri: parsedJson['serverUri'] ?? '',
         useAuthorization: parsedJson['useAuthorization'] == 'true',
         uploadEnabled: parsedJson['uploadEnabled'] == 'true',
         methods: (parsedJson['method'] as List)
@@ -63,7 +63,7 @@ class NsgGenController {
             : []);
   }
 
-  void generateCode(NsgGenerator nsgGenerator) async {
+  Future generateCode(NsgGenerator nsgGenerator) async {
     if (nsgGenerator.doCSharp) {
       var codeList = <String>[];
       codeList.add('using Microsoft.Extensions.Logging;');
@@ -215,7 +215,7 @@ class NsgGenController {
     }
   }
 
-  void generateInterfaceData(NsgGenerator nsgGenerator) async {
+  Future generateInterfaceData(NsgGenerator nsgGenerator) async {
     var codeList = <String>[];
     codeList.add('using System;');
     codeList.add('using System.Collections.Generic;');
@@ -250,7 +250,7 @@ class NsgGenController {
     codeList.add(
         'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Delete<T>(INsgTokenExtension user, IEnumerable<T> items)');
     codeList.add('    where T : NsgServerDataItem, new();');
-    var publicMdf = (nsgGenerator.targetFramework == 'net5.0' ? 'public ' : '');
+    //var publicMdf = (nsgGenerator.targetFramework == 'net5.0' ? 'public ' : '');
     methods.forEach((_) {
       // _.imageFieldList.forEach((el) {
       //   if (_.authorize != 'none') {
@@ -279,7 +279,7 @@ class NsgGenController {
     //}
   }
 
-  void generateImplController(NsgGenerator nsgGenerator) async {
+  Future generateImplController(NsgGenerator nsgGenerator) async {
     // ${impl_controller_name}.Designer.cs
     var codeList = <String>[];
     codeList.add('using System;');
@@ -338,8 +338,7 @@ class NsgGenController {
 
     var hasMetadata = false;
     methods.forEach((m) {
-      if (m.genDataItem.databaseType != null &&
-          m.genDataItem.databaseType.isNotEmpty) {
+      if (m.genDataItem.databaseType.isNotEmpty) {
         hasMetadata = true;
       }
       // m.imageFieldList.forEach((el) {
@@ -404,7 +403,6 @@ class NsgGenController {
       codeList.add('using NsgSoft.DataObjects;');
       var usedNSs = <String>[];
       methods.forEach((m) {
-        if (m.genDataItem.databaseTypeNamespace == null) return;
         if (m.genDataItem.databaseTypeNamespace.isEmpty) return;
         if (usedNSs.contains(m.genDataItem.databaseTypeNamespace)) return;
         codeList.add('using ${m.genDataItem.databaseTypeNamespace};');
@@ -470,7 +468,7 @@ class NsgGenController {
     codeList.add('return RES;');
   }
 
-  void generateImplAuthController(NsgGenerator nsgGenerator) async {
+  Future generateImplAuthController(NsgGenerator nsgGenerator) async {
     var codeList = <String>[];
     codeList.add('using NsgServerClasses;');
     codeList.add('using System;');
@@ -500,7 +498,7 @@ class NsgGenController {
     }
   }
 
-  void load(NsgGenerator nsgGenerator) async {
+  Future load(NsgGenerator nsgGenerator) async {
     print('load Controller $className start');
     await Future.forEach<NsgGenMethod>(methods, (element) async {
       await element.loadGenDataItem(nsgGenerator);
@@ -508,7 +506,7 @@ class NsgGenController {
     print('load $className finished');
   }
 
-  void generateCodeDart(NsgGenerator nsgGenerator) async {
+  Future generateCodeDart(NsgGenerator nsgGenerator) async {
     //Init controller initialization
     await generateInitController(nsgGenerator);
     await Future.forEach<NsgGenMethod>(methods, (_) async {
@@ -561,14 +559,20 @@ class NsgGenController {
     addRegisterDataItems(nsgGenerator, codeList);
     codeList.add('    provider!.useNsgAuthorization = $useAuthorization;');
     codeList.add('    await provider!.connect(this);');
-    codeList.add('    if (provider!.isAnonymous) {');
-    codeList.add(
-        '      await Get.to(provider!.loginPage)?.then((value) => loadData());');
-    codeList.add('    } else {');
-    codeList.add('      await loadData();');
-    codeList.add('    }');
+    //codeList.add('    if (provider!.isAnonymous) {');
+    // codeList.add(
+    //     '      await Get.to(provider!.loginPage)?.then((value) => loadData());');
+    // codeList.add('    } else {');
+    // codeList.add('      await loadData();');
+    // codeList.add('    }');
     codeList.add('    ');
     codeList.add('    super.onInit();');
+    codeList.add('  }');
+
+    codeList.add('  @override');
+    codeList.add('  Future loadProviderData() async {');
+    codeList.add('    currentStatus = RxStatus.success();');
+    codeList.add('    sendNotify();');
     codeList.add('  }');
 
     await Future.forEach<NsgGenFunction>(functions, (_) async {
@@ -626,17 +630,12 @@ class NsgGenController {
   void addRegisterDataItems(NsgGenerator nsgGenerator, List<String> codeList) {
     methods.forEach((_) {
       codeList.add('      NsgDataClient.client');
-      if (_.genDataItem == null) {
-        print('${_.name}.genDataItem == null');
-      }
       codeList.add(
           '       .registerDataItem(${_.genDataItem.typeName}(), remoteProvider: provider);');
     });
     nsgGenerator.enums.forEach((_) {
       codeList.add('      NsgDataClient.client');
-      if (_ == null) {
-        print('${_.className}.genDataItem == null');
-      }
+
       codeList.add(
           '       .registerDataItem(${_.className}(0, \'\'), remoteProvider: provider);');
     });

@@ -19,25 +19,25 @@ class NsgGenMethod {
   final bool checkLastModifiedDate;
   final bool allowDelete;
 
-  NsgGenDataItem genDataItem;
+  late NsgGenDataItem genDataItem;
 
   NsgGenMethod(
-      {this.name,
-      this.description,
-      this.apiPrefix,
-      this.authorize,
-      this.getterType,
-      this.dataTypeFlie,
-      this.allowGetter,
-      this.allowCreate,
-      this.allowPost,
-      this.checkLastModifiedDate,
-      this.allowDelete});
+      {required this.name,
+      this.description = '',
+      required this.apiPrefix,
+      required this.authorize,
+      this.getterType = 'POST',
+      required this.dataTypeFlie,
+      this.allowGetter = true,
+      this.allowCreate = false,
+      this.allowPost = false,
+      this.checkLastModifiedDate = false,
+      this.allowDelete = false});
 
   factory NsgGenMethod.fromJson(Map<String, dynamic> parsedJson) {
     return NsgGenMethod(
-        name: parsedJson['name'],
-        description: parsedJson['description'],
+        name: parsedJson['name'] ?? '',
+        description: parsedJson['description'] ?? '',
         apiPrefix: parsedJson.containsKey('apiPrefix')
             ? parsedJson['apiPrefix']
             : parsedJson.containsKey('api_prefix')
@@ -47,7 +47,7 @@ class NsgGenMethod {
         getterType: parsedJson.containsKey('getterType')
             ? parsedJson['getterType']
             : parsedJson['type'],
-        dataTypeFlie: parsedJson['dataTypeFile'],
+        dataTypeFlie: parsedJson['dataTypeFile'] ?? '',
         allowGetter: parsedJson.containsKey('allowGetter')
             ? parsedJson['allowGetter'] != 'false'
             : true,
@@ -197,9 +197,7 @@ class NsgGenMethod {
       codeList.add('');
     }
     //Generate data class
-    if (genDataItem != null) {
       genDataItem.writeCode(nsgGenerator, this);
-    }
     //Generate image tranfer methods
     // imageFieldList.forEach((element) {
     //   codeList.add('[Route("${element.apiPrefix}/{file}")]');
@@ -237,9 +235,7 @@ class NsgGenMethod {
 
   Future generateCodeDart(
       NsgGenerator nsgGenerator, NsgGenController nsgGenController) async {
-    if (genDataItem != null) {
       await genDataItem.generateCodeDart(nsgGenerator, nsgGenController, this);
-    }
   }
 
 //   var imageFieldList = <NsgGenDataItemField>[];

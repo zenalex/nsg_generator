@@ -14,35 +14,35 @@ class NsgGenFunction {
   final List<NsgGenMethodParam> params;
 
   NsgGenFunction(
-      {this.name,
-      this.apiType,
-      this.description,
-      this.apiPrefix,
-      this.authorize,
-      this.type,
-      this.referenceName,
-      this.referenceType,
-      this.params});
+      {required this.name,
+      required this.apiType,
+      this.description = '',
+      this.apiPrefix = '',
+      required this.authorize,
+      required this.type,
+      this.referenceName = '',
+      this.referenceType = '',
+      this.params = const []});
 
   factory NsgGenFunction.fromJson(Map<String, dynamic> parsedJson) {
     return NsgGenFunction(
-        name: parsedJson['name'],
+        name: parsedJson['name'] ?? '',
         apiType: (parsedJson['apiType'] ?? 'post').toLowerCase(),
-        description: parsedJson['description'],
+        description: parsedJson['description'] ?? '',
         apiPrefix: parsedJson.containsKey('apiPrefix')
             ? parsedJson['apiPrefix']
             : parsedJson.containsKey('api_prefix')
                 ? parsedJson['api_prefix']
                 : parsedJson['name'],
         authorize: parsedJson['authorize'] ?? 'none',
-        type: parsedJson['type'],
-        referenceName: parsedJson['referenceName'],
-        referenceType: parsedJson['referenceType'],
+        type: parsedJson['type'] ?? '',
+        referenceName: parsedJson['referenceName'] ?? '',
+        referenceType: parsedJson['referenceType'] ?? '',
         params: parsedJson.containsKey('params')
             ? (parsedJson['params'] as List)
                 .map((i) => NsgGenMethodParam.fromJson(i))
                 .toList()
-            : null);
+            : []);
   }
 
   String get dartName => NsgGenerator.generator.getDartName(name);
@@ -91,12 +91,12 @@ class NsgGenFunction {
   }
 
   void writeMethod(NsgGenController nsgGenController, List<String> codeList) {
-    if (description != null && description.isNotEmpty) {
+    if (description.isNotEmpty) {
       Misc.writeDescription(codeList, description, false);
     }
     var paramTNString = '';
     var paramNString = '';
-    if (params != null && params.isNotEmpty) {
+    if (params.isNotEmpty) {
       params.forEach((p) {
         paramTNString += p.returnType + ' ' + p.name + ', ';
         paramNString += p.name + ', ';
@@ -106,9 +106,10 @@ class NsgGenFunction {
       paramTNString = paramTNString.substring(0, paramTNString.length - 2);
       paramNString = paramNString.substring(0, paramNString.length - 2);
     }
-    if (type == null) {
-      codeList.add('void $dartName($paramTNString) { }');
-    } else if (type == 'String') {
+    // if (type == null) {
+    //   codeList.add('void $dartName($paramTNString) { }');
+    // } else 
+    if (type == 'String') {
       codeList.add('$dartType $dartName($paramTNString) => \'\';');
     } else if (type == 'Guid') {
       codeList.add(
@@ -138,7 +139,7 @@ class NsgGenFunction {
       NsgGenerator nsgGenerator, NsgGenController controller) async {
     var paramNString =
         controller.useAuthorization ? 'user, findParams' : 'null, findParams';
-    if (params != null && params.isNotEmpty) {
+    if (params.isNotEmpty) {
       params.forEach((p) {
         paramNString += ', ' + p.name;
       });
@@ -164,7 +165,7 @@ class NsgGenFunction {
     } else if (['Image', 'Binary'].contains(type)) {
       var uriParamTNString = '';
       var uriParamNString = '';
-      if (params != null && params.isNotEmpty) {
+      if (params.isNotEmpty) {
         for (var p in params) {
           uriParamTNString += '[FromUri] ' + p.returnType + ' ' + p.name;
           uriParamNString += p.name;
@@ -185,8 +186,7 @@ class NsgGenFunction {
     if (controller.useAuthorization) {
       codeList.add('var user = await authController.GetUserByToken(Request);');
     }
-    if (params != null &&
-        params.isNotEmpty &&
+    if (params.isNotEmpty &&
         !(['Image', 'Binary'].contains(type))) {
       params.forEach((p) {
         if (p.type == 'Date' || p.type == 'DateTime') {
@@ -219,10 +219,10 @@ class NsgGenFunction {
     codeList.add('');
   }
 
-  void generateControllerInterfaceMethod(List<String> codeList,
+  Future generateControllerInterfaceMethod(List<String> codeList,
       NsgGenerator nsgGenerator, NsgGenController controller) async {
     var paramTNString = 'INsgTokenExtension user, NsgFindParams findParams';
-    if (params != null && params.isNotEmpty) {
+    if (params.isNotEmpty) {
       params.forEach((p) {
         paramTNString += ', ' + p.returnType + ' ' + p.name;
       });
@@ -232,7 +232,7 @@ class NsgGenFunction {
           'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name($paramTNString);');
     } else if (['Image', 'Binary'].contains(type)) {
       var uriParamTNString = '';
-      if (params != null && params.isNotEmpty) {
+      if (params.isNotEmpty) {
         for (var p in params) {
           uriParamTNString += '[FromUri] ' + p.returnType + ' ' + p.name;
         }
@@ -254,7 +254,7 @@ class NsgGenFunction {
       NsgGenerator nsgGenerator, NsgGenController controller) async {
     var paramTNString = 'INsgTokenExtension user, NsgFindParams findParams';
     var paramNString = 'user, findParams';
-    if (params != null && params.isNotEmpty) {
+    if (params.isNotEmpty) {
       params.forEach((p) {
         paramTNString += ', ' + p.returnType + ' ' + p.name;
         paramNString += ', ' + p.name;
@@ -269,7 +269,7 @@ class NsgGenFunction {
     } else if (['Image', 'Binary'].contains(type)) {
       var uriParamTNString = '';
       var uriParamNString = '';
-      if (params != null && params.isNotEmpty) {
+      if (params.isNotEmpty) {
         for (var p in params) {
           uriParamTNString += p.returnType + ' ' + p.name;
           uriParamNString += p.name;
@@ -289,10 +289,10 @@ class NsgGenFunction {
     }
   }
 
-  void generateControllerImplMethod(List<String> codeList,
+  Future generateControllerImplMethod(List<String> codeList,
       NsgGenerator nsgGenerator, NsgGenController controller) async {
     var paramTNString = 'INsgTokenExtension user, NsgFindParams findParams';
-    if (params != null && params.isNotEmpty) {
+    if (params.isNotEmpty) {
       params.forEach((p) {
         paramTNString += ', ' + p.returnType + ' ' + p.name;
       });
@@ -305,7 +305,7 @@ class NsgGenFunction {
       codeList.add('}');
     } else if (['Image', 'Binary'].contains(type)) {
       var uriParamTNString = '';
-      if (params != null && params.isNotEmpty) {
+      if (params.isNotEmpty) {
         for (var p in params) {
           uriParamTNString += p.returnType + ' ' + p.name;
         }
@@ -344,13 +344,13 @@ class NsgGenFunction {
     }
   }
 
-  void generateCodeDart(List<String> codeList, NsgGenerator nsgGenerator,
+  Future generateCodeDart(List<String> codeList, NsgGenerator nsgGenerator,
       NsgGenController controller) async {
     if (description.isNotEmpty) {
       Misc.writeDescription(codeList, description, false);
     }
     var paramTNString = ''; //NsgDataRequestParams? filter';
-    if (params != null && params.isNotEmpty) {
+    if (params.isNotEmpty) {
       params.forEach((p) {
         paramTNString += p.returnType + ' ' + p.name + ', ';
       });
@@ -373,7 +373,7 @@ class NsgGenFunction {
         '  var progress = NsgProgressDialogHelper(showProgress: showProgress, isStoppable: isStoppable);');
     codeList.add('    try {');
     codeList.add('      var params = <String, dynamic>{};');
-    if (params != null && params.isNotEmpty) {
+    if (params.isNotEmpty) {
       params.forEach((p) {
         if (p.type == 'String') {
           codeList.add('      params[\'${p.name}\'] = ${p.name};');
@@ -437,7 +437,7 @@ class NsgGenMethodParam {
   final String type;
   final String referenceType;
 
-  NsgGenMethodParam({this.name, this.type, this.referenceType});
+  NsgGenMethodParam({required this.name, required this.type, this.referenceType = ''});
 
   factory NsgGenMethodParam.fromJson(Map<String, dynamic> parsedJson) {
     return NsgGenMethodParam(
