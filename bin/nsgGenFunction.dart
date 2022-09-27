@@ -108,7 +108,7 @@ class NsgGenFunction {
     }
     // if (type == null) {
     //   codeList.add('void $dartName($paramTNString) { }');
-    // } else 
+    // } else
     if (type == 'String') {
       codeList.add('$dartType $dartName($paramTNString) => \'\';');
     } else if (type == 'Guid') {
@@ -186,8 +186,7 @@ class NsgGenFunction {
     if (controller.useAuthorization) {
       codeList.add('var user = await authController.GetUserByToken(Request);');
     }
-    if (params.isNotEmpty &&
-        !(['Image', 'Binary'].contains(type))) {
+    if (params.isNotEmpty && !(['Image', 'Binary'].contains(type))) {
       params.forEach((p) {
         if (p.type == 'Date' || p.type == 'DateTime') {
           codeList
@@ -437,13 +436,14 @@ class NsgGenMethodParam {
   final String type;
   final String referenceType;
 
-  NsgGenMethodParam({required this.name, required this.type, this.referenceType = ''});
+  NsgGenMethodParam(
+      {required this.name, required this.type, this.referenceType = ''});
 
   factory NsgGenMethodParam.fromJson(Map<String, dynamic> parsedJson) {
     return NsgGenMethodParam(
         name: parsedJson['name'],
         type: parsedJson['type'],
-        referenceType: parsedJson['referenceType']);
+        referenceType: parsedJson['referenceType'] ?? '');
   }
 
   String get returnType {
