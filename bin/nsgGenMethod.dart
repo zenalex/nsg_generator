@@ -44,9 +44,11 @@ class NsgGenMethod {
                 ? parsedJson['api_prefix']
                 : parsedJson['name'],
         authorize: parsedJson['authorize'] ?? 'none',
-        getterType: parsedJson.containsKey('getterType')
-            ? parsedJson['getterType']
-            : parsedJson['type'],
+        getterType: (parsedJson.containsKey('getterType')
+                ? parsedJson['getterType']
+                : parsedJson['type'] ?? 'POST')
+            .toString()
+            .toUpperCase(),
         dataTypeFlie: parsedJson['dataTypeFile'] ?? '',
         allowGetter: parsedJson.containsKey('allowGetter')
             ? parsedJson['allowGetter'] != 'false'
@@ -76,7 +78,7 @@ class NsgGenMethod {
       }
       //POST or GET
       var apiType = 'HttpGet';
-      if (getterType == 'post') apiType = 'HttpPost';
+      if (getterType == 'POST') apiType = 'HttpPost';
       // var apiType = '';
       // if (type == 'get') apiType = 'HttpGet';
       // if (type == 'post') apiType = 'HttpPost';
@@ -197,7 +199,7 @@ class NsgGenMethod {
       codeList.add('');
     }
     //Generate data class
-      genDataItem.writeCode(nsgGenerator, this);
+    genDataItem.writeCode(nsgGenerator, this);
     //Generate image tranfer methods
     // imageFieldList.forEach((element) {
     //   codeList.add('[Route("${element.apiPrefix}/{file}")]');
@@ -235,7 +237,7 @@ class NsgGenMethod {
 
   Future generateCodeDart(
       NsgGenerator nsgGenerator, NsgGenController nsgGenController) async {
-      await genDataItem.generateCodeDart(nsgGenerator, nsgGenController, this);
+    await genDataItem.generateCodeDart(nsgGenerator, nsgGenController, this);
   }
 
 //   var imageFieldList = <NsgGenDataItemField>[];
