@@ -537,6 +537,7 @@ class NsgGenController {
     codeList.add("import 'package:get/get.dart';");
     codeList.add("import 'package:nsg_controls/nsg_controls.dart';");
     codeList.add("import 'package:nsg_data/nsg_data.dart';");
+    codeList.add("import 'package:package_info_plus/package_info_plus.dart';");
     codeList.add("import '../_nsg_server_options.dart';");
     // if (functions.any((f) => ['Image', 'Binary'].contains(f.type))) {
     //   codeList.add("import 'dart:io';");
@@ -551,8 +552,9 @@ class NsgGenController {
     codeList.add('  NsgDataProvider? provider;');
     codeList.add('  @override');
     codeList.add('  Future onInit() async {');
+    codeList.add('    final info = await PackageInfo.fromPlatform();');
     codeList.add(
-        '    provider ??= NsgDataProvider(applicationName: \'${nsgGenerator.applicationName}\', firebaseToken: \'\');');
+        '    provider ??= NsgDataProvider(applicationName: \'${nsgGenerator.applicationName}\', applicationVersion: info.version, firebaseToken: \'\');');
     codeList
         .add('  provider!.serverUri = NsgServerOptions.serverUri$className;');
     codeList.add('  ');
