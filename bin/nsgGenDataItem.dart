@@ -36,7 +36,7 @@ class NsgGenDataItem {
     return NsgGenDataItem(
         typeName: parsedJson['typeName'] ?? '',
         description: parsedJson.containsKey('description')
-            ? parsedJson['description'] ??''
+            ? parsedJson['description'] ?? ''
             : parsedJson['databaseType'] ?? '',
         databaseType: parsedJson['databaseType'] ?? '',
         databaseTypeNamespace: parsedJson['databaseTypeNamespace'] ?? '',
@@ -683,10 +683,10 @@ class NsgGenDataItem {
     fields.forEach((_) {
       if (!_.writeOnClient) return;
       codeList.add(
-          " static const ${_.fieldNameVar} = '${nsgGenerator.getDartName(_.name)}';");
+          "  static const ${_.fieldNameVar} = '${nsgGenerator.getDartName(_.name)}';");
     });
     codeList.add('');
-    codeList.add(' static final Map<String, String> fieldNameDict = {');
+    codeList.add('  static final Map<String, String> fieldNameDict = {');
     fields.forEach((_) {
       if (!_.writeOnClient) return;
       if (_.userVisibility) {
@@ -704,16 +704,16 @@ class NsgGenDataItem {
       if (!_.writeOnClient) return;
       if (_.isPrimary) {
         codeList.add(
-            '   addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+            '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
       } else {
         if (_.type == 'String' &&
             _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
           codeList.add(
-              '   addField(${_.nsgDataType}(${_.fieldNameVar}, maxLength: ${_.maxLength}), primaryKey: ${_.isPrimary});');
+              '    addField(${_.nsgDataType}(${_.fieldNameVar}, maxLength: ${_.maxLength}), primaryKey: ${_.isPrimary});');
         } else if (_.type == 'double' &&
             _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
           codeList.add(
-              '   addField(${_.nsgDataType}(${_.fieldNameVar}, maxDecimalPlaces: ${_.maxLength}), primaryKey: ${_.isPrimary});');
+              '    addField(${_.nsgDataType}(${_.fieldNameVar}, maxDecimalPlaces: ${_.maxLength}), primaryKey: ${_.isPrimary});');
         } else if (_.type == 'UntypedReference') {
           var defaultReferenceType = _.referenceType;
           if ((defaultReferenceType.isEmpty) &&
@@ -725,14 +725,14 @@ class NsgGenDataItem {
           }
           if (defaultReferenceType.isNotEmpty) {
             codeList.add(
-                '   addField(${_.nsgDataType}(${_.fieldNameVar}, defaultReferentType: $defaultReferenceType), primaryKey: ${_.isPrimary});');
+                '    addField(${_.nsgDataType}(${_.fieldNameVar}, defaultReferentType: $defaultReferenceType), primaryKey: ${_.isPrimary});');
           } else {
             codeList.add(
-                '   addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+                '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
           }
         } else {
           codeList.add(
-              '   addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+              '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
         }
       }
     });
@@ -740,7 +740,7 @@ class NsgGenDataItem {
       if (!_.writeOnClient) return;
       if (_.userVisibility) {
         codeList.add(
-            "   fieldList.fields[${_.fieldNameVar}]?.presentation = '${_.userName}';");
+            "    fieldList.fields[${_.fieldNameVar}]?.presentation = '${_.userName}';");
       }
     });
     codeList.add('  }');
@@ -772,12 +772,11 @@ class NsgGenDataItem {
     fields.forEach((_) {
       if (!_.writeOnClient) return;
       if (_.description.isNotEmpty) {
-        Misc.writeDescription(codeList, _.description, false);
+        Misc.writeDescription(codeList, _.description, false, indent: 2);
       }
       _.writeGetter(nsgGenController, codeList);
       _.writeSetter(nsgGenController, codeList);
     });
-    codeList.add('');
     if (checkLastModifiedDate) {
       var lm = NsgGenDataItemField(name: 'LastModified', type: 'DateTime');
       lm.writeGetter(nsgGenController, codeList);
@@ -794,8 +793,8 @@ class NsgGenDataItem {
     codeList.add(
         "    return '/${nsgGenController.apiPrefix}/${nsgGenMethod.apiPrefix}';");
     codeList.add('  }');
-
     codeList.add('}');
+    codeList.add('');
 
     await File(
             '${nsgGenerator.dartPathGen}/${nsgGenerator.getDartUnderscoreName(typeName)}.g.dart')

@@ -27,7 +27,7 @@ class NsgGenDataItemField {
       this.dbType = '',
       this.maxLength = 0,
       this.description = '',
-      this.apiPrefix= '',
+      this.apiPrefix = '',
       this.isPrimary = false,
       this.referenceName = '',
       this.referenceType = '',
@@ -135,56 +135,56 @@ class NsgGenDataItemField {
 
   void writeGetter(NsgGenController nsgGenController, List<String> codeList) {
     if (['id', 'ownerid'].contains(name.toLowerCase())) {
-      codeList.add('@override');
+      codeList.add('  @override');
     }
     if (type == 'String' || type == 'Guid') {
       codeList.add(
-          '$dartType get $dartName => getFieldValue($fieldNameVar).toString();');
+          '  $dartType get $dartName => getFieldValue($fieldNameVar).toString();');
     } else if (type == 'Date' || type == 'DateTime') {
       codeList.add(
-          '$dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
+          '  $dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
     } else if (type == 'int') {
       codeList.add(
-          '$dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
+          '  $dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
     } else if (type == 'bool') {
       codeList.add(
-          '$dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
+          '  $dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
     } else if (type == 'double') {
       codeList.add(
-          '$dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
+          '  $dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
     } else if (['Image', 'Binary'].contains(type)) {
-      codeList.add('List<int> get $dartName {');
-      codeList.add('  return getFieldValue($fieldNameVar) as List<int>;');
-      codeList.add('}');
+      codeList.add('  List<int> get $dartName {');
+      codeList.add('    return getFieldValue($fieldNameVar) as List<int>;');
+      codeList.add('  }');
     } else if (type == 'List<Reference>') {
       codeList.add(
-          'NsgDataTable<$referenceType> get $dartName => NsgDataTable<$referenceType>(owner: this, fieldName: $fieldNameVar);');
+          '  NsgDataTable<$referenceType> get $dartName => NsgDataTable<$referenceType>(owner: this, fieldName: $fieldNameVar);');
     } else if (type == 'List<Enum>') {
       codeList.add(
-          'List<$referenceType> get $dartName => getFieldValue($fieldNameVar) as List<$referenceType>;');
+          '  List<$referenceType> get $dartName => getFieldValue($fieldNameVar) as List<$referenceType>;');
     } else if (type == 'Enum') {
       codeList.add(
-          '$referenceType get $dartName => NsgEnum.fromValue($referenceType, getFieldValue($fieldNameVar)) as $referenceType;');
+          '  $referenceType get $dartName => NsgEnum.fromValue($referenceType, getFieldValue($fieldNameVar)) as $referenceType;');
     } else if (type == 'Reference') {
       codeList.add(
-          'String get $dartName => getFieldValue($fieldNameVar).toString();');
+          '  String get $dartName => getFieldValue($fieldNameVar).toString();');
       codeList.add(
-          '$referenceType get ${NsgGenerator.generator.getDartName(referenceName)} => getReferent<$referenceType>($fieldNameVar);');
+          '  $referenceType get ${NsgGenerator.generator.getDartName(referenceName)} => getReferent<$referenceType>($fieldNameVar);');
       codeList.add(
-          'Future<$referenceType> ${NsgGenerator.generator.getDartName(referenceName)}Async() async {');
+          '  Future<$referenceType> ${NsgGenerator.generator.getDartName(referenceName)}Async() async {');
       codeList.add(
-          ' return await getReferentAsync<$referenceType>($fieldNameVar);');
-      codeList.add('}');
+          '   return await getReferentAsync<$referenceType>($fieldNameVar);');
+      codeList.add('  }');
     } else if (type == 'UntypedReference') {
       codeList.add(
-          'String get $dartName => getFieldValue($fieldNameVar).toString();');
+          '  String get $dartName => getFieldValue($fieldNameVar).toString();');
       codeList.add(
-          'NsgDataItem get ${NsgGenerator.generator.getDartName(referenceName)} => getReferent<NsgDataItem>($fieldNameVar);');
+          '  NsgDataItem get ${NsgGenerator.generator.getDartName(referenceName)} => getReferent<NsgDataItem>($fieldNameVar);');
       codeList.add(
-          'Future<NsgDataItem> ${NsgGenerator.generator.getDartName(referenceName)}Async() async {');
+          '  Future<NsgDataItem> ${NsgGenerator.generator.getDartName(referenceName)}Async() async {');
       codeList
-          .add(' return await getReferentAsync<NsgDataItem>($fieldNameVar);');
-      codeList.add('}');
+          .add('   return await getReferentAsync<NsgDataItem>($fieldNameVar);');
+      codeList.add('  }');
     } else {
       print("write getter for field type $type couldn't be found");
       throw Exception();
@@ -193,40 +193,40 @@ class NsgGenDataItemField {
   }
 
   void writeSetter(NsgGenController nsgGenController, List<String> codeList) {
-    if (['id' /*, 'ownerid'*/].contains(name.toLowerCase())) {
-      codeList.add('@override');
+    if (['id', 'ownerid'].contains(name.toLowerCase())) {
+      codeList.add('  @override');
     }
     if (type == 'Image') {
       codeList.add(
-          'set $dartName(List<int> value) => setFieldValue($fieldNameVar, value);');
+          '  set $dartName(List<int> value) => setFieldValue($fieldNameVar, value);');
     } else if (type == 'Binary') {
       codeList.add(
-          'set $dartName(List<int> value) => setFieldValue($fieldNameVar, value);');
+          '  set $dartName(List<int> value) => setFieldValue($fieldNameVar, value);');
     } else if (type == 'Reference') {
       codeList.add(
-          'set $dartName(String value) => setFieldValue($fieldNameVar, value);');
+          '  set $dartName(String value) => setFieldValue($fieldNameVar, value);');
       codeList.add(
-          'set ${NsgGenerator.generator.getDartName(referenceName)}($referenceType value) =>');
+          '  set ${NsgGenerator.generator.getDartName(referenceName)}($referenceType value) =>');
       codeList.add('    setFieldValue($fieldNameVar, value.id);');
     } else if (type == 'UntypedReference') {
       codeList.add(
-          'set $dartName(String value) => setFieldValue($fieldNameVar, value);');
+          '  set $dartName(String value) => setFieldValue($fieldNameVar, value);');
       codeList.add(
-          'set ${NsgGenerator.generator.getDartName(referenceName)}(NsgDataItem value) =>');
+          '  set ${NsgGenerator.generator.getDartName(referenceName)}(NsgDataItem value) =>');
       codeList.add('    setFieldValue($fieldNameVar, value);');
     } else if (type == 'List<Reference>') {
       //Отменил запись setter из-за смены возвращаемого типа на NsgDataTable
       // codeList.add(
-      //     'set $dartName(List<$referenceType> value) => setFieldValue($fieldNameVar, value);');
+      //     '  set $dartName(List<$referenceType> value) => setFieldValue($fieldNameVar, value);');
     } else if (type == 'Enum') {
       codeList.add(
-          'set $dartName($referenceType value) => setFieldValue($fieldNameVar, value);');
+          '  set $dartName($referenceType value) => setFieldValue($fieldNameVar, value);');
     } else if (type == 'List<Enum>') {
       codeList.add(
-          'set $dartName(List<$referenceType> value) => setFieldValue($fieldNameVar, value);');
+          '  set $dartName(List<$referenceType> value) => setFieldValue($fieldNameVar, value);');
     } else {
       codeList.add(
-          'set $dartName($dartType value) => setFieldValue($fieldNameVar, value);');
+          '  set $dartName($dartType value) => setFieldValue($fieldNameVar, value);');
     }
     codeList.add('');
   }

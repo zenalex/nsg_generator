@@ -16,17 +16,17 @@ class Misc {
     }
   }
 
-  static void writeDescription(
-      List<String> codeList, String text, bool xmlWrap) {
+  static void writeDescription(List<String> codeList, String text, bool xmlWrap,
+      {int indent = 0}) {
     if (text.isEmpty) return;
     if (xmlWrap) {
-      codeList.add('/// <summary>');
+      codeList.add('${' ' * indent}/// <summary>');
     }
     text.split('\n').forEach((descLine) {
-      codeList.add('/// $descLine');
+      codeList.add('${' ' * indent}/// $descLine');
     });
     if (xmlWrap) {
-      codeList.add('/// </summary>');
+      codeList.add('${' ' * indent}/// </summary>');
     }
   }
 }
