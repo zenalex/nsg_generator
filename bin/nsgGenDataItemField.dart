@@ -50,15 +50,26 @@ class NsgGenDataItemField {
         parsedJson['name'];
     userName = Misc.CamelCaseToNormal(userName);
 
+    var name = parsedJson['name'].toString();
+    var referenceName = (parsedJson['referenceName'] ?? '').toString();
+    var type = (parsedJson['type'] ?? '').toString();
+    if (type == 'Reference') {
+      if (referenceName.isEmpty) {
+        if (name.endsWith('Id')) {
+          referenceName = name.substring(0, name.length - 2);
+        } else {
+          referenceName = name;
+          name += 'Id';
+        }
+      }
+    }
     return NsgGenDataItemField(
-        name: parsedJson['name'] ?? '',
-        type: parsedJson['type'] ?? '',
+        name: name,
+        type: type,
         dbName: parsedJson['databaseName'] ?? '',
         dbType: parsedJson['databaseType'] ?? '',
         maxLength: ml ??
-            (defaultMaxLength.containsKey(parsedJson['type'])
-                ? defaultMaxLength[parsedJson['type']]
-                : 0),
+            (defaultMaxLength.containsKey(type) ? defaultMaxLength[type] : 0),
         description: parsedJson.containsKey('description')
             ? parsedJson['description'] ?? ''
             : parsedJson['databaseName'] ?? '',
@@ -66,9 +77,9 @@ class NsgGenDataItemField {
             ? parsedJson['apiPrefix']
             : parsedJson.containsKey('api_prefix')
                 ? parsedJson['api_prefix']
-                : parsedJson['name'],
+                : name,
         isPrimary: parsedJson['isPrimary'] == 'true',
-        referenceName: parsedJson['referenceName'] ?? '',
+        referenceName: referenceName,
         referenceType: parsedJson.containsKey('defaultReferenceType')
             ? parsedJson['defaultReferenceType'] ?? ''
             : parsedJson['referenceType'] ?? '',
