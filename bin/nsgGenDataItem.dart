@@ -380,20 +380,10 @@ class NsgGenDataItem {
             'get => this[Names.${field.name}] as List<${field.referenceType}>;');
         codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
-        if (field.alwaysReturnNested) {
-          codeList.add('public bool ShouldSerialize${field.name}()');
-          codeList.add('{');
-          codeList.add('return ${field.name} != null && ${field.name}.Any();');
-          codeList.add('}');
-        } else {
-          codeList.add('public bool ShouldSerialize${field.name}()');
-          codeList.add('{');
-          codeList
-              .add('return NestReferences() && (SerializeFields == null ||');
-          codeList.add(
-              '    SerializeFields.Find(s => s.StartsWith(Names.${field.name})) != default);');
-          codeList.add('}');
-        }
+        codeList.add('public bool ShouldSerialize${field.name}()');
+        codeList.add('{');
+        codeList.add('return ${field.name} != null && ${field.name}.Any();');
+        codeList.add('}');
       } else if (field.dartType == 'List<Enum>') {
         codeList.add(
             'public IEnumerable<${field.referenceType}> ${field.name} { get; set; }');
@@ -424,21 +414,13 @@ class NsgGenDataItem {
             'get => this[Names.${field.referenceName}] as ${field.referenceType};');
         codeList.add('set => this[Names.${field.referenceName}] = value;');
         codeList.add('}');
-        if (!field.alwaysReturnNested) {
-          //   codeList.add('public bool ShouldSerialize${element.referenceName}()');
-          //   codeList.add('{');
-          //   codeList.add(
-          //       'return ${element.referenceName} != null && ${element.referenceName}.GetId() != Guid.Empty;');
-          //   codeList.add('}');
-          // } else {
-          codeList.add('public bool ShouldSerialize${field.referenceName}()');
-          codeList.add('{');
-          codeList
-              .add('return NestReferences() && (SerializeFields == null ||');
-          codeList.add(
-              '    SerializeFields.Find(s => s.StartsWith(Names.${field.name})) != default);');
-          codeList.add('}');
-        }
+        codeList.add('public bool ShouldSerialize${field.referenceName}()');
+        codeList.add('{');
+        codeList
+            .add('return NestReferences() && (SerializeFields == null ||');
+        codeList.add(
+            '    SerializeFields.Find(s => s.StartsWith(Names.${field.name})) != default);');
+        codeList.add('}');
       } else if (field.dartType == 'UntypedReference') {
         codeList.add('/// <remarks> ');
         codeList.add(
@@ -451,17 +433,6 @@ class NsgGenDataItem {
         codeList.add('get => this[Names.${field.name}].ToString();');
         codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
-        // codeList.add(
-        //     'public NsgServerMetadataItem ${element.referenceName} { get; set; }');
-        // if (!element.alwaysReturnNested) {
-        //   codeList.add('public bool ShouldSerialize${element.referenceName}()');
-        //   codeList.add('{');
-        //   codeList
-        //       .add('return NestReferences() && (SerializeFields == null ||');
-        //   codeList.add(
-        //       '    SerializeFields.Find(s => s.StartsWith("${element.dartName}")) != default);');
-        //   codeList.add('}');
-        // }
       } else {
         if (field.type == 'Guid') {
           codeList.add('public Guid ${field.name}');

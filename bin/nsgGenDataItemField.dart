@@ -14,7 +14,6 @@ class NsgGenDataItemField {
   final String referenceType;
   final bool userVisibility;
   final String userName;
-  final bool alwaysReturnNested;
   final bool writeOnClient;
   final bool writeOnServer;
   final bool allowPost;
@@ -33,7 +32,6 @@ class NsgGenDataItemField {
       this.referenceType = '',
       this.userVisibility = false,
       this.userName = '',
-      this.alwaysReturnNested = false,
       this.writeOnClient = true,
       this.writeOnServer = true,
       this.allowPost = true,
@@ -69,7 +67,6 @@ class NsgGenDataItemField {
             : parsedJson['referenceType'] ?? '',
         userVisibility: parsedJson['userVisibility'] == 'true',
         userName: parsedJson['userName'] ?? '',
-        alwaysReturnNested: parsedJson['alwaysReturnNested'] == 'true',
         writeOnClient: parsedJson.containsKey('writeOnClient')
             ? parsedJson['writeOnClient'] != 'false'
             : true,
