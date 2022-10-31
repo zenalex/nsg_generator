@@ -29,4 +29,13 @@ class Misc {
       codeList.add('${' ' * indent}/// </summary>');
     }
   }
+
+  static String CamelCaseToNormal(String s) {
+    if (s.isEmpty) return s;
+    var exp = RegExp(
+        r'(?<=[a-zA-Zа-яА-Я])((?<=[a-zа-я])|(?=[A-ZА-Я][a-zа-я]))[A-ZА-Я]');
+    s = s.replaceAllMapped(
+        exp, (Match m) => (' ' + (m.group(0) ?? '').toLowerCase()));
+    return s;
+  }
 }

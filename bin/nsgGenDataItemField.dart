@@ -1,3 +1,4 @@
+import 'misc.dart';
 import 'nsgGenController.dart';
 import 'nsgGenerator.dart';
 
@@ -43,6 +44,12 @@ class NsgGenDataItemField {
     // (defaultMaxLength.containsValue(parsedJson['type'])
     //     ? defaultMaxLength[parsedJson['type']]
     //     : 0);
+    var userName = parsedJson['userName'] ??
+        parsedJson['databaseName'] ??
+        parsedJson['description'] ??
+        parsedJson['name'];
+    userName = Misc.CamelCaseToNormal(userName);
+
     return NsgGenDataItemField(
         name: parsedJson['name'] ?? '',
         type: parsedJson['type'] ?? '',
@@ -66,7 +73,7 @@ class NsgGenDataItemField {
             ? parsedJson['defaultReferenceType'] ?? ''
             : parsedJson['referenceType'] ?? '',
         userVisibility: parsedJson['userVisibility'] == 'true',
-        userName: parsedJson['userName'] ?? '',
+        userName: userName,
         writeOnClient: parsedJson.containsKey('writeOnClient')
             ? parsedJson['writeOnClient'] != 'false'
             : true,
