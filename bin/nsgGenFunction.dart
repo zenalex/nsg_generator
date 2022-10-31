@@ -337,7 +337,7 @@ class NsgGenFunction {
           .add('var RES = new Dictionary<string, IEnumerable<$primType>>();');
       codeList.add('');
       codeList.add('var res = new $primType[0];');
-      codeList.add('RES["results"] = res;');
+      codeList.add('RES[RESULTS] = res;');
       codeList.add('return RES;');
       codeList.add('}');
     }

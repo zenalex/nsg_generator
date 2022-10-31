@@ -588,7 +588,7 @@ class NsgGenDataItem {
         codeList.add(
             'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
         codeList.add(
-            'RES["results"] = NsgServerMetadataItem.PostAll<${nsgMethod.genDataItem.typeName}>(user, items);');
+            'RES[RESULTS] = NsgServerMetadataItem.PostAll<${nsgMethod.genDataItem.typeName}>(user, items);');
         codeList.add('return RES;');
       } else {
         codeList.add('throw new NotImplementedException();');
@@ -605,7 +605,7 @@ class NsgGenDataItem {
             'NsgServerMetadataItem.SetDeleteMarkAll<${nsgMethod.genDataItem.typeName}>(items);');
         codeList.add(
             'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
-        codeList.add('RES["results"] = items;');
+        codeList.add('RES[RESULTS] = items;');
         codeList.add('return RES;');
       } else {
         codeList.add('throw new NotImplementedException();');
