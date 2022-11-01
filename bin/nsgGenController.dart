@@ -583,12 +583,6 @@ class NsgGenController {
       await _.generateCodeDart(codeList, nsgGenerator, this);
     });
 
-    codeList.add('  ');
-    codeList.add('  Future loadData() async {');
-    codeList.add('    currentStatus = RxStatus.success();');
-    codeList.add('    sendNotify();');
-    codeList.add('  }');
-
     codeList.add('}');
 
     await File(
