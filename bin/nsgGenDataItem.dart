@@ -271,7 +271,7 @@ class NsgGenDataItem {
         codeList.add('ValueDictionary[Names.${field.name}] = string.Empty;');
       } else {
         codeList.add(
-            'ValueDictionary[Names.${field.name}] = default(${field.dartType});');
+            'ValueDictionary[Names.${field.name}] = default(${field.type});');
       }
     });
     codeList.add('}');
@@ -336,31 +336,31 @@ class NsgGenDataItem {
       if (field.description.isNotEmpty) {
         Misc.writeDescription(codeList, field.description, true);
       }
-      if (field.dartType == 'int') {
+      if (field.type == 'int') {
         codeList.add('public int ${field.name}');
         codeList.add('{');
         codeList.add('get => Convert.ToInt32(this[Names.${field.name}]);');
         codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
-      } else if (field.dartType == 'double') {
+      } else if (field.type == 'double') {
         codeList.add('public double ${field.name}');
         codeList.add('{');
         codeList.add('get => Convert.ToDouble(this[Names.${field.name}]);');
         codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
-      } else if (field.dartType == 'bool') {
+      } else if (field.type == 'bool') {
         codeList.add('public bool ${field.name}');
         codeList.add('{');
         codeList.add('get => (bool)this[Names.${field.name}];');
         codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
-      } else if (field.dartType == 'DateTime') {
+      } else if (field.type == 'DateTime') {
         codeList.add('public DateTime ${field.name}');
         codeList.add('{');
         codeList.add('get => (DateTime)this[Names.${field.name}];');
         codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
-      } else if (field.dartType == 'List<Reference>') {
+      } else if (field.type == 'List<Reference>') {
         codeList.add('public List<${field.referenceType}> ${field.name}');
         codeList.add('{');
         codeList.add(
@@ -371,11 +371,11 @@ class NsgGenDataItem {
         codeList.add('{');
         codeList.add('return ${field.name} != null && ${field.name}.Any();');
         codeList.add('}');
-      } else if (field.dartType == 'List<Enum>') {
+      } else if (field.type == 'List<Enum>') {
         codeList.add(
             'public IEnumerable<${field.referenceType}> ${field.name} { get; set; }');
         codeList.add('    = ${field.referenceType}.List();');
-      } else if (field.dartType == 'Enum') {
+      } else if (field.type == 'Enum') {
         codeList.add('/// <remarks>');
         codeList.add('/// <see cref="${field.referenceType}"/> enum type');
         codeList.add('/// </remarks>');
@@ -384,7 +384,7 @@ class NsgGenDataItem {
         codeList.add('get => (int)this[Names.${field.name}];');
         codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
-      } else if (field.dartType == 'Reference') {
+      } else if (field.type == 'Reference') {
         codeList.add('/// <remarks> ');
         codeList.add('/// <see cref="${field.referenceType}"/> reference');
         codeList.add('/// </remarks> ');
@@ -407,7 +407,7 @@ class NsgGenDataItem {
         codeList.add(
             '    SerializeFields.Find(s => s.StartsWith(Names.${field.name})) != default);');
         codeList.add('}');
-      } else if (field.dartType == 'UntypedReference') {
+      } else if (field.type == 'UntypedReference') {
         codeList.add('/// <remarks> ');
         codeList.add(
             '/// Untyped reference (${field.referenceTypes!.map((e) => e['databaseType'].toString()).join(', ')})');
@@ -419,29 +419,27 @@ class NsgGenDataItem {
         codeList.add('get => this[Names.${field.name}].ToString();');
         codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
+      } else if (field.type == 'Guid') {
+        codeList.add('public Guid ${field.name}');
+        codeList.add('{');
+        codeList.add('get => (Guid)this[Names.${field.name}];');
+        codeList.add('set => this[Names.${field.name}] = value;');
+        codeList.add('}');
       } else {
-        if (field.type == 'Guid') {
-          codeList.add('public Guid ${field.name}');
-          codeList.add('{');
-          codeList.add('get => (Guid)this[Names.${field.name}];');
-          codeList.add('set => this[Names.${field.name}] = value;');
-          codeList.add('}');
+        if (field.name.endsWith('Id')) {
+          codeList.add(
+              '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000")]');
         } else {
-          if (field.name.endsWith('Id')) {
-            codeList.add(
-                '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000")]');
-          } else {
-            if (field.maxLength > 0) {
-              codeList.add('[StringLength(${field.maxLength})]');
-            }
-            codeList.add('[System.ComponentModel.DefaultValue("")]');
+          if (field.maxLength > 0) {
+            codeList.add('[StringLength(${field.maxLength})]');
           }
-          codeList.add('public string ${field.name}');
-          codeList.add('{');
-          codeList.add('get => this[Names.${field.name}].ToString();');
-          codeList.add('set => this[Names.${field.name}] = value;');
-          codeList.add('}');
+          codeList.add('[System.ComponentModel.DefaultValue("")]');
         }
+        codeList.add('public string ${field.name}');
+        codeList.add('{');
+        codeList.add('get => this[Names.${field.name}].ToString();');
+        codeList.add('set => this[Names.${field.name}] = value;');
+        codeList.add('}');
       }
       //if (element.type == 'Image') nsgMethod.addImageMethod(element);
       codeList.add('');

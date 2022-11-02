@@ -52,6 +52,7 @@ class NsgGenDataItemField {
     var name = parsedJson['name'].toString();
     var referenceName = (parsedJson['referenceName'] ?? '').toString();
     var type = (parsedJson['type'] ?? '').toString();
+    if (type == 'Date') type = 'DateTime';
     if (type == 'Reference') {
       if (referenceName.isEmpty) {
         if (name.endsWith('Id')) {
@@ -111,7 +112,6 @@ class NsgGenDataItemField {
       .getDartName('name' + name[0].toUpperCase() + name.substring(1));
 
   String get dartType {
-    if (type == 'Date') return 'DateTime';
     if (type == 'Guid') return 'String';
     return type;
   }
@@ -119,7 +119,7 @@ class NsgGenDataItemField {
   String get nsgDataType {
     if (type == 'String' || type == 'Guid') {
       return 'NsgDataStringField';
-    } else if (type == 'Date' || type == 'DateTime') {
+    } else if (type == 'DateTime') {
       return 'NsgDataDateField';
     } else if (type == 'int') {
       return 'NsgDataIntField';
@@ -154,7 +154,7 @@ class NsgGenDataItemField {
     if (type == 'String' || type == 'Guid') {
       codeList.add(
           '  $dartType get $dartName => getFieldValue($fieldNameVar).toString();');
-    } else if (type == 'Date' || type == 'DateTime') {
+    } else if (type == 'DateTime') {
       codeList.add(
           '  $dartType get $dartName => getFieldValue($fieldNameVar) as $dartType;');
     } else if (type == 'int') {

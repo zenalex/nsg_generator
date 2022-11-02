@@ -50,8 +50,6 @@ class NsgGenFunction {
   String get returnType {
     if (type == 'Reference' || type == 'List<Reference>' || type == 'Enum') {
       return referenceType;
-    } else if (type == 'Date') {
-      return 'DateTime';
     }
     return type;
   }
@@ -60,7 +58,6 @@ class NsgGenFunction {
     if (type == 'Reference' || type == 'List<Reference>' || type == 'Enum') {
       return referenceType;
     }
-    if (type == 'Date') return 'DateTime';
     if (type == 'Guid') return 'String';
     return type;
   }
@@ -68,7 +65,7 @@ class NsgGenFunction {
   String get nsgDataType {
     if (type == 'String' || type == 'Guid') {
       return 'NsgDataStringField';
-    } else if (type == 'Date' || type == 'DateTime') {
+    } else if (type == 'DateTime') {
       return 'NsgDataDateField';
     } else if (type == 'int') {
       return 'NsgDataIntField';
@@ -114,7 +111,7 @@ class NsgGenFunction {
     } else if (type == 'Guid') {
       codeList.add(
           '$dartType $dartName($paramTNString) => \'00000000-0000-0000-0000-000000000000\';');
-    } else if (type == 'Date' || type == 'DateTime') {
+    } else if (type == 'DateTime') {
       codeList.add('$dartType $dartName($paramTNString) => $dartType();');
     } else if (type == 'Duration') {
       codeList.add('$dartType $dartName($paramTNString)=> $dartType();');
@@ -188,7 +185,7 @@ class NsgGenFunction {
     }
     if (params.isNotEmpty && !(['Image', 'Binary'].contains(type))) {
       params.forEach((p) {
-        if (p.type == 'Date' || p.type == 'DateTime') {
+        if (p.type == 'DateTime') {
           codeList
               .add('if (!findParams.Parameters.ContainsKey("${p.name}") ||');
           codeList.add(
@@ -200,7 +197,7 @@ class NsgGenFunction {
         var pStr = '${p.returnType} ${p.name} = ';
         if (p.type == 'String') {
           pStr += 'findParams.Parameters["${p.name}"].ToString()';
-        } else if (['int', 'double', 'Date', 'DateTime'].contains(p.type)) {
+        } else if (['int', 'double', 'DateTime'].contains(p.type)) {
           pStr +=
               '${p.type}.Parse(findParams.Parameters["${p.name}"].ToString(), System.Globalization.CultureInfo.InvariantCulture)';
         } else if (p.type == 'bool') {
@@ -376,7 +373,7 @@ class NsgGenFunction {
       params.forEach((p) {
         if (p.type == 'String') {
           codeList.add('      params[\'${p.name}\'] = ${p.name};');
-        } else if (p.type == 'Date' || p.type == 'DateTime') {
+        } else if (p.type == 'DateTime') {
           codeList.add(
               '      params[\'${p.name}\'] = ${p.name}.toIso8601String();');
         } else if (p.type == 'Reference') {
@@ -440,9 +437,11 @@ class NsgGenMethodParam {
       {required this.name, required this.type, this.referenceType = ''});
 
   factory NsgGenMethodParam.fromJson(Map<String, dynamic> parsedJson) {
+    var type = (parsedJson['type'] ?? '').toString();
+    if (type == 'Date') type = 'DateTime';
     return NsgGenMethodParam(
         name: parsedJson['name'],
-        type: parsedJson['type'],
+        type: type,
         referenceType: parsedJson['referenceType'] ?? '');
   }
 
