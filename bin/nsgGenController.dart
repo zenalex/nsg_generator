@@ -462,10 +462,15 @@ class NsgGenController {
 
   static void generateImplMetadataGetMethodBody(
       NsgGenerator nsgGenerator, List<String> codeList, NsgGenMethod m) async {
-    codeList.add(
-        'var RES = GetResultDictionary<${m.genDataItem.typeName}>(findParams);');
-    codeList.add('');
-    codeList.add('return RES;');
+    if (m.name == 'UserSettings') {
+      codeList.add(
+          'return await Get<${m.genDataItem.typeName}>(user, findParams);');
+    } else {
+      codeList.add(
+          'var RES = GetResultDictionary<${m.genDataItem.typeName}>(findParams);');
+      codeList.add('');
+      codeList.add('return RES;');
+    }
   }
 
   Future generateImplAuthController(NsgGenerator nsgGenerator) async {

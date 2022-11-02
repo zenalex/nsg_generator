@@ -19,6 +19,7 @@ class NsgGenDataItem {
   final List<NsgGenFunction> methods;
   bool checkLastModifiedDate = false;
   bool allowCreate = false;
+  bool isUserSettings = false;
 
   NsgGenDataItem(
       {required this.typeName,
@@ -110,10 +111,13 @@ class NsgGenDataItem {
       if (description.isNotEmpty) {
         Misc.writeDescription(codeList, description, true);
       }
-      codeList.add('public partial class $typeName : NsgServerMetadataItem');
+      if (isUserSettings) {
+        codeList.add('public partial class $typeName : NsgServerUserSettings');
+      } else {
+        codeList.add('public partial class $typeName : NsgServerMetadataItem');
+      }
       codeList.add('{');
 
-      //FromData
       codeList.add('public $typeName() : this(null, null) { }');
       codeList.add('');
 
@@ -171,11 +175,13 @@ class NsgGenDataItem {
       throw Exception('There is no Primary key in $typeName');
     });
 
-    codeList.add(
-        'public override Guid GetId() => NsgService.StringToGuid(${pkField.name});');
-    codeList.add(
-        'public override void SetId(object value) => ${pkField.name} = value.ToString();');
-    codeList.add('');
+    if (!isUserSettings) {
+      codeList.add(
+          'public override Guid GetId() => NsgService.StringToGuid(${pkField.name});');
+      codeList.add(
+          'public override void SetId(object value) => ${pkField.name} = value.ToString();');
+      codeList.add('');
+    }
     codeList.add(
         'public override Dictionary<string, string> GetClientServerNames() => ClientServerNames;');
     codeList.add(
@@ -231,8 +237,11 @@ class NsgGenDataItem {
     }
     codeList.add('public override void SetDefaultValues()');
     codeList.add('{');
+    if (isUserSettings) codeList.add('base.SetDefaultValues();');
     fields.forEach((field) {
       if (!field.writeOnServer) return;
+      if (isUserSettings &&
+          [pkField.name, 'Settings', 'UserId'].contains(field.name)) return;
       if (field.type == 'int') {
         codeList.add('ValueDictionary[Names.${field.name}] = 0;');
       } else if (field.type == 'double') {
@@ -269,6 +278,32 @@ class NsgGenDataItem {
     codeList.add('');
 
     codeList.add('#region Names');
+    if (isUserSettings) {
+      codeList.add('public override string Names_Id => Names.${pkField.name};');
+      codeList.add('');
+      var usField = fields.firstWhere((f) => f.name == 'Settings',
+          orElse: () => NsgGenDataItemField(name: 'null', type: 'null'));
+      if (usField.name == 'null') {
+        var errorMessage =
+            'UserSettings - the required field "Settings" couldn\'t be found';
+        print(errorMessage);
+        throw Exception(errorMessage);
+      }
+      codeList.add(
+          'public override string Names_Settings => Names.${usField.name};');
+      codeList.add('');
+      usField = fields.firstWhere((f) => f.name == 'UserId',
+          orElse: () => NsgGenDataItemField(name: 'null', type: 'null'));
+      if (usField.name == 'null') {
+        var errorMessage =
+            'UserSettings - the required field "UserId" couldn\'t be found';
+        print(errorMessage);
+        throw Exception(errorMessage);
+      }
+      codeList
+          .add('public override string Names_UserId => Names.${usField.name};');
+      codeList.add('');
+    }
     codeList.add('public static class Names');
     codeList.add('{');
     fields.forEach((field) {
@@ -296,6 +331,8 @@ class NsgGenDataItem {
     codeList.add('#region Properties');
     fields.forEach((field) {
       if (!field.writeOnServer) return;
+      if (isUserSettings &&
+          [pkField.name, 'Settings', 'UserId'].contains(field.name)) return;
       if (field.description.isNotEmpty) {
         Misc.writeDescription(codeList, field.description, true);
       }
@@ -505,11 +542,16 @@ class NsgGenDataItem {
           'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post(INsgTokenExtension user, IEnumerable<NsgServerDataItem> items)');
       codeList.add('{');
       if (nsgMethod.genDataItem.databaseType.isNotEmpty) {
-        codeList.add(
-            'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
-        codeList.add(
-            'RES[RESULTS] = NsgServerMetadataItem.PostAll<${nsgMethod.genDataItem.typeName}>(user, items);');
-        codeList.add('return RES;');
+        if (nsgMethod.name == 'UserSettings') {
+          codeList.add(
+              'return await Post<${nsgMethod.genDataItem.typeName}>(user, items);');
+        } else {
+          codeList.add(
+              'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
+          codeList.add(
+              'RES[RESULTS] = NsgServerMetadataItem.PostAll<${nsgMethod.genDataItem.typeName}>(user, items);');
+          codeList.add('return RES;');
+        }
       } else {
         codeList.add('throw new NotImplementedException();');
       }
@@ -521,17 +563,29 @@ class NsgGenDataItem {
           'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Delete(INsgTokenExtension user, IEnumerable<NsgServerDataItem> items)');
       codeList.add('{');
       if (nsgMethod.genDataItem.databaseType.isNotEmpty) {
-        codeList.add(
-            'NsgServerMetadataItem.SetDeleteMarkAll<${nsgMethod.genDataItem.typeName}>(items);');
-        codeList.add(
-            'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
-        codeList.add('RES[RESULTS] = items;');
-        codeList.add('return RES;');
+        if (nsgMethod.name == 'UserSettings') {
+          codeList.add(
+              'return await Delete<${nsgMethod.genDataItem.typeName}>(user, items.Cast<${nsgMethod.genDataItem.typeName}>());');
+        } else {
+          codeList.add(
+              'NsgServerMetadataItem.SetDeleteMarkAll<${nsgMethod.genDataItem.typeName}>(items);');
+          codeList.add(
+              'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
+          codeList.add('RES[RESULTS] = items;');
+          codeList.add('return RES;');
+        }
       } else {
         codeList.add('throw new NotImplementedException();');
       }
       codeList.add('}');
       codeList.add('');
+    }
+    if (isUserSettings) {
+      codeList.add(
+          'public override Guid GetUserIdByToken(INsgTokenExtension user)');
+      codeList.add('{');
+      codeList.add('throw new NotImplementedException();');
+      codeList.add('}');
     }
     // });
     methods.forEach((element) {

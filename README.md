@@ -287,6 +287,17 @@ Uri сервера
 "functions": []
 ```
 
+### 1. 1. 1. Настройки пользователей (UserSettings)
+
+Сервер позволяет управлять настройками пользователей. Для этого необходимо добавить метод под названием UserSettings
+и указать [файл объекта](#2-файл-описания-структуры-объекта) с привязкой к объекту метаданных.  
+Требуемые поля:  
+- ключевое поле (тип String или Guid)
+- Settings (тип String)
+- UserId (тип String или Guid)
+
+Для UserSettings всегда создаются методы GET, POST и DELETE
+
 #
 
 ### 1. 1. 2. Описание структуры функции (function)
@@ -399,12 +410,18 @@ Uri сервера
             "type": "String"
         },
         {
-            "name": "MachineryBrandId",
+            "name": "BrandId",
             "description": "Марка",
             "databaseName": "Владелец",
             "type": "Reference",
-            "referenceName": "MachineryBrand",
-            "referenceType": "MachineryBrandItem"
+            "referenceName": "Brand",
+            "referenceType": "BrandItem"
+        },
+        {
+            "name": "Category",
+            "databaseName": "Категория",
+            "type": "Reference",
+            "referenceType": "CategoryItem"
         },
         {
             "name": "IsFolder",

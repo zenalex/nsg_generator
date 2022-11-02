@@ -35,14 +35,16 @@ class NsgGenMethod {
       this.allowDelete = false});
 
   factory NsgGenMethod.fromJson(Map<String, dynamic> parsedJson) {
+    var name = (parsedJson['name'] ?? '').toString();
+    var isUserSettings = name == 'UserSettings';
     return NsgGenMethod(
-        name: parsedJson['name'] ?? '',
+        name: name,
         description: parsedJson['description'] ?? '',
         apiPrefix: parsedJson.containsKey('apiPrefix')
             ? parsedJson['apiPrefix']
             : parsedJson.containsKey('api_prefix')
                 ? parsedJson['api_prefix']
-                : parsedJson['name'],
+                : name,
         authorize: parsedJson['authorize'] ?? 'none',
         getterType: (parsedJson.containsKey('getterType')
                 ? parsedJson['getterType']
@@ -50,13 +52,14 @@ class NsgGenMethod {
             .toString()
             .toUpperCase(),
         dataTypeFlie: parsedJson['dataTypeFile'] ?? '',
-        allowGetter: parsedJson.containsKey('allowGetter')
-            ? parsedJson['allowGetter'] != 'false'
-            : true,
+        allowGetter: (parsedJson.containsKey('allowGetter')
+                ? parsedJson['allowGetter'] != 'false'
+                : true) ||
+            isUserSettings,
         allowCreate: parsedJson['allowCreate'] == 'true',
-        allowPost: parsedJson['allowPost'] == 'true',
+        allowPost: parsedJson['allowPost'] == 'true' || isUserSettings,
         checkLastModifiedDate: parsedJson['checkLastModifiedDate'] == 'true',
-        allowDelete: parsedJson['allowDelete'] == 'true');
+        allowDelete: parsedJson['allowDelete'] == 'true' || isUserSettings);
   }
 
   Future generateCode(List<String> codeList, NsgGenerator nsgGenerator,
@@ -199,6 +202,7 @@ class NsgGenMethod {
       codeList.add('');
     }
     //Generate data class
+    genDataItem.isUserSettings = name == 'UserSettings';
     genDataItem.writeCode(nsgGenerator, this);
     //Generate image tranfer methods
     // imageFieldList.forEach((element) {
