@@ -45,10 +45,9 @@ class NsgGenDataItemField {
     //     ? defaultMaxLength[parsedJson['type']]
     //     : 0);
     var userName = parsedJson['userName'] ??
-        parsedJson['databaseName'] ??
-        parsedJson['description'] ??
-        parsedJson['name'];
-    userName = Misc.CamelCaseToNormal(userName);
+        Misc.CamelCaseToNormal(parsedJson['databaseName'] ??
+            parsedJson['description'] ??
+            parsedJson['name']);
 
     var name = parsedJson['name'].toString();
     var referenceName = (parsedJson['referenceName'] ?? '').toString();
