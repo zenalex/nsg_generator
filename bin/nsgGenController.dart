@@ -540,9 +540,9 @@ class NsgGenController {
     //----------------------------------------------------------
     var codeList = <String>[];
     codeList.add("import 'package:get/get.dart';");
-    codeList.add("import 'package:nsg_controls/nsg_controls.dart';");
     codeList.add("import 'package:nsg_data/nsg_data.dart';");
     codeList.add("import 'package:package_info_plus/package_info_plus.dart';");
+    codeList.add("// ignore: depend_on_referenced_packages");
     codeList.add("import '../_nsg_server_options.dart';");
     // if (functions.any((f) => ['Image', 'Binary'].contains(f.type))) {
     //   codeList.add("import 'dart:io';");
