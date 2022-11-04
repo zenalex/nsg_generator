@@ -63,8 +63,8 @@ class NsgGenEnum {
       codeList.add('');
       codeList.add('public static IEnumerable<$className> List()');
       codeList.add('{');
-      codeList
-          .add('return new[] { ${values!.map((e) => e.codeName).join(', ')} };');
+      codeList.add(
+          'return new[] { ${values!.map((e) => e.codeName).join(', ')} };');
       codeList.add('}');
       codeList.add('');
       codeList.add('public static explicit operator $className(string name)');
@@ -126,7 +126,7 @@ class NsgGenEnum {
     var codeList = <String>[];
     enums.forEach((_) {
       codeList.add(
-          "export 'enums/${nsgGenerator.getDartUnderscoreName(_.className)}.dart';");
+          "export 'enums/${Misc.getDartUnderscoreName(_.className)}.dart';");
     });
 
     await File('${nsgGenerator.dartPath}/enums.dart')
@@ -143,7 +143,7 @@ class NsgGenEnum {
     codeList.add('class $className extends NsgEnum {');
     values!.forEach((i) {
       codeList.add(
-          '  static $className ${nsgGenerator.getDartName(i.codeName)} = $className(${i.value}, \'${i.name}\');');
+          '  static $className ${Misc.getDartName(i.codeName)} = $className(${i.value}, \'${i.name}\');');
     });
     codeList.add('');
     codeList.add(
@@ -153,15 +153,14 @@ class NsgGenEnum {
     codeList.add('  void initialize() {');
     codeList.add('    NsgEnum.listAllValues[runtimeType] = <int, $className>{');
     values!.forEach((v) {
-      codeList
-          .add('      ${v.value}: ${nsgGenerator.getDartName(v.codeName)},');
+      codeList.add('      ${v.value}: ${Misc.getDartName(v.codeName)},');
     });
     codeList.add('    };');
     codeList.add('  }');
     codeList.add('}');
     codeList.add('');
     await File(
-            '${nsgGenerator.dartPath}/enums/${nsgGenerator.getDartUnderscoreName(className)}.dart')
+            '${nsgGenerator.dartPath}/enums/${Misc.getDartUnderscoreName(className)}.dart')
         .writeAsString(codeList.join('\r\n'));
   }
 }
@@ -171,5 +170,6 @@ class NsgGenEnumItem {
   final String name;
   final dynamic value;
 
-  NsgGenEnumItem({required this.codeName, required this.name, required this.value});
+  NsgGenEnumItem(
+      {required this.codeName, required this.name, required this.value});
 }

@@ -172,7 +172,7 @@ class NsgGenController {
       codeList.add('#region types');
       methods.forEach((el) {
         codeList.add(
-            'NsgServerDataItem.Types.Add("${nsgGenerator.getDartName(el.genDataItem.typeName)}", new ${el.genDataItem.typeName}());');
+            'NsgServerDataItem.Types.Add("${Misc.getDartName(el.genDataItem.typeName)}", new ${el.genDataItem.typeName}());');
       });
       codeList.add('#endregion');
       codeList.add(
@@ -524,13 +524,13 @@ class NsgGenController {
     var codeList = <String>[];
     methods.forEach((_) {
       codeList.add(
-          "export '${nsgGenerator.getDartUnderscoreName(_.genDataItem.typeName)}.dart';");
+          "export '${Misc.getDartUnderscoreName(_.genDataItem.typeName)}.dart';");
       codeList.add(
-          "export '${nsgGenerator.genPathName}/${nsgGenerator.getDartUnderscoreName(_.genDataItem.typeName)}.g.dart';");
+          "export '${nsgGenerator.genPathName}/${Misc.getDartUnderscoreName(_.genDataItem.typeName)}.g.dart';");
     });
 
     await File(
-            '${nsgGenerator.dartPath}/${nsgGenerator.getDartUnderscoreName(className)}_model.dart')
+            '${nsgGenerator.dartPath}/${Misc.getDartUnderscoreName(className)}_model.dart')
         .writeAsString(codeList.join('\r\n'));
   }
 
@@ -551,7 +551,7 @@ class NsgGenController {
       codeList.add("import '../enums.dart';");
     }
     codeList.add(
-        "import '../${nsgGenerator.getDartUnderscoreName(className)}_model.dart';");
+        "import '../${Misc.getDartUnderscoreName(className)}_model.dart';");
     codeList.add('');
     codeList.add('class ${className}Generated extends NsgBaseController {');
     codeList.add('  NsgDataProvider? provider;');
@@ -591,7 +591,7 @@ class NsgGenController {
     codeList.add('}');
 
     await File(
-            '${nsgGenerator.dartPathGen}/${nsgGenerator.getDartUnderscoreName(className)}.g.dart')
+            '${nsgGenerator.dartPathGen}/${Misc.getDartUnderscoreName(className)}.g.dart')
         .writeAsString(codeList.join('\r\n'));
 
     //----------------------------------------------------------
@@ -600,14 +600,14 @@ class NsgGenController {
     codeList = <String>[];
     //codeList.add("import '${nsgGenerator.getDartName(class_name)}Model.dart';");
     codeList.add(
-        "import '${nsgGenerator.genPathName}/${nsgGenerator.getDartUnderscoreName(className)}.g.dart';");
+        "import '${nsgGenerator.genPathName}/${Misc.getDartUnderscoreName(className)}.g.dart';");
     codeList.add('');
     codeList.add('class $className extends ${className}Generated {');
     codeList.add('  DataController() : super();');
     codeList.add('}');
 
     var fn =
-        '${nsgGenerator.dartPath}/${nsgGenerator.getDartUnderscoreName(className)}.dart';
+        '${nsgGenerator.dartPath}/${Misc.getDartUnderscoreName(className)}.dart';
     if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
       await File(fn).writeAsString(codeList.join('\r\n'));
     }

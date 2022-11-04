@@ -106,10 +106,10 @@ class NsgGenDataItemField {
     'double': 2
   };
 
-  String get dartName => NsgGenerator.generator.getDartName(name);
+  String get dartName => Misc.getDartName(name);
 
-  String get fieldNameVar => NsgGenerator.generator
-      .getDartName('name' + name[0].toUpperCase() + name.substring(1));
+  String get fieldNameVar =>
+      Misc.getDartName('name' + name[0].toUpperCase() + name.substring(1));
 
   String get dartType {
     if (type == 'Guid') return 'String';
@@ -183,9 +183,9 @@ class NsgGenDataItemField {
       codeList.add(
           '  String get $dartName => getFieldValue($fieldNameVar).toString();');
       codeList.add(
-          '  $referenceType get ${NsgGenerator.generator.getDartName(referenceName)} => getReferent<$referenceType>($fieldNameVar);');
+          '  $referenceType get ${Misc.getDartName(referenceName)} => getReferent<$referenceType>($fieldNameVar);');
       codeList.add(
-          '  Future<$referenceType> ${NsgGenerator.generator.getDartName(referenceName)}Async() async {');
+          '  Future<$referenceType> ${Misc.getDartName(referenceName)}Async() async {');
       codeList.add(
           '   return await getReferentAsync<$referenceType>($fieldNameVar);');
       codeList.add('  }');
@@ -193,9 +193,9 @@ class NsgGenDataItemField {
       codeList.add(
           '  String get $dartName => getFieldValue($fieldNameVar).toString();');
       codeList.add(
-          '  NsgDataItem get ${NsgGenerator.generator.getDartName(referenceName)} => getReferent<NsgDataItem>($fieldNameVar);');
+          '  NsgDataItem get ${Misc.getDartName(referenceName)} => getReferent<NsgDataItem>($fieldNameVar);');
       codeList.add(
-          '  Future<NsgDataItem> ${NsgGenerator.generator.getDartName(referenceName)}Async() async {');
+          '  Future<NsgDataItem> ${Misc.getDartName(referenceName)}Async() async {');
       codeList
           .add('   return await getReferentAsync<NsgDataItem>($fieldNameVar);');
       codeList.add('  }');
@@ -220,13 +220,13 @@ class NsgGenDataItemField {
       codeList.add(
           '  set $dartName(String value) => setFieldValue($fieldNameVar, value);');
       codeList.add(
-          '  set ${NsgGenerator.generator.getDartName(referenceName)}($referenceType value) =>');
+          '  set ${Misc.getDartName(referenceName)}($referenceType value) =>');
       codeList.add('    setFieldValue($fieldNameVar, value.id);');
     } else if (type == 'UntypedReference') {
       codeList.add(
           '  set $dartName(String value) => setFieldValue($fieldNameVar, value);');
       codeList.add(
-          '  set ${NsgGenerator.generator.getDartName(referenceName)}(NsgDataItem value) =>');
+          '  set ${Misc.getDartName(referenceName)}(NsgDataItem value) =>');
       codeList.add('    setFieldValue($fieldNameVar, value);');
     } else if (type == 'List<Reference>') {
       //Отменил запись setter из-за смены возвращаемого типа на NsgDataTable

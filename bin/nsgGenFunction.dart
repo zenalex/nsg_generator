@@ -45,7 +45,7 @@ class NsgGenFunction {
             : []);
   }
 
-  String get dartName => NsgGenerator.generator.getDartName(name);
+  String get dartName => Misc.getDartName(name);
 
   String get returnType {
     if (type == 'Reference' || type == 'List<Reference>' || type == 'Enum') {
@@ -360,10 +360,10 @@ class NsgGenFunction {
     // } else
     if (type == 'Reference') {
       codeList.add(
-          '  Future<$dartType?> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
+          '  Future<$dartType?> ${Misc.getDartName(name)}($paramTNString) async {');
     } else {
       codeList.add(
-          '  Future<List<$dartType>> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
+          '  Future<List<$dartType>> ${Misc.getDartName(name)}($paramTNString) async {');
     }
     codeList.add(
         '  var progress = NsgProgressDialogHelper(showProgress: showProgress, isStoppable: isStoppable);');

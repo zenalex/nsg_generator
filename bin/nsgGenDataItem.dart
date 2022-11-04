@@ -320,7 +320,7 @@ class NsgGenDataItem {
               codeList, field.description + ' - reference', true);
         }
         codeList.add(
-            'public static readonly string ${field.referenceName} = "${nsgGenerator.getDartName(field.referenceName)}";');
+            'public static readonly string ${field.referenceName} = "${Misc.getDartName(field.referenceName)}";');
       }
       codeList.add('');
     });
@@ -637,7 +637,7 @@ class NsgGenDataItem {
     codeList.add('// ignore: unused_import');
     codeList.add("import 'dart:typed_data';");
     codeList.add(
-        "import '../${nsgGenerator.getDartUnderscoreName(nsgGenController.className)}_model.dart';");
+        "import '../${Misc.getDartUnderscoreName(nsgGenController.className)}_model.dart';");
     for (var field in fields) {
       if (!field.writeOnClient) continue;
       if (field.type == 'Enum') {
@@ -655,7 +655,7 @@ class NsgGenDataItem {
     fields.forEach((_) {
       if (!_.writeOnClient) return;
       codeList.add(
-          "  static const ${_.fieldNameVar} = '${nsgGenerator.getDartName(_.name)}';");
+          "  static const ${_.fieldNameVar} = '${Misc.getDartName(_.name)}';");
     });
     codeList.add('');
     codeList.add('  static final Map<String, String> fieldNameDict = {');
@@ -720,15 +720,15 @@ class NsgGenDataItem {
     if (presentation.isNotEmpty) {
       codeList.add('  @override');
       codeList.add(
-          '  String toString() => ${nsgGenerator.getDartName(presentation.replaceAll('\"', '\''))};');
+          '  String toString() => ${Misc.getDartName(presentation.replaceAll('\"', '\''))};');
       codeList.add('');
     } else if (fields.isNotEmpty) {
       var nameField = fields.firstWhere((f) => f.name.toLowerCase() == 'name',
           orElse: () => NsgGenDataItemField(name: '', type: ''));
       if (nameField.name.isNotEmpty) {
         codeList.add('  @override');
-        codeList.add(
-            '  String toString() => ${nsgGenerator.getDartName(nameField.name)};');
+        codeList
+            .add('  String toString() => ${Misc.getDartName(nameField.name)};');
         codeList.add('');
       }
     }
@@ -769,14 +769,14 @@ class NsgGenDataItem {
     codeList.add('');
 
     await File(
-            '${nsgGenerator.dartPathGen}/${nsgGenerator.getDartUnderscoreName(typeName)}.g.dart')
+            '${nsgGenerator.dartPathGen}/${Misc.getDartUnderscoreName(typeName)}.g.dart')
         .writeAsString(codeList.join('\r\n'));
     //----------------------------------------------------------
     //generate main item class data_item.dart
     //----------------------------------------------------------
     codeList = <String>[];
     codeList.add(
-        "import '${nsgGenerator.genPathName}/${nsgGenerator.getDartUnderscoreName(typeName)}.g.dart';");
+        "import '${nsgGenerator.genPathName}/${Misc.getDartUnderscoreName(typeName)}.g.dart';");
     codeList.add('');
     codeList.add('class $typeName extends ${typeName}Generated {');
     methods.forEach((_) {
@@ -785,7 +785,7 @@ class NsgGenDataItem {
     codeList.add('}');
 
     var fn =
-        '${nsgGenerator.dartPath}/${nsgGenerator.getDartUnderscoreName(typeName)}.dart';
+        '${nsgGenerator.dartPath}/${Misc.getDartUnderscoreName(typeName)}.dart';
     if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
       await File(fn).writeAsString(codeList.join('\r\n'));
     }
