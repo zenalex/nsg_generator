@@ -6,6 +6,7 @@ import 'nsgGenEnum.dart';
 
 class NsgGenerator {
   final String targetFramework;
+  final bool isDotNetCore;
   String cSharpPath;
   final String cSharpNamespace;
   String dartPath;
@@ -20,10 +21,10 @@ class NsgGenerator {
   bool copyStartupCs = false;
 
   String? jsonPath;
-  static late NsgGenerator generator;
 
   NsgGenerator(
-      {this.targetFramework = 'net5.0',
+      {required this.targetFramework,
+      required this.isDotNetCore,
       required this.cSharpPath,
       required this.cSharpNamespace,
       required this.dartPath,
@@ -34,14 +35,27 @@ class NsgGenerator {
   factory NsgGenerator.fromJson(Map<String, dynamic> parsedJson) {
     var targetFramework = parsedJson['targetFramework'] ?? 'net5.0';
     if (targetFramework.isEmpty) targetFramework = 'net5.0';
+    var isDotNetCore = [
+      'netcoreapp1.0',
+      'netcoreapp1.1',
+      'netcoreapp2.0',
+      'netcoreapp2.1',
+      'netcoreapp2.2',
+      'netcoreapp3.0',
+      'netcoreapp3.1',
+      'net5.0',
+      'net6.0',
+      'net7.0'
+    ].contains(targetFramework);
     var enums = <NsgGenEnum>[];
     if (parsedJson.containsKey('enums')) {
       enums = (parsedJson['enums'] as List)
           .map((i) => NsgGenEnum.fromJson(i))
           .toList();
     }
-    generator = NsgGenerator(
+    return NsgGenerator(
         targetFramework: targetFramework,
+        isDotNetCore: isDotNetCore,
         cSharpPath: parsedJson['cSharpPath'] ?? '',
         cSharpNamespace: parsedJson['cSharpNamespace'] ?? '',
         dartPath: parsedJson['dartPath'] ?? '',
@@ -50,7 +64,6 @@ class NsgGenerator {
             .map((i) => NsgGenController.fromJson(i))
             .toList(),
         enums: enums);
-    return generator;
   }
 
   String get genPathName => 'generated';

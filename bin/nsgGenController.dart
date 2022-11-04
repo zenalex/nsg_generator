@@ -73,7 +73,7 @@ class NsgGenController {
       codeList.add('using System.Net.Http;');
       codeList.add('using System.Threading;');
       codeList.add('using System.Threading.Tasks;');
-      if (nsgGenerator.targetFramework == 'net5.0') {
+      if (nsgGenerator.isDotNetCore) {
         codeList.add('using Microsoft.AspNetCore.Mvc;');
         codeList.add('using Microsoft.AspNetCore.Authorization;');
       } else {
@@ -103,16 +103,14 @@ class NsgGenController {
       codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
       codeList.add('{');
       Misc.writeDescription(codeList, '${dataType}Interface Controller', true);
-      if (nsgGenerator.targetFramework == 'net5.0') {
+      if (nsgGenerator.isDotNetCore) {
         codeList.add('[ApiController]');
         codeList.add('[Route("$apiPrefix")]');
       } else {
         codeList.add('[RoutePrefix("$apiPrefix")]');
       }
       codeList.add('public class $className : ' +
-          (nsgGenerator.targetFramework == 'net5.0'
-              ? 'ControllerBase'
-              : 'ApiController'));
+          (nsgGenerator.isDotNetCore ? 'ControllerBase' : 'ApiController'));
       codeList.add('{');
 
       codeList.add('${className}Interface controller;');
@@ -139,7 +137,7 @@ class NsgGenController {
       // codeList.add('#endif');
       codeList.add('}');
       codeList.add('');
-      if (nsgGenerator.targetFramework != 'net5.0') {
+      if (!nsgGenerator.isDotNetCore) {
         codeList.add(
             'public $className() : this(Program.LoggerFactory.CreateLogger<$className>()) { }');
         codeList.add('');
@@ -149,7 +147,7 @@ class NsgGenController {
       codeList.add('{');
       codeList.add('get');
       codeList.add('{');
-      if (nsgGenerator.targetFramework == 'net5.0') {
+      if (nsgGenerator.isDotNetCore) {
         codeList.add(
             'if (currentController == null) currentController = new $className(null);');
       } else {
@@ -224,7 +222,7 @@ class NsgGenController {
     codeList.add('using ${nsgGenerator.cSharpNamespace};');
     codeList.add('using NsgServerClasses;');
     codeList.add('using System.Threading.Tasks;');
-    if (nsgGenerator.targetFramework == 'net5.0') {
+    if (nsgGenerator.isDotNetCore) {
       codeList.add('using Microsoft.AspNetCore.Mvc;');
     } else {
       codeList.add('using System.Web.Http;');
@@ -250,7 +248,7 @@ class NsgGenController {
     codeList.add(
         'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Delete<T>(INsgTokenExtension user, IEnumerable<T> items)');
     codeList.add('    where T : NsgServerDataItem, new();');
-    //var publicMdf = (nsgGenerator.targetFramework == 'net5.0' ? 'public ' : '');
+    //var publicMdf = (nsgGenerator.isDotNetCore ? 'public ' : '');
     methods.forEach((_) {
       // _.imageFieldList.forEach((el) {
       //   if (_.authorize != 'none') {
@@ -290,7 +288,7 @@ class NsgGenController {
     codeList.add('using ${nsgGenerator.cSharpNamespace};');
     codeList.add('using NsgServerClasses;');
     codeList.add('using System.Threading.Tasks;');
-    if (nsgGenerator.targetFramework == 'net5.0') {
+    if (nsgGenerator.isDotNetCore) {
       codeList.add('using Microsoft.AspNetCore.Mvc;');
     } else {
       codeList.add('using System.Web.Http;');
@@ -393,7 +391,7 @@ class NsgGenController {
     codeList.add('using ${nsgGenerator.cSharpNamespace};');
     codeList.add('using NsgServerClasses;');
     codeList.add('using System.Threading.Tasks;');
-    if (nsgGenerator.targetFramework == 'net5.0') {
+    if (nsgGenerator.isDotNetCore) {
       codeList.add('using Microsoft.AspNetCore.Mvc;');
     } else {
       codeList.add('using System.Web.Http;');
@@ -481,7 +479,7 @@ class NsgGenController {
     codeList.add('using System.Linq;');
     codeList.add('using System.Net.Http;');
     codeList.add('using System.Threading.Tasks;');
-    if (nsgGenerator.targetFramework == 'net5.0') {
+    if (nsgGenerator.isDotNetCore) {
       codeList.add('using Microsoft.AspNetCore.Http;');
       codeList.add('using Microsoft.AspNetCore.Mvc;');
     } else {

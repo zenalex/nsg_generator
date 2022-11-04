@@ -209,7 +209,7 @@ class NsgGenMethod {
     //   codeList.add('[Route("${element.apiPrefix}/{file}")]');
     //   codeList.add('[HttpGet]');
 
-    //   if (nsgGenerator.targetFramework == 'net5.0') {
+    //   if (nsgGenerator.isDotNetCore) {
     //     codeList.add(
     //         'public async Task<FileStreamResult> ${name}${element.apiPrefix}([FromRoute] string file)');
     //   } else {

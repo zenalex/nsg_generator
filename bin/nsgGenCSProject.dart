@@ -45,7 +45,7 @@ class NsgGenCSProject {
         '      <HintPath>..\\..\\NsgServerClasses\\bin\\Debug\\$targetFramework\\NsgServerClasses.dll</HintPath>');
     codeList.add('    </Reference>');
     codeList.add('    <Reference Include="System.Configuration" />');
-    if (targetFramework != 'net5.0') {
+    if (!nsgGenerator.isDotNetCore) {
       codeList.add('    <Reference Include="System.Web" />');
     }
     codeList.add('  </ItemGroup>');
@@ -59,7 +59,7 @@ class NsgGenCSProject {
     codeList.add('  </ItemGroup>');
     codeList.add('');
     codeList.add('  <ItemGroup>');
-    if (targetFramework != 'net5.0') {
+    if (!nsgGenerator.isDotNetCore) {
       codeList.add(
           '    <PackageReference Include="Microsoft.Owin.Diagnostics" Version="4.2.0" />');
       codeList.add(
@@ -83,7 +83,7 @@ class NsgGenCSProject {
         '    <PackageReference Include="Microsoft.AspNet.WebApi.OwinSelfHost" Version="5.2.7" />');
     codeList.add(
         '    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="' +
-            (targetFramework == 'net5.0' ? '5.0.7' : '3.1.21') +
+            (nsgGenerator.isDotNetCore ? '5.0.7' : '3.1.21') +
             '" />');
     codeList.add(
         '    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.15.0" />');
@@ -107,7 +107,7 @@ class NsgGenCSProject {
     }
     print('generating Program.cs');
     var codeList = <String>[];
-    if (nsgGenerator.targetFramework == 'net5.0') {
+    if (nsgGenerator.isDotNetCore) {
       codeList.add('using Microsoft.AspNetCore.Hosting;');
       codeList.add('using Microsoft.Extensions.Configuration;');
       codeList.add('using Microsoft.Extensions.Hosting;');
@@ -202,7 +202,7 @@ class NsgGenCSProject {
     }
     print('generating Startup.cs');
     var codeList = <String>[];
-    if (nsgGenerator.targetFramework == 'net5.0') {
+    if (nsgGenerator.isDotNetCore) {
       codeList.add('using Microsoft.AspNetCore.Builder;');
       codeList.add('using Microsoft.AspNetCore.Hosting;');
       codeList.add('using Microsoft.AspNetCore.HttpsPolicy;');
