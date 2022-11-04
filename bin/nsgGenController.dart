@@ -538,6 +538,9 @@ class NsgGenController {
     //----------------------------------------------------------
     var codeList = <String>[];
     codeList.add("import 'package:get/get.dart';");
+    if (functions.isNotEmpty) {
+      codeList.add("import 'package:nsg_controls/nsg_controls.dart';");
+    }
     codeList.add("import 'package:nsg_data/nsg_data.dart';");
     codeList.add("import 'package:package_info_plus/package_info_plus.dart';");
     codeList.add("// ignore: depend_on_referenced_packages");
