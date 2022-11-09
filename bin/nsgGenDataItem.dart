@@ -150,6 +150,11 @@ class NsgGenDataItem {
       codeList.add('set');
       codeList.add('{');
       codeList.add('nsgObject = value as $databaseType;');
+      codeList.add('if (nsgObject == null)');
+      codeList.add('{');
+      codeList.add('nsgObject = $databaseType.Новый();');
+      codeList.add('nsgObject.CopyFieldsFromObject(value);');
+      codeList.add('}');
       codeList.add('if (value == null) return;');
       codeList.add('NsgToServerObject(nsgObject);');
       codeList.add('}');
