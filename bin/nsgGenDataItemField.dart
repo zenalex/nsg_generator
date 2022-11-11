@@ -53,7 +53,7 @@ class NsgGenDataItemField {
     var referenceName = (parsedJson['referenceName'] ?? '').toString();
     var type = (parsedJson['type'] ?? '').toString();
     if (type == 'Date') type = 'DateTime';
-    if (type == 'Reference') {
+    if (['Reference', 'UntypedReference'].contains(type)) {
       if (referenceName.isEmpty) {
         if (name.endsWith('Id')) {
           referenceName = name.substring(0, name.length - 2);
