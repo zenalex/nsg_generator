@@ -202,7 +202,6 @@ class NsgGenMethod {
       codeList.add('');
     }
     //Generate data class
-    genDataItem.isUserSettings = name == 'UserSettings';
     genDataItem.writeCode(nsgGenerator, this);
     //Generate image tranfer methods
     // imageFieldList.forEach((element) {

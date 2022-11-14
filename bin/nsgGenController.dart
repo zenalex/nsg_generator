@@ -505,6 +505,7 @@ class NsgGenController {
     print('load Controller $className start');
     await Future.forEach<NsgGenMethod>(methods, (element) async {
       await element.loadGenDataItem(nsgGenerator);
+      element.genDataItem.isUserSettings = element.name == 'UserSettings';
     });
     print('load $className finished');
   }

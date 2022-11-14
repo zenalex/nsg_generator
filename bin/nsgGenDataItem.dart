@@ -656,7 +656,12 @@ class NsgGenDataItem {
       codeList.add('');
       Misc.writeDescription(codeList, description, false);
     }
-    codeList.add('class ${typeName}Generated extends NsgDataItem {');
+    if (this.isUserSettings) {
+      codeList.add(
+          'class ${typeName}Generated extends NsgDataItem with NsgUserSettings {');
+    } else {
+      codeList.add('class ${typeName}Generated extends NsgDataItem {');
+    }
     fields.forEach((_) {
       if (!_.writeOnClient) return;
       codeList.add(
