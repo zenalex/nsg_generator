@@ -567,6 +567,8 @@ class NsgGenController {
     codeList.add('  ');
     addRegisterDataItems(nsgGenerator, codeList);
     codeList.add('    provider!.useNsgAuthorization = $useAuthorization;');
+    codeList.add('    await db.init(\'${nsgGenerator.applicationName}\');');
+    codeList.add('    await provider!.connect(this);');
     codeList.add('    await provider!.connect(this);');
     //codeList.add('    if (provider!.isAnonymous) {');
     // codeList.add(
