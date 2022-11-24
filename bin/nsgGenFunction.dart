@@ -194,20 +194,22 @@ class NsgGenFunction {
           return;
         }
         //if (!body.ContainsKey("date") || !DateTime.TryParse(body["date"].ToString(), out DateTime date)) date = DateTime.Now;
-        var pStr = '${p.returnType} ${p.name} = ';
+        var pStr = ['${p.returnType} ${p.name} = '];
         if (p.type == 'String') {
-          pStr += 'findParams.Parameters["${p.name}"].ToString()';
-        } else if (['int', 'double', 'DateTime'].contains(p.type)) {
-          pStr +=
-              '${p.type}.Parse(findParams.Parameters["${p.name}"].ToString(), System.Globalization.CultureInfo.InvariantCulture)';
+          pStr[0] += 'findParams.Parameters["${p.name}"].ToString();';
+        } else if (['int', 'double'].contains(p.type)) {
+          pStr[0] +=
+              'findParams.Parameters["${p.name}"] is ${p.type} _${p.name}_ ? _${p.name}_ :';
+          pStr.add(
+              '    ${p.type}.Parse(findParams.Parameters["${p.name}"].ToString(), System.Globalization.CultureInfo.InvariantCulture);');
         } else if (p.type == 'bool') {
-          pStr +=
-              '${p.type}.Parse(findParams.Parameters["${p.name}"].ToString())';
+          pStr[0] +=
+              '${p.type}.Parse(findParams.Parameters["${p.name}"].ToString());';
         } else {
-          pStr +=
-              '(findParams.Parameters["${p.name}"] as Newtonsoft.Json.Linq.JObject)?.ToObject<${p.returnType}>() ?? new ${p.returnType}()';
+          pStr[0] +=
+              '(findParams.Parameters["${p.name}"] as Newtonsoft.Json.Linq.JObject)?.ToObject<${p.returnType}>() ?? new ${p.returnType}();';
         }
-        codeList.add(pStr + ';');
+        codeList.addAll(pStr);
       });
     }
     codeList.add('return await controller.$name($paramNString);');
