@@ -563,8 +563,8 @@ class NsgGenController {
     codeList.add(
         '    provider ??= NsgDataProvider(applicationName: \'${nsgGenerator.applicationName}\', applicationVersion: info.version, firebaseToken: \'\');');
     codeList
-        .add('  provider!.serverUri = NsgServerOptions.serverUri$className;');
-    codeList.add('  ');
+        .add('    provider!.serverUri = NsgServerOptions.serverUri$className;');
+    codeList.add('');
     addRegisterDataItems(nsgGenerator, codeList);
     codeList.add('    provider!.useNsgAuthorization = $useAuthorization;');
     codeList.add('    var db = NsgLocalDb.instance;');
@@ -576,9 +576,10 @@ class NsgGenController {
     // codeList.add('    } else {');
     // codeList.add('      await loadData();');
     // codeList.add('    }');
-    codeList.add('    ');
+    codeList.add('');
     codeList.add('    super.onInit();');
     codeList.add('  }');
+    codeList.add('');
 
     codeList.add('  @override');
     codeList.add('  Future loadProviderData() async {');
@@ -593,6 +594,7 @@ class NsgGenController {
     });
 
     codeList.add('}');
+    codeList.add('');
 
     await File(
             '${nsgGenerator.dartPathGen}/${Misc.getDartUnderscoreName(className)}.g.dart')
@@ -634,15 +636,15 @@ class NsgGenController {
 
   void addRegisterDataItems(NsgGenerator nsgGenerator, List<String> codeList) {
     methods.forEach((_) {
-      codeList.add('      NsgDataClient.client');
+      codeList.add('    NsgDataClient.client');
       codeList.add(
-          '       .registerDataItem(${_.genDataItem.typeName}(), remoteProvider: provider);');
+          '        .registerDataItem(${_.genDataItem.typeName}(), remoteProvider: provider);');
     });
     nsgGenerator.enums.forEach((_) {
-      codeList.add('      NsgDataClient.client');
+      codeList.add('    NsgDataClient.client');
 
       codeList.add(
-          '       .registerDataItem(${_.className}(0, \'\'), remoteProvider: provider);');
+          '        .registerDataItem(${_.className}(0, \'\'), remoteProvider: provider);');
     });
   }
 }

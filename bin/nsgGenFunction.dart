@@ -368,7 +368,7 @@ class NsgGenFunction {
           '  Future<List<$dartType>> ${Misc.getDartName(name)}($paramTNString) async {');
     }
     codeList.add(
-        '  var progress = NsgProgressDialogHelper(showProgress: showProgress, isStoppable: isStoppable);');
+        '    var progress = NsgProgressDialogHelper(showProgress: showProgress, isStoppable: isStoppable);');
     codeList.add('    try {');
     codeList.add('      var params = <String, dynamic>{};');
     if (params.isNotEmpty) {
