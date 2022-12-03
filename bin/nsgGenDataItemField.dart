@@ -1,6 +1,6 @@
 import 'misc.dart';
 import 'nsgGenController.dart';
-import 'nsgGenerator.dart';
+import 'nsgGenDataItem.dart';
 
 class NsgGenDataItemField {
   final String name;
@@ -147,9 +147,15 @@ class NsgGenDataItemField {
     }
   }
 
-  void writeGetter(NsgGenController nsgGenController, List<String> codeList) {
+  void writeGetter(NsgGenController nsgGenController, NsgGenDataItem dataItem,
+      List<String> codeList) {
     if (['id', 'ownerid'].contains(name.toLowerCase())) {
       codeList.add('  @override');
+    }
+    if (dataItem.entityType == NsgGenDataItemEntityType.userSettings) {
+      if (['name', 'settings', 'userid'].contains(name.toLowerCase())) {
+        codeList.add('  @override');
+      }
     }
     if (type == 'String' || type == 'Guid') {
       codeList.add(
@@ -206,9 +212,15 @@ class NsgGenDataItemField {
     codeList.add('');
   }
 
-  void writeSetter(NsgGenController nsgGenController, List<String> codeList) {
+  void writeSetter(NsgGenController nsgGenController, NsgGenDataItem dataItem,
+      List<String> codeList) {
     if (['id', 'ownerid'].contains(name.toLowerCase())) {
       codeList.add('  @override');
+    }
+    if (dataItem.entityType == NsgGenDataItemEntityType.userSettings) {
+      if (['settings', 'userId'].contains(name.toLowerCase())) {
+        codeList.add('  @override');
+      }
     }
     if (type == 'Image') {
       codeList.add(

@@ -9,6 +9,7 @@ import 'nsgGenerator.dart';
 
 class NsgGenDataItem {
   final String typeName;
+  final NsgGenDataItemEntityType entityType;
   final String description;
   final String databaseType;
   final String databaseTypeNamespace;
@@ -19,10 +20,10 @@ class NsgGenDataItem {
   final List<NsgGenFunction> methods;
   bool checkLastModifiedDate = false;
   bool allowCreate = false;
-  bool isUserSettings = false;
 
   NsgGenDataItem(
       {required this.typeName,
+      this.entityType = NsgGenDataItemEntityType.dataItem,
       this.description = '',
       this.databaseType = '',
       this.databaseTypeNamespace = '',
@@ -34,8 +35,9 @@ class NsgGenDataItem {
 
   factory NsgGenDataItem.fromJson(Map<String, dynamic> parsedJson) {
     var methods = (parsedJson['methods'] ?? []) as List;
+    var tn = parsedJson['typeName'] ?? '';
     return NsgGenDataItem(
-        typeName: parsedJson['typeName'] ?? '',
+        typeName: tn,
         description: parsedJson.containsKey('description')
             ? parsedJson['description'] ?? ''
             : parsedJson['databaseType'] ?? '',
@@ -44,6 +46,8 @@ class NsgGenDataItem {
         presentation: parsedJson['presentation'] ?? '',
         maxHttpGetItems: parsedJson['maxHttpGetItems'] ?? 100,
         periodFieldName: parsedJson['periodFieldName'] ?? '',
+        entityType:
+            NsgGenDataItemEntityType.parse(parsedJson['entityType'] ?? '', tn),
         fields: (parsedJson['fields'] as List)
             .map((i) => NsgGenDataItemField.fromJson(i))
             .toList(),
@@ -111,7 +115,7 @@ class NsgGenDataItem {
       if (description.isNotEmpty) {
         Misc.writeDescription(codeList, description, true);
       }
-      if (isUserSettings) {
+      if (entityType == NsgGenDataItemEntityType.userSettings) {
         codeList.add('public partial class $typeName : NsgServerUserSettings');
       } else {
         codeList.add('public partial class $typeName : NsgServerMetadataItem');
@@ -180,7 +184,7 @@ class NsgGenDataItem {
       throw Exception('There is no Primary key in $typeName');
     });
 
-    if (!isUserSettings) {
+    if (entityType != NsgGenDataItemEntityType.userSettings) {
       codeList.add(
           'public override Guid GetId() => NsgService.StringToGuid(${pkField.name});');
       codeList.add(
@@ -242,10 +246,11 @@ class NsgGenDataItem {
     }
     codeList.add('public override void SetDefaultValues()');
     codeList.add('{');
-    if (isUserSettings) codeList.add('base.SetDefaultValues();');
+    if (entityType == NsgGenDataItemEntityType.userSettings)
+      codeList.add('base.SetDefaultValues();');
     fields.forEach((field) {
       if (!field.writeOnServer) return;
-      if (isUserSettings &&
+      if (entityType == NsgGenDataItemEntityType.userSettings &&
           [pkField.name, 'Settings', 'UserId'].contains(field.name)) return;
       if (field.type == 'int') {
         codeList.add('ValueDictionary[Names.${field.name}] = 0;');
@@ -283,7 +288,7 @@ class NsgGenDataItem {
     codeList.add('');
 
     codeList.add('#region Names');
-    if (isUserSettings) {
+    if (entityType == NsgGenDataItemEntityType.userSettings) {
       codeList.add('public override string Names_Id => Names.${pkField.name};');
       codeList.add('');
       var usField = fields.firstWhere((f) => f.name == 'Settings',
@@ -336,7 +341,7 @@ class NsgGenDataItem {
     codeList.add('#region Properties');
     fields.forEach((field) {
       if (!field.writeOnServer) return;
-      if (isUserSettings &&
+      if (entityType == NsgGenDataItemEntityType.userSettings &&
           [pkField.name, 'Settings', 'UserId'].contains(field.name)) return;
       if (field.description.isNotEmpty) {
         Misc.writeDescription(codeList, field.description, true);
@@ -583,7 +588,7 @@ class NsgGenDataItem {
       codeList.add('}');
       codeList.add('');
     }
-    if (isUserSettings) {
+    if (entityType == NsgGenDataItemEntityType.userSettings) {
       codeList.add(
           'public override Guid GetUserIdByToken(INsgTokenExtension user)');
       codeList.add('{');
@@ -656,7 +661,7 @@ class NsgGenDataItem {
       codeList.add('');
       Misc.writeDescription(codeList, description, false);
     }
-    if (this.isUserSettings) {
+    if (entityType == NsgGenDataItemEntityType.userSettings) {
       codeList.add(
           'class ${typeName}Generated extends NsgDataItem with NsgUserSettings {');
     } else {
@@ -756,13 +761,13 @@ class NsgGenDataItem {
       if (_.description.isNotEmpty) {
         Misc.writeDescription(codeList, _.description, false, indent: 2);
       }
-      _.writeGetter(nsgGenController, codeList);
-      _.writeSetter(nsgGenController, codeList);
+      _.writeGetter(nsgGenController, this, codeList);
+      _.writeSetter(nsgGenController, this, codeList);
     });
     if (checkLastModifiedDate) {
       var lm = NsgGenDataItemField(name: 'LastModified', type: 'DateTime');
-      lm.writeGetter(nsgGenController, codeList);
-      lm.writeSetter(nsgGenController, codeList);
+      lm.writeGetter(nsgGenController, this, codeList);
+      lm.writeSetter(nsgGenController, this, codeList);
       codeList.add('');
     }
     if (periodFieldName.isNotEmpty) {
@@ -798,6 +803,24 @@ class NsgGenDataItem {
         '${nsgGenerator.dartPath}/${Misc.getDartUnderscoreName(typeName)}.dart';
     if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
       await File(fn).writeAsString(codeList.join('\r\n'));
+    }
+  }
+}
+
+enum NsgGenDataItemEntityType {
+  dataItem,
+  userSettings;
+
+  static NsgGenDataItemEntityType parse(String v, String typeName) {
+    if (typeName == 'UserSettings')
+      return NsgGenDataItemEntityType.userSettings;
+    switch (v) {
+      case 'dataItem':
+        return NsgGenDataItemEntityType.dataItem;
+      case 'userSettings':
+        return NsgGenDataItemEntityType.userSettings;
+      default:
+        return NsgGenDataItemEntityType.dataItem;
     }
   }
 }
