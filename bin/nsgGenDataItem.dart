@@ -186,7 +186,7 @@ class NsgGenDataItem {
 
     if (entityType != NsgGenDataItemEntityType.userSettings) {
       codeList.add(
-          'public override Guid GetId() => NsgService.StringToGuid(${pkField.name});');
+          'public override Guid GetId() => NsgSoft.Common.NsgService.StringToGuid(${pkField.name});');
       codeList.add(
           'public override void SetId(object value) => ${pkField.name} = value.ToString();');
       codeList.add('');

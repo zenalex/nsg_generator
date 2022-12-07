@@ -398,6 +398,7 @@ class NsgGenController {
       codeList.add('using System.Web.Mvc;');
     }
     if (hasMetadata) {
+      codeList.add('using NsgSoft.Common;');
       codeList.add('using NsgSoft.DataObjects;');
       var usedNSs = <String>[];
       methods.forEach((m) {
