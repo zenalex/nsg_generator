@@ -183,7 +183,7 @@ class NsgGenMethod {
         throw Exception(
             'Wrong authorization type in method $name([FromBody] ${genDataItem.typeName} items)');
       }
-      codeList.add('[HttpDelete]');
+      codeList.add('[HttpPost]');
       // codeList.add(
       //     'public async Task<IEnumerable<${genDataItem.typeName}>> ${name}Post([FromBody] IEnumerable<${genDataItem.typeName}> items)');
       codeList.add(
