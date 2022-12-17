@@ -566,6 +566,8 @@ class NsgGenController {
         .add('    provider!.serverUri = NsgServerOptions.serverUri$className;');
     codeList.add('');
     addRegisterDataItems(nsgGenerator, codeList);
+    codeList
+        .add('    await NsgLocalDb.instance.init(provider!.applicationName);');
     codeList.add('    provider!.useNsgAuthorization = $useAuthorization;');
     codeList.add('    var db = NsgLocalDb.instance;');
     codeList.add('    await db.init(\'${nsgGenerator.applicationName}\');');
