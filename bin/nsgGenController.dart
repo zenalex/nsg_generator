@@ -15,6 +15,7 @@ class NsgGenController {
   final String serverUri;
   final bool useAuthorization;
   final bool uploadEnabled;
+  final bool loginRequired;
   final List<NsgGenMethod> methods;
   final List<NsgGenFunction> functions;
 
@@ -27,6 +28,7 @@ class NsgGenController {
       required this.serverUri,
       this.useAuthorization = false,
       this.uploadEnabled = false,
+      this.loginRequired = true,
       this.methods = const [],
       this.functions = const []});
 
@@ -53,6 +55,9 @@ class NsgGenController {
         serverUri: parsedJson['serverUri'] ?? '',
         useAuthorization: parsedJson['useAuthorization'] == 'true',
         uploadEnabled: parsedJson['uploadEnabled'] == 'true',
+        loginRequired: parsedJson.containsKey('loginRequired')
+            ? parsedJson['loginRequired'] != 'false'
+            : true,
         methods: (parsedJson['method'] as List)
             .map((i) => NsgGenMethod.fromJson(i))
             .toList(),
@@ -564,6 +569,9 @@ class NsgGenController {
         '    provider ??= NsgDataProvider(applicationName: \'${nsgGenerator.applicationName}\', applicationVersion: info.version, firebaseToken: \'\');');
     codeList
         .add('    provider!.serverUri = NsgServerOptions.serverUri$className;');
+    if (!loginRequired) {
+      codeList.add('    provider!.loginRequired = false;');
+    }
     codeList.add('');
     addRegisterDataItems(nsgGenerator, codeList);
     codeList

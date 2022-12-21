@@ -11,6 +11,7 @@ class NsgGenFunction {
   final String type;
   final String referenceName;
   final String referenceType;
+  final String dialogText;
   final List<NsgGenMethodParam> params;
 
   NsgGenFunction(
@@ -22,6 +23,7 @@ class NsgGenFunction {
       required this.type,
       this.referenceName = '',
       this.referenceType = '',
+      this.dialogText = '',
       this.params = const []});
 
   factory NsgGenFunction.fromJson(Map<String, dynamic> parsedJson) {
@@ -38,6 +40,7 @@ class NsgGenFunction {
         type: parsedJson['type'] ?? '',
         referenceName: parsedJson['referenceName'] ?? '',
         referenceType: parsedJson['referenceType'] ?? '',
+        dialogText: parsedJson['dialogText'] ?? '',
         params: parsedJson.containsKey('params')
             ? (parsedJson['params'] as List)
                 .map((i) => NsgGenMethodParam.fromJson(i))
@@ -367,8 +370,9 @@ class NsgGenFunction {
       codeList.add(
           '  Future<List<$dartType>> ${Misc.getDartName(name)}($paramTNString) async {');
     }
+    var dlg = dialogText.isEmpty ? '' : ', textDialog: \'$dialogText\'';
     codeList.add(
-        '    var progress = NsgProgressDialogHelper(showProgress: showProgress, isStoppable: isStoppable);');
+        '    var progress = NsgProgressDialogHelper(showProgress: showProgress, isStoppable: isStoppable$dlg);');
     codeList.add('    try {');
     codeList.add('      var params = <String, dynamic>{};');
     if (params.isNotEmpty) {
