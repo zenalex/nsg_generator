@@ -565,6 +565,8 @@ class NsgGenController {
     codeList.add('  @override');
     codeList.add('  Future onInit() async {');
     codeList.add('    final info = await PackageInfo.fromPlatform();');
+    codeList.add('    NsgMetrica.activate();');
+    codeList.add('    NsgMetrica.reportAppStart();');
     codeList.add(
         '    provider ??= NsgDataProvider(applicationName: \'${nsgGenerator.applicationName}\', applicationVersion: info.version, firebaseToken: \'\');');
     codeList
@@ -637,6 +639,10 @@ class NsgGenController {
       codeList.add(
           '  static const String serverUri${c.className} = \'${c.serverUri}\';');
     });
+    codeList.add('}');
+
+    codeList.add('class NsgMetricaOptions {');
+    codeList.add('  static String yandexMetricaId = ""');
     codeList.add('}');
 
     var file = File('${nsgGenerator.dartPath}/_nsg_server_options.dart');
