@@ -16,6 +16,8 @@ class Misc {
     }
   }
 
+  static RegExp csToStringRE = RegExp(r'{((\w+)([.](\w+)[(](\w+)*[)])*){1,}}');
+
   static RegExp nonUpperCaseRE = RegExp(r'[^A-Z]');
   static String getDartName(String dn) {
     if (dn.isEmpty) return dn;

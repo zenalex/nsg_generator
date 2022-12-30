@@ -134,7 +134,11 @@ class NsgGenDataItem {
 
       codeList.add('');
       if (presentation.isNotEmpty) {
-        codeList.add('public override string ToString() => $presentation;');
+        if (presentation.contains(Misc.csToStringRE))
+          codeList
+              .add('public override string ToString() => \$"$presentation";');
+        else
+          codeList.add('public override string ToString() => $presentation;');
         codeList.add('');
       } else if (fields.any((f) => f.writeOnServer)) {
         var nameField = fields.firstWhere(
