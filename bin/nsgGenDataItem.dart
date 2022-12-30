@@ -681,10 +681,10 @@ class NsgGenDataItem {
     fields.forEach((_) {
       if (!_.writeOnClient) return;
       if (_.userVisibility) {
-        codeList.add("   ${_.fieldNameVar}: '${_.userName}',");
+        codeList.add("    ${_.fieldNameVar}: '${_.userName}',");
       }
     });
-    codeList.add(' };');
+    codeList.add('  };');
     codeList.add('');
     codeList.add('  @override');
     codeList.add('  String get typeName => \'$typeName\';');

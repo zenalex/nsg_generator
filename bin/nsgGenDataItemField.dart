@@ -218,7 +218,7 @@ class NsgGenDataItemField {
       codeList.add('  @override');
     }
     if (dataItem.entityType == NsgGenDataItemEntityType.userSettings) {
-      if (['settings', 'userId'].contains(name.toLowerCase())) {
+      if (['name', 'settings', 'userId'].contains(name.toLowerCase())) {
         codeList.add('  @override');
       }
     }
