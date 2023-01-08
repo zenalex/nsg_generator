@@ -247,7 +247,7 @@ class NsgGenController {
     codeList.add('    where T : NsgServerDataItem, new();');
     codeList.add('');
     codeList.add(
-        'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post<T>(INsgTokenExtension user, IEnumerable<T> items)');
+        'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post<T>(INsgTokenExtension user, NsgFindParams findParams, IEnumerable<T> items)');
     codeList.add('    where T : NsgServerDataItem, new();');
     codeList.add('');
     codeList.add(
@@ -326,10 +326,10 @@ class NsgGenController {
     codeList.add('}');
     codeList.add('');
     codeList.add(
-        'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post<T>(INsgTokenExtension user, IEnumerable<T> items) where T : NsgServerDataItem, new()');
+        'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post<T>(INsgTokenExtension user, NsgFindParams findParams, IEnumerable<T> items) where T : NsgServerDataItem, new()');
     codeList.add('{');
     codeList.add('OnBeforePost(user, items);');
-    codeList.add('return new T().Post(user, items);');
+    codeList.add('return new T().Post(user, findParams, items);');
     codeList.add('}');
     codeList.add('');
     codeList.add(

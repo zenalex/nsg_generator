@@ -551,17 +551,17 @@ class NsgGenDataItem {
     }
     if (nsgMethod.allowPost) {
       codeList.add(
-          'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post(INsgTokenExtension user, IEnumerable<NsgServerDataItem> items)');
+          'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post(INsgTokenExtension user, NsgFindParams findParams, IEnumerable<NsgServerDataItem> items)');
       codeList.add('{');
       if (nsgMethod.genDataItem.databaseType.isNotEmpty) {
         if (nsgMethod.name == 'UserSettings') {
           codeList.add(
-              'return await Post<${nsgMethod.genDataItem.typeName}>(user, items);');
+              'return await Post<${nsgMethod.genDataItem.typeName}>(user, findParams, items);');
         } else {
           codeList.add(
               'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
           codeList.add(
-              'RES[RESULTS] = NsgServerMetadataItem.PostAll<${nsgMethod.genDataItem.typeName}>(user, items);');
+              'RES[RESULTS] = NsgServerMetadataItem.PostAll<${nsgMethod.genDataItem.typeName}>(user, findParams, items);');
           codeList.add('return RES;');
         }
       } else {

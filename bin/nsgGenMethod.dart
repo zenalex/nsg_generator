@@ -161,10 +161,10 @@ class NsgGenMethod {
         codeList
             .add('var user = await authController.GetUserByToken(Request);');
         codeList.add(
-            'return await controller.Post<${genDataItem.typeName}>(user, items);');
+            'return await controller.Post<${genDataItem.typeName}>(user, NsgFindParams.From(Request.GetQueryNameValuePairs()), items);');
       } else {
         codeList.add(
-            'return await controller.Post<${genDataItem.typeName}>(null, items);');
+            'return await controller.Post<${genDataItem.typeName}>(null, NsgFindParams.From(Request.GetQueryNameValuePairs()), items);');
       }
       codeList.add('}');
       codeList.add('');
