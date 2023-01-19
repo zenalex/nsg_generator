@@ -738,8 +738,8 @@ class NsgGenDataItem {
     codeList.add('');
     if (presentation.isNotEmpty) {
       codeList.add('  @override');
-      codeList.add(
-          '  String toString() => ${Misc.getDartName(presentation.replaceAll('\"', '\''))};');
+      codeList
+          .add('  String toString() => ${Misc.getDartToString(presentation)};');
       codeList.add('');
     } else if (fields.isNotEmpty) {
       var nameField = fields.firstWhere((f) => f.name.toLowerCase() == 'name',

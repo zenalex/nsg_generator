@@ -16,9 +16,7 @@ class Misc {
     }
   }
 
-  static RegExp csToStringRE = RegExp(r'{((\w+)([.](\w+)[(](\w+)*[)])*){1,}}');
-
-  static RegExp nonUpperCaseRE = RegExp(r'[^A-Z]');
+  static RegExp nonUpperCaseRE = RegExp(r'[^A-ZА-Я]');
   static String getDartName(String dn) {
     if (dn.isEmpty) return dn;
     var firstLowerCaseIndex = dn.indexOf(nonUpperCaseRE);
@@ -43,6 +41,29 @@ class Misc {
         .replaceAllMapped(exp, (Match m) => ('_' + (m.group(0) ?? '')))
         .toLowerCase();
     return dn;
+  }
+
+  static RegExp csToStringRE = RegExp(r'{((\w+)([.](\w+)(\(.*\))?)*){1,}}');
+  static String getDartToString(String presentation) {
+    if (presentation.contains(csToStringRE)) {
+      var allMatches = csToStringRE.allMatches(presentation);
+      allMatches.forEach((match) {
+        var s = match[0]!; //.toString();
+        if (s.contains('.')) {
+          var sSplit = s.substring(1, s.length - 1).split('.');
+          var sMap = sSplit.map((e) => Misc.getDartName(e));
+          var sReplacement = '{' + sMap.join('.') + '}';
+          presentation = presentation.replaceFirst(
+              s, '\$' + sReplacement.replaceAll('\"', '\''));
+        } else {
+          presentation = presentation.replaceFirst(
+              s, '\$' + Misc.getDartName(s.substring(1, s.length - 1)));
+        }
+        print(s);
+      });
+      print(allMatches.length);
+    }
+    return Misc.getDartName('\'' + presentation + '\'');
   }
 
   static void writeDescription(List<String> codeList, String text, bool xmlWrap,
