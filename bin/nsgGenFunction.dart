@@ -356,8 +356,9 @@ class NsgGenFunction {
         paramTNString += p.returnType + ' ' + p.name + ', ';
       });
     }
+    var dlg = dialogText.isEmpty ? '' : ' = \'$dialogText\'';
     paramTNString +=
-        '{NsgDataRequestParams? filter, bool showProgress = false, bool isStoppable = false}';
+        '{NsgDataRequestParams? filter, bool showProgress = false, bool isStoppable = false, String? textDialog$dlg}';
 
     // if (type == 'List<Reference>') {
     //   codeList.add(
@@ -370,9 +371,8 @@ class NsgGenFunction {
       codeList.add(
           '  Future<List<$dartType>> ${Misc.getDartName(name)}($paramTNString) async {');
     }
-    var dlg = dialogText.isEmpty ? '' : ', textDialog: \'$dialogText\'';
     codeList.add(
-        '    var progress = NsgProgressDialogHelper(showProgress: showProgress, isStoppable: isStoppable$dlg);');
+        '    var progress = NsgProgressDialogHelper(showProgress: showProgress, isStoppable: isStoppable, textDialog: textDialog);');
     codeList.add('    try {');
     codeList.add('      var params = <String, dynamic>{};');
     if (params.isNotEmpty) {
