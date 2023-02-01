@@ -595,7 +595,8 @@ class NsgGenController {
 
     codeList.add('  @override');
     codeList.add('  Future loadProviderData() async {');
-    codeList.add('    currentStatus = RxStatus.success();');
+    codeList.add(
+        '    currentStatus = GetStatus.success(NsgBaseController.emptyData);');
     codeList.add('    sendNotify();');
     codeList.add('  }');
 

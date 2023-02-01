@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'misc.dart';
 import 'nsgGenDataItemField.dart';
-import 'nsgGenFunction.dart';
 import 'nsgGenMethod.dart';
 import 'nsgGenController.dart';
 import 'nsgGenerator.dart';
@@ -17,7 +16,6 @@ class NsgGenDataItem {
   final int maxHttpGetItems;
   final String periodFieldName;
   final List<NsgGenDataItemField> fields;
-  final List<NsgGenFunction> methods;
   bool checkLastModifiedDate = false;
   bool allowCreate = false;
 
@@ -30,8 +28,7 @@ class NsgGenDataItem {
       this.presentation = '',
       this.maxHttpGetItems = 100,
       this.periodFieldName = '',
-      this.fields = const [],
-      this.methods = const []});
+      this.fields = const []});
 
   factory NsgGenDataItem.fromJson(Map<String, dynamic> parsedJson) {
     var methods = (parsedJson['methods'] ?? []) as List;
@@ -50,8 +47,7 @@ class NsgGenDataItem {
             NsgGenDataItemEntityType.parse(parsedJson['entityType'] ?? '', tn),
         fields: (parsedJson['fields'] as List)
             .map((i) => NsgGenDataItemField.fromJson(i))
-            .toList(),
-        methods: methods.map((i) => NsgGenFunction.fromJson(i)).toList());
+            .toList());
   }
 
   void writeCode(NsgGenerator nsgGenerator, NsgGenMethod nsgMethod) async {
@@ -464,36 +460,6 @@ class NsgGenDataItem {
     }
     codeList.add('#endregion Properties');
 
-    methods.forEach((element) {
-      var paramTNString = '';
-      var paramNString = '';
-      if (element.params.isNotEmpty) {
-        element.params.forEach((p) {
-          paramTNString += p.returnType + ' ' + p.name + ', ';
-          paramNString += p.name + ', ';
-        });
-      }
-      if (paramTNString.isNotEmpty) {
-        paramTNString = paramTNString.substring(0, paramTNString.length - 2);
-        paramNString = paramNString.substring(0, paramNString.length - 2);
-      }
-      if (element.description.isNotEmpty) {
-        Misc.writeDescription(codeList, element.description, true);
-      }
-      if (['int', 'double', 'bool', 'DateTime'].contains(element.dartType)) {
-        codeList.add(
-            'public ${element.dartType} ${element.name}($paramTNString) => On${element.name}($paramNString);');
-      } else if (element.dartType == 'Duration') {
-        codeList.add(
-            'public TimeSpan ${element.name}($paramTNString) => On${element.name}($paramNString);');
-      } else {
-        codeList.add(
-            'public string ${element.name}($paramTNString) => On${element.name}($paramNString);');
-      }
-      //if (element.type == 'Image') nsgMethod.addImageMethod(element);
-      codeList.add('');
-    });
-
     codeList.add('}');
     codeList.add('}');
 
@@ -600,32 +566,6 @@ class NsgGenDataItem {
       codeList.add('}');
     }
     // });
-    methods.forEach((element) {
-      var paramTNString = '';
-      if (element.params.isNotEmpty) {
-        element.params.forEach((p) {
-          paramTNString += p.returnType + ' ' + p.name + ', ';
-        });
-      }
-      if (paramTNString.isNotEmpty) {
-        paramTNString = paramTNString.substring(0, paramTNString.length - 2);
-      }
-      if (element.description.isNotEmpty) {
-        Misc.writeDescription(codeList, element.description, true);
-      }
-      if (['int', 'double', 'bool', 'DateTime'].contains(element.dartType)) {
-        codeList.add(
-            'public ${element.dartType} On${element.name}($paramTNString) => default;');
-      } else if (element.dartType == 'Duration') {
-        codeList.add(
-            'public TimeSpan On${element.name}($paramTNString) => default;');
-      } else {
-        codeList.add(
-            'public string On${element.name}($paramTNString) => string.Empty;');
-      }
-      //if (element.type == 'Image') nsgMethod.addImageMethod(element);
-      codeList.add('');
-    });
     codeList.add('}');
     codeList.add('}');
     fn = '${nsgGenerator.cSharpPath}/Models/$typeName.cs';
@@ -798,9 +738,6 @@ class NsgGenDataItem {
         "import '${nsgGenerator.genPathName}/${Misc.getDartUnderscoreName(typeName)}.g.dart';");
     codeList.add('');
     codeList.add('class $typeName extends ${typeName}Generated {');
-    methods.forEach((_) {
-      _.writeMethod(nsgGenController, codeList);
-    });
     codeList.add('}');
 
     var fn =
