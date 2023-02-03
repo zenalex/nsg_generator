@@ -348,7 +348,7 @@ class NsgGenFunction {
   Future generateCodeDart(List<String> codeList, NsgGenerator nsgGenerator,
       NsgGenController controller) async {
     if (description.isNotEmpty) {
-      Misc.writeDescription(codeList, description, false);
+      Misc.writeDescription(codeList, description, false, indent: 2);
     }
     var paramTNString = ''; //NsgDataRequestParams? filter';
     if (params.isNotEmpty) {
