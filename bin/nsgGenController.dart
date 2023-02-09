@@ -550,7 +550,7 @@ class NsgGenController {
     codeList.add("import 'package:nsg_data/nsg_data.dart';");
     codeList.add("// ignore: depend_on_referenced_packages");
     codeList.add("import 'package:package_info_plus/package_info_plus.dart';");
-    codeList.add("import '../_nsg_server_options.dart';");
+    codeList.add("import '../options/server_options.dart';");
     // if (functions.any((f) => ['Image', 'Binary'].contains(f.type))) {
     //   codeList.add("import 'dart:io';");
     // }
@@ -643,10 +643,10 @@ class NsgGenController {
     codeList.add('}');
 
     codeList.add('class NsgMetricaOptions {');
-    codeList.add('  static String yandexMetricaId = ""');
+    codeList.add('  static String yandexMetricaId = "";');
     codeList.add('}');
 
-    var file = File('${nsgGenerator.dartPath}/_nsg_server_options.dart');
+    var file = File('${nsgGenerator.dartPath}/options/server_options.dart');
     if (await file.exists() && !nsgGenerator.forceOverwrite) return;
     await file.writeAsString(codeList.join('\r\n'));
   }

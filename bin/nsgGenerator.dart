@@ -90,6 +90,8 @@ class NsgGenerator {
       await dir.create();
       dir = Directory(dartPathGen);
       await dir.create();
+      dir = Directory(dartPath + '/options/');
+      await dir.create();
       if (enums.isNotEmpty) {
         dir = Directory(dartPath + '/enums/');
         await dir.create();
