@@ -16,6 +16,7 @@ class NsgGenController {
   final bool useAuthorization;
   final bool uploadEnabled;
   final bool loginRequired;
+  final bool writeOnClient;
   final List<NsgGenMethod> methods;
   final List<NsgGenFunction> functions;
 
@@ -29,6 +30,7 @@ class NsgGenController {
       this.useAuthorization = false,
       this.uploadEnabled = false,
       this.loginRequired = true,
+      this.writeOnClient = true,
       this.methods = const [],
       this.functions = const []});
 
@@ -57,6 +59,9 @@ class NsgGenController {
         uploadEnabled: parsedJson['uploadEnabled'] == 'true',
         loginRequired: parsedJson.containsKey('loginRequired')
             ? parsedJson['loginRequired'] != 'false'
+            : true,
+        writeOnClient: parsedJson.containsKey('writeOnClient')
+            ? parsedJson['writeOnClient'] != 'false'
             : true,
         methods: (parsedJson['method'] as List)
             .map((i) => NsgGenMethod.fromJson(i))
@@ -213,7 +218,7 @@ class NsgGenController {
         await generateImplAuthController(nsgGenerator);
       }
     }
-    if (nsgGenerator.doDart) {
+    if (nsgGenerator.doDart && this.writeOnClient) {
       await generateCodeDart(nsgGenerator);
     }
   }
