@@ -622,7 +622,7 @@ class NsgGenController {
         "import '${nsgGenerator.genPathName}/${Misc.getDartUnderscoreName(className)}.g.dart';");
     codeList.add('');
     codeList.add('class $className extends ${className}Generated {');
-    codeList.add('  DataController() : super();');
+    codeList.add('  $className() : super();');
     codeList.add('}');
 
     var fn =

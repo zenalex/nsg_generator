@@ -333,13 +333,13 @@ class NsgGenFunction {
         primType = 'int';
       }
       codeList.add(
-          'public Task<Dictionary<string, IEnumerable<$primType>>> On$name($paramTNString)');
+          'public async Task<Dictionary<string, IEnumerable<$primType>>> On$name($paramTNString)');
       codeList.add('{');
       codeList
           .add('var RES = new Dictionary<string, IEnumerable<$primType>>();');
       codeList.add('');
       codeList.add('var res = new $primType[0];');
-      codeList.add('RES[RESULTS] = res;');
+      codeList.add('RES[NsgServerDataItem.RESULTS] = res;');
       codeList.add('return RES;');
       codeList.add('}');
     }
