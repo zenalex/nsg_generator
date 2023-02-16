@@ -171,6 +171,10 @@ class NsgGenFunction {
           uriParamNString += p.name;
         }
       }
+      if (uriParamTNString.isEmpty) {
+        uriParamTNString = 'HttpRequestMessage requestMessage';
+        uriParamNString = 'requestMessage';
+      }
       paramNString = uriParamNString;
       codeList.add(
           'public async Task<HttpResponseMessage> $name($uriParamTNString)');
@@ -238,6 +242,9 @@ class NsgGenFunction {
           uriParamTNString += '[FromUri] ' + p.returnType + ' ' + p.name;
         }
       }
+      if (uriParamTNString.isEmpty) {
+        uriParamTNString = 'System.Net.Http.HttpRequestMessage requestMessage';
+      }
       codeList.add(
           'Task<System.Net.Http.HttpResponseMessage> $name($uriParamTNString);');
     } else {
@@ -276,6 +283,10 @@ class NsgGenFunction {
           uriParamNString += p.name;
         }
       }
+      if (uriParamTNString.isEmpty) {
+        uriParamTNString = 'System.Net.Http.HttpRequestMessage requestMessage';
+        uriParamNString = 'requestMessage';
+      }
       codeList.add(
           'public async Task<System.Net.Http.HttpResponseMessage> $name($uriParamTNString)');
       codeList.add('    => await On$name($uriParamNString);');
@@ -310,6 +321,9 @@ class NsgGenFunction {
         for (var p in params) {
           uriParamTNString += p.returnType + ' ' + p.name;
         }
+      }
+      if (uriParamTNString.isEmpty) {
+        uriParamTNString = 'HttpRequestMessage requestMessage';
       }
       codeList
           .add('public Task<HttpResponseMessage> On$name($uriParamTNString)');

@@ -60,10 +60,11 @@ void startGenerator(NsgGeneratorArgs args) async {
   if (args.dartPath.isNotEmpty) {
     generator.dartPath = args.dartPath;
   }
+  print('STARTING ${DateTime.now()}');
   print('controllers: ${generator.controllers.length}');
   await generator
       .writeCode(args.serviceConfigPath)
-      .whenComplete(() => print('DONE\n'));
+      .whenComplete(() => print('FINISHED ${DateTime.now()}\n'));
 }
 
 Future<String> readFile(String path) async {

@@ -44,7 +44,7 @@ generation_config.json - Основной файл, содержащий опи�
                 {
                     "name": "BrandItem",
                     "description": "Марка",
-                    "apiPrefix": "BrandItem",
+                    "apiPrefix": "Brand",
                     "authorize": "user",
                     "getterType": "post",
                     "dataTypeFile": "brand_item.json",
@@ -63,7 +63,6 @@ generation_config.json - Основной файл, содержащий опи�
                 {
                     "name": "SizeItem",
                     "description": "Размеры",
-                    "apiPrefix": "SizeItem",
                     "authorize": "user",
                     "getterType": "post",
                     "dataTypeFile": "size_item.json",
@@ -73,6 +72,7 @@ generation_config.json - Основной файл, содержащий опи�
                 {
                     "name": "OrderItem",
                     "description": "Заказ",
+                    "apiPrefix": "Order",
                     "authorize": "user",
                     "getterType": "post",
                     "dataTypeFile": "order_item.json",
@@ -82,9 +82,7 @@ generation_config.json - Основной файл, содержащий опи�
                 {
                     "name": "OrderTableItem",
                     "description": "Заказ.Таблица",
-                    "apiPrefix": "OrderTableItem",
-                    "authorize": "user",
-                    "getterType": "post",
+                    "allowGetter": "false",
                     "dataTypeFile": "order_table_item.json"
                 },
                 {
