@@ -5,6 +5,8 @@ import 'nsgGenerator.dart';
 class NsgGenFunction {
   final String name;
   final String apiType;
+  final bool httpGet;
+  final bool httpPost;
   final String description;
   final String apiPrefix;
   final String authorize;
@@ -17,6 +19,8 @@ class NsgGenFunction {
   NsgGenFunction(
       {required this.name,
       required this.apiType,
+      required this.httpGet,
+      required this.httpPost,
       this.description = '',
       this.apiPrefix = '',
       required this.authorize,
@@ -27,9 +31,32 @@ class NsgGenFunction {
       this.params = const []});
 
   factory NsgGenFunction.fromJson(Map<String, dynamic> parsedJson) {
+    var httpGet =
+        parsedJson.containsKey('httpGet') && parsedJson['httpGet'] == 'true';
+    var httpPost =
+        parsedJson.containsKey('httpPost') && parsedJson['httpPost'] == 'true';
+    var apiType = parsedJson['apiType'];
+    if (apiType != null) {
+      apiType = apiType.toString().toLowerCase();
+      httpGet |= apiType.toString().contains('get');
+      httpPost |= apiType.toString().contains('post');
+    }
+    if (!httpGet && !httpPost) {
+      httpPost = true;
+      apiType = 'post';
+    }
+    if (apiType == null || apiType == '') {
+      if (httpGet && httpPost)
+        apiType = 'get, post';
+      else if (httpGet)
+        apiType = 'get';
+      else if (httpPost) apiType = 'post';
+    }
     return NsgGenFunction(
         name: parsedJson['name'] ?? '',
-        apiType: (parsedJson['apiType'] ?? 'post').toLowerCase(),
+        apiType: apiType,
+        httpGet: httpGet,
+        httpPost: httpPost,
         description: parsedJson['description'] ?? '',
         apiPrefix: parsedJson.containsKey('apiPrefix')
             ? parsedJson['apiPrefix']
@@ -156,9 +183,8 @@ class NsgGenFunction {
       throw Exception('Wrong authorization type in method $name()');
     }
     //POST or GET
-    var httpApiType = 'HttpPost';
-    if (apiType == 'get') httpApiType = 'HttpGet';
-    codeList.add('[$httpApiType]');
+    if (httpGet) codeList.add('[HttpGet]');
+    if (httpPost) codeList.add('[HttpPost]');
     if (['Reference', 'List<Reference>'].contains(type)) {
       codeList.add(
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name([FromBody] NsgFindParams findParams)');
@@ -173,7 +199,7 @@ class NsgGenFunction {
       }
       if (uriParamTNString.isEmpty) {
         uriParamTNString = 'HttpRequestMessage requestMessage';
-        uriParamNString = 'requestMessage';
+        uriParamNString = 'user, requestMessage';
       }
       paramNString = uriParamNString;
       codeList.add(
@@ -243,7 +269,8 @@ class NsgGenFunction {
         }
       }
       if (uriParamTNString.isEmpty) {
-        uriParamTNString = 'System.Net.Http.HttpRequestMessage requestMessage';
+        uriParamTNString =
+            'INsgTokenExtension user, System.Net.Http.HttpRequestMessage requestMessage';
       }
       codeList.add(
           'Task<System.Net.Http.HttpResponseMessage> $name($uriParamTNString);');
@@ -284,8 +311,9 @@ class NsgGenFunction {
         }
       }
       if (uriParamTNString.isEmpty) {
-        uriParamTNString = 'System.Net.Http.HttpRequestMessage requestMessage';
-        uriParamNString = 'requestMessage';
+        uriParamTNString =
+            'INsgTokenExtension user, System.Net.Http.HttpRequestMessage requestMessage';
+        uriParamNString = 'user, requestMessage';
       }
       codeList.add(
           'public async Task<System.Net.Http.HttpResponseMessage> $name($uriParamTNString)');
@@ -323,7 +351,8 @@ class NsgGenFunction {
         }
       }
       if (uriParamTNString.isEmpty) {
-        uriParamTNString = 'HttpRequestMessage requestMessage';
+        uriParamTNString =
+            'INsgTokenExtension user, HttpRequestMessage requestMessage';
       }
       codeList
           .add('public Task<HttpResponseMessage> On$name($uriParamTNString)');
