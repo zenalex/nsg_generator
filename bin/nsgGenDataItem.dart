@@ -15,6 +15,7 @@ class NsgGenDataItem {
   final String presentation;
   final int maxHttpGetItems;
   final String periodFieldName;
+  final bool useStaticDatabaseNames;
   final List<NsgGenDataItemField> fields;
   bool checkLastModifiedDate = false;
   bool allowCreate = false;
@@ -28,6 +29,7 @@ class NsgGenDataItem {
       this.presentation = '',
       this.maxHttpGetItems = 100,
       this.periodFieldName = '',
+      this.useStaticDatabaseNames = false,
       this.fields = const []});
 
   factory NsgGenDataItem.fromJson(Map<String, dynamic> parsedJson) {
@@ -43,6 +45,7 @@ class NsgGenDataItem {
         presentation: parsedJson['presentation'] ?? '',
         maxHttpGetItems: parsedJson['maxHttpGetItems'] ?? 100,
         periodFieldName: parsedJson['periodFieldName'] ?? '',
+        useStaticDatabaseNames: parsedJson['useStaticDatabaseNames'] == 'true',
         entityType:
             NsgGenDataItemEntityType.parse(parsedJson['entityType'] ?? '', tn),
         fields: (parsedJson['fields'] as List)
@@ -198,7 +201,14 @@ class NsgGenDataItem {
     codeList.add('{');
     fields.forEach((field) {
       if (field.writeOnServer && field.dbName.isNotEmpty) {
-        codeList.add('[Names.${field.name}] = "${field.dbName}",');
+        if (databaseType.isEmpty ||
+            field.dbName.contains('.') ||
+            !useStaticDatabaseNames) {
+          codeList.add('[Names.${field.name}] = "${field.dbName}",');
+        } else {
+          codeList.add(
+              '[Names.${field.name}] = ${databaseType}.Names.${field.dbName},');
+        }
       }
     });
     codeList.add('};');
