@@ -199,7 +199,9 @@ class NsgGenFunction {
       }
       if (uriParamTNString.isEmpty) {
         uriParamTNString = 'HttpRequestMessage requestMessage';
-        uriParamNString = 'user, requestMessage';
+        uriParamNString = controller.useAuthorization && authorize != 'none'
+            ? 'user, requestMessage'
+            : 'null, requestMessage';
       }
       paramNString = uriParamNString;
       codeList.add(
