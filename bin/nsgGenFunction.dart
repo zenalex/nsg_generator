@@ -215,7 +215,7 @@ class NsgGenFunction {
           'public async Task<Dictionary<string, IEnumerable<$primType>>> $name([FromBody] NsgFindParams findParams)');
     }
     codeList.add('{');
-    if (controller.useAuthorization) {
+    if (controller.useAuthorization && authorize != 'none') {
       codeList.add('var user = await authController.GetUserByToken(Request);');
     }
     if (params.isNotEmpty && !(['Image', 'Binary'].contains(type))) {
