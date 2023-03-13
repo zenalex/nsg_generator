@@ -164,8 +164,9 @@ class NsgGenFunction {
 
   Future generateControllerMethod(List<String> codeList,
       NsgGenerator nsgGenerator, NsgGenController controller) async {
-    var paramNString =
-        controller.useAuthorization ? 'user, findParams' : 'null, findParams';
+    var paramNString = controller.useAuthorization && authorize != 'none'
+        ? 'user, findParams'
+        : 'null, findParams';
     if (params.isNotEmpty) {
       params.forEach((p) {
         paramNString += ', ' + p.name;
