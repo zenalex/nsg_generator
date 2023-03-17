@@ -282,7 +282,7 @@ class NsgGenDataItem {
       } else if (field.type == 'UntypedReference') {
         codeList.add(
             'ValueDictionary[Names.${field.name}] = "00000000-0000-0000-0000-000000000000.NO";');
-      } else if (field.type == 'List<Reference>') {
+      } else if (field.type.startsWith('List')) {
         codeList.add(
             'ValueDictionary[Names.${field.name}] = new List<${field.referenceType}>();');
       } else if (field.type == 'Enum') {
@@ -380,21 +380,23 @@ class NsgGenDataItem {
         codeList.add('get => (DateTime)this[Names.${field.name}];');
         codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
-      } else if (field.type == 'List<Reference>') {
-        codeList.add('public List<${field.referenceType}> ${field.name}');
-        codeList.add('{');
-        codeList.add(
-            'get => this[Names.${field.name}] as List<${field.referenceType}>;');
-        codeList.add('set => this[Names.${field.name}] = value;');
-        codeList.add('}');
-        codeList.add('public bool ShouldSerialize${field.name}()');
-        codeList.add('{');
-        codeList.add('return ${field.name} != null && ${field.name}.Any();');
-        codeList.add('}');
-      } else if (field.type == 'List<Enum>') {
-        codeList.add(
-            'public IEnumerable<${field.referenceType}> ${field.name} { get; set; }');
-        codeList.add('    = ${field.referenceType}.List();');
+      } else if (field.type.startsWith('List')) {
+        if (field.isReference) {
+          codeList.add('public List<${field.referenceType}> ${field.name}');
+          codeList.add('{');
+          codeList.add(
+              'get => this[Names.${field.name}] as List<${field.referenceType}>;');
+          codeList.add('set => this[Names.${field.name}] = value;');
+          codeList.add('}');
+          codeList.add('public bool ShouldSerialize${field.name}()');
+          codeList.add('{');
+          codeList.add('return ${field.name} != null && ${field.name}.Any();');
+          codeList.add('}');
+        } else {
+          codeList.add(
+              'public IEnumerable<${field.referenceType}> ${field.name} { get; set; }');
+          codeList.add('    = ${field.referenceType}.List();');
+        }
       } else if (field.type == 'Enum') {
         codeList.add('/// <remarks>');
         codeList.add('/// <see cref="${field.referenceType}"/> enum type');

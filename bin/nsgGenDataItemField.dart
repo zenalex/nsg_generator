@@ -13,6 +13,7 @@ class NsgGenDataItemField {
   final bool isPrimary;
   final String referenceName;
   final String referenceType;
+  final bool isReference;
   final bool userVisibility;
   final String userName;
   final bool writeOnClient;
@@ -31,6 +32,7 @@ class NsgGenDataItemField {
       this.isPrimary = false,
       this.referenceName = '',
       this.referenceType = '',
+      this.isReference = false,
       this.userVisibility = false,
       this.userName = '',
       this.writeOnClient = true,
@@ -51,7 +53,11 @@ class NsgGenDataItemField {
 
     var name = parsedJson['name'].toString();
     var referenceName = (parsedJson['referenceName'] ?? '').toString();
+    var referenceType = parsedJson.containsKey('defaultReferenceType')
+        ? parsedJson['defaultReferenceType'] ?? ''
+        : parsedJson['referenceType'] ?? '';
     var type = (parsedJson['type'] ?? '').toString();
+    bool isReference = Misc.typesNeedingReferenceType.contains(type);
     if (type == 'Date') type = 'DateTime';
     if (['Reference', 'UntypedReference'].contains(type)) {
       if (referenceName.isEmpty) {
@@ -62,6 +68,12 @@ class NsgGenDataItemField {
           name += 'Id';
         }
       }
+    } else if (referenceType.isEmpty &&
+        type != 'List<Reference>' &&
+        (type.startsWith('List<') && type.endsWith('>'))) {
+      referenceType =
+          type.substring(type.indexOf('<') + 1, type.lastIndexOf('>'));
+      isReference = !Misc.primitiveTypes.contains(referenceType);
     }
     return NsgGenDataItemField(
         name: name,
@@ -80,9 +92,8 @@ class NsgGenDataItemField {
                 : name,
         isPrimary: parsedJson['isPrimary'] == 'true',
         referenceName: referenceName,
-        referenceType: parsedJson.containsKey('defaultReferenceType')
-            ? parsedJson['defaultReferenceType'] ?? ''
-            : parsedJson['referenceType'] ?? '',
+        referenceType: referenceType,
+        isReference: isReference,
         userVisibility: parsedJson['userVisibility'] == 'true',
         userName: userName,
         writeOnClient: parsedJson.containsKey('writeOnClient')
@@ -135,10 +146,12 @@ class NsgGenDataItemField {
       return 'NsgDataEnumReferenceField<$referenceType>';
     } else if (type == 'Reference') {
       return 'NsgDataReferenceField<$referenceType>';
-    } else if (type == 'List<Reference>') {
-      return 'NsgDataReferenceListField<$referenceType>';
-    } else if (type == 'List<Enum>') {
-      return 'NsgDataListLield<$referenceType>';
+    } else if (type.startsWith('List')) {
+      if (isReference) {
+        return 'NsgDataReferenceListField<$referenceType>';
+      } else {
+        return 'NsgDataListLield<$referenceType>';
+      }
     } else if (type == 'UntypedReference') {
       return 'NsgDataUntypedReferenceField';
     } else {
@@ -176,12 +189,14 @@ class NsgGenDataItemField {
       codeList.add('  List<int> get $dartName {');
       codeList.add('    return getFieldValue($fieldNameVar) as List<int>;');
       codeList.add('  }');
-    } else if (type == 'List<Reference>') {
-      codeList.add(
-          '  NsgDataTable<$referenceType> get $dartName => NsgDataTable<$referenceType>(owner: this, fieldName: $fieldNameVar);');
-    } else if (type == 'List<Enum>') {
-      codeList.add(
-          '  List<$referenceType> get $dartName => getFieldValue($fieldNameVar) as List<$referenceType>;');
+    } else if (type.startsWith('List')) {
+      if (isReference) {
+        codeList.add(
+            '  NsgDataTable<$referenceType> get $dartName => NsgDataTable<$referenceType>(owner: this, fieldName: $fieldNameVar);');
+      } else {
+        codeList.add(
+            '  List<$referenceType> get $dartName => getFieldValue($fieldNameVar) as List<$referenceType>;');
+      }
     } else if (type == 'Enum') {
       codeList.add(
           '  $referenceType get $dartName => NsgEnum.fromValue($referenceType, getFieldValue($fieldNameVar)) as $referenceType;');
@@ -240,16 +255,18 @@ class NsgGenDataItemField {
       codeList.add(
           '  set ${Misc.getDartName(referenceName)}(NsgDataItem value) =>');
       codeList.add('    setFieldValue($fieldNameVar, value);');
-    } else if (type == 'List<Reference>') {
-      //Отменил запись setter из-за смены возвращаемого типа на NsgDataTable
-      // codeList.add(
-      //     '  set $dartName(List<$referenceType> value) => setFieldValue($fieldNameVar, value);');
+    } else if (type.startsWith('List')) {
+      if (isReference) {
+        //Отменил запись setter из-за смены возвращаемого типа на NsgDataTable
+        // codeList.add(
+        //     '  set $dartName(List<$referenceType> value) => setFieldValue($fieldNameVar, value);');
+      } else {
+        codeList.add(
+            '  set $dartName(List<$referenceType> value) => setFieldValue($fieldNameVar, value);');
+      }
     } else if (type == 'Enum') {
       codeList.add(
           '  set $dartName($referenceType value) => setFieldValue($fieldNameVar, value);');
-    } else if (type == 'List<Enum>') {
-      codeList.add(
-          '  set $dartName(List<$referenceType> value) => setFieldValue($fieldNameVar, value);');
     } else {
       codeList.add(
           '  set $dartName($dartType value) => setFieldValue($fieldNameVar, value);');

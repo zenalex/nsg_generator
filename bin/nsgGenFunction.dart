@@ -13,6 +13,7 @@ class NsgGenFunction {
   final String type;
   final String referenceName;
   final String referenceType;
+  final bool isReference;
   final String dialogText;
   final List<NsgGenMethodParam> params;
 
@@ -27,6 +28,7 @@ class NsgGenFunction {
       required this.type,
       this.referenceName = '',
       this.referenceType = '',
+      this.isReference = false,
       this.dialogText = '',
       this.params = const []});
 
@@ -52,6 +54,16 @@ class NsgGenFunction {
         apiType = 'get';
       else if (httpPost) apiType = 'post';
     }
+    var type = (parsedJson['type'] ?? '').toString();
+    bool isReference = Misc.typesNeedingReferenceType.contains(type);
+    var referenceType = (parsedJson['referenceType'] ?? '').toString();
+    if (referenceType.isEmpty &&
+        type != 'List<Reference>' &&
+        (type.startsWith('List<') && type.endsWith('>'))) {
+      referenceType =
+          type.substring(type.indexOf('<') + 1, type.lastIndexOf('>'));
+      isReference = !Misc.primitiveTypes.contains(referenceType);
+    }
     return NsgGenFunction(
         name: parsedJson['name'] ?? '',
         apiType: apiType,
@@ -66,7 +78,8 @@ class NsgGenFunction {
         authorize: parsedJson['authorize'] ?? 'none',
         type: parsedJson['type'] ?? '',
         referenceName: parsedJson['referenceName'] ?? '',
-        referenceType: parsedJson['referenceType'] ?? '',
+        referenceType: referenceType,
+        isReference: isReference,
         dialogText: parsedJson['dialogText'] ?? '',
         params: parsedJson.containsKey('params')
             ? (parsedJson['params'] as List)
@@ -186,7 +199,7 @@ class NsgGenFunction {
     //POST or GET
     if (httpGet) codeList.add('[HttpGet]');
     if (httpPost) codeList.add('[HttpPost]');
-    if (['Reference', 'List<Reference>'].contains(type)) {
+    if (type == 'Reference' || type.startsWith('List') && isReference) {
       codeList.add(
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name([FromBody] NsgFindParams findParams)');
     } else if (['Image', 'Binary'].contains(type)) {
@@ -241,6 +254,9 @@ class NsgGenFunction {
         } else if (p.type == 'bool') {
           pStr[0] +=
               '${p.type}.Parse(findParams.Parameters["${p.name}"].ToString());';
+        } else if (p.type.startsWith('List')) {
+          pStr[0] +=
+              '(findParams.Parameters["${p.name}"] as Newtonsoft.Json.Linq.JArray)?.ToObject<${p.returnType}>() ?? new ${p.returnType}();';
         } else {
           pStr[0] +=
               '(findParams.Parameters["${p.name}"] as Newtonsoft.Json.Linq.JObject)?.ToObject<${p.returnType}>() ?? new ${p.returnType}();';
@@ -430,9 +446,9 @@ class NsgGenFunction {
               '      params[\'${p.name}\'] = ${p.name}.toIso8601String();');
         } else if (p.type == 'Reference') {
           codeList.add('      params[\'${p.name}\'] = ${p.name}.toJson();');
-        } else if (p.type.startsWith('List<')) {
+        } else if (p.type.startsWith('List')) {
           codeList.add(
-              '      params[\'${p.name}\'] = ${p.name}.map((obj) => obj.toJson());');
+              '      params[\'${p.name}\'] = ${p.name}.map((obj) => obj.toJson()).toList();');
         } else if (p.type == 'Enum') {
           codeList.add('      params[\'${p.name}\'] = ${p.name}.value;');
         } else {
@@ -484,24 +500,38 @@ class NsgGenMethodParam {
   final String name;
   final String type;
   final String referenceType;
+  final bool isReference;
 
   NsgGenMethodParam(
-      {required this.name, required this.type, this.referenceType = ''});
+      {required this.name,
+      required this.type,
+      this.referenceType = '',
+      this.isReference = false});
 
   factory NsgGenMethodParam.fromJson(Map<String, dynamic> parsedJson) {
     var type = (parsedJson['type'] ?? '').toString();
+    bool isReference = Misc.typesNeedingReferenceType.contains(type);
+    var referenceType = (parsedJson['referenceType'] ?? '').toString();
     if (type == 'Date') type = 'DateTime';
+    if (referenceType.isEmpty &&
+        type != 'List<Reference>' &&
+        (type.startsWith('List<') && type.endsWith('>'))) {
+      referenceType =
+          type.substring(type.indexOf('<') + 1, type.lastIndexOf('>'));
+      isReference = !Misc.primitiveTypes.contains(referenceType);
+    }
     return NsgGenMethodParam(
         name: parsedJson['name'],
         type: type,
-        referenceType: parsedJson['referenceType'] ?? '');
+        referenceType: referenceType,
+        isReference: isReference);
   }
 
   String get returnType {
     if (type == 'Reference') {
       return referenceType;
     }
-    if (type == 'List<Reference>') {
+    if (type.startsWith('List')) {
       return 'List<$referenceType>';
     }
     return type;

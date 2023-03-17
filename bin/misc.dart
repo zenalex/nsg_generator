@@ -88,4 +88,20 @@ class Misc {
         exp, (Match m) => (' ' + (m.group(0) ?? '').toLowerCase()));
     return s;
   }
+
+  static List<String> typesNeedingReferenceType = [
+    'Reference',
+    'List<Reference>',
+    'Enum',
+    'List<Enum>'
+  ];
+
+  static List<String> primitiveTypes = [
+    'Enum',
+    'int',
+    'double',
+    'String',
+    'bool',
+    'DateTime'
+  ];
 }
