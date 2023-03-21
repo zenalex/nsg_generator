@@ -447,8 +447,12 @@ class NsgGenFunction {
         } else if (p.type == 'Reference') {
           codeList.add('      params[\'${p.name}\'] = ${p.name}.toJson();');
         } else if (p.type.startsWith('List')) {
-          codeList.add(
-              '      params[\'${p.name}\'] = ${p.name}.map((obj) => obj.toJson()).toList();');
+          if (p.isReference) {
+            codeList.add(
+                '      params[\'${p.name}\'] = ${p.name}.map((obj) => obj.toJson()).toList();');
+          } else {
+            codeList.add('      params[\'${p.name}\'] = ${p.name};');
+          }
         } else if (p.type == 'Enum') {
           codeList.add('      params[\'${p.name}\'] = ${p.name}.value;');
         } else {
