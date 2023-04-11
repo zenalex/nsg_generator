@@ -89,6 +89,9 @@ class Misc {
     return s;
   }
 
+  static String cutTableRowTypeNameEnding(String typeName) =>
+      typeName.replaceAll(RegExp(r"[.]Строка"), '');
+
   static List<String> typesNeedingReferenceType = [
     'Reference',
     'List<Reference>',

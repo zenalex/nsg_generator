@@ -19,6 +19,8 @@ class NsgGenDataItem {
   final List<NsgGenDataItemField> fields;
   bool checkLastModifiedDate = false;
   bool allowCreate = false;
+  bool isTableRow = false;
+  String databaseTypeTable = '';
 
   NsgGenDataItem(
       {required this.typeName,
@@ -30,7 +32,13 @@ class NsgGenDataItem {
       this.maxHttpGetItems = 100,
       this.periodFieldName = '',
       this.useStaticDatabaseNames = false,
-      this.fields = const []});
+      this.isTableRow = false,
+      this.fields = const []}) {
+    this.isTableRow |= this.databaseType.endsWith('.Строка');
+    this.databaseTypeTable = this.databaseType;
+    if (this.isTableRow)
+      this.databaseTypeTable = Misc.cutTableRowTypeNameEnding(databaseType);
+  }
 
   factory NsgGenDataItem.fromJson(Map<String, dynamic> parsedJson) {
     var methods = (parsedJson['methods'] ?? []) as List;
@@ -46,6 +54,7 @@ class NsgGenDataItem {
         maxHttpGetItems: parsedJson['maxHttpGetItems'] ?? 100,
         periodFieldName: parsedJson['periodFieldName'] ?? '',
         useStaticDatabaseNames: parsedJson['useStaticDatabaseNames'] == 'true',
+        isTableRow: parsedJson['isTableRow'] == 'true',
         entityType:
             NsgGenDataItemEntityType.parse(parsedJson['entityType'] ?? '', tn),
         fields: (parsedJson['fields'] as List)
@@ -90,7 +99,7 @@ class NsgGenDataItem {
         var alias = j['alias'].toString();
         var databaseType = j['databaseType'].toString();
         if (!csTypes.containsKey(alias)) {
-          csTypes[alias] = databaseType;
+          csTypes[alias] = Misc.cutTableRowTypeNameEnding(databaseType);
         }
       }
     }
@@ -149,7 +158,12 @@ class NsgGenDataItem {
           codeList.add('');
         }
       }
-      codeList.add('private $databaseType nsgObject = $databaseType.Новый();');
+      if (isTableRow)
+        codeList.add(
+            'private $databaseType nsgObject = $databaseTypeTable.Новый().NewRow();');
+      else
+        codeList
+            .add('private $databaseType nsgObject = $databaseType.Новый();');
       codeList.add('');
       codeList.add('public override NsgMultipleObject NSGObject');
       codeList.add('{');
@@ -159,7 +173,10 @@ class NsgGenDataItem {
       codeList.add('nsgObject = value as $databaseType;');
       codeList.add('if (nsgObject == null)');
       codeList.add('{');
-      codeList.add('nsgObject = $databaseType.Новый();');
+      if (isTableRow)
+        codeList.add('nsgObject = $databaseTypeTable.Новый().NewRow();');
+      else
+        codeList.add('nsgObject = $databaseType.Новый();');
       codeList.add('nsgObject.CopyFieldsFromObject(value);');
       codeList.add('}');
       codeList.add('if (value == null) return;');
@@ -514,8 +531,12 @@ class NsgGenDataItem {
           'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Create(INsgTokenExtension user, NsgFindParams findParams)');
       codeList.add('{');
       if (nsgMethod.genDataItem.databaseType.isNotEmpty) {
-        codeList
-            .add('var obj = ${nsgMethod.genDataItem.databaseType}.Новый();');
+        if (isTableRow)
+          codeList.add(
+              'var obj = ${nsgMethod.genDataItem.databaseTypeTable}.Новый().NewRow();');
+        else
+          codeList
+              .add('var obj = ${nsgMethod.genDataItem.databaseType}.Новый();');
         codeList.add('obj.New();');
         codeList.add(
             'var res = new ${nsgMethod.genDataItem.typeName}(GetSerializeFields(findParams?.ReadNestedField), obj);');
