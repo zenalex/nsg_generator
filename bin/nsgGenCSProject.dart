@@ -61,32 +61,32 @@ class NsgGenCSProject {
     codeList.add('  <ItemGroup>');
     if (!nsgGenerator.isDotNetCore) {
       codeList.add(
-          '    <PackageReference Include="Microsoft.Owin.Diagnostics" Version="4.2.0" />');
+          '    <PackageReference Include="Microsoft.Owin.Diagnostics" Version="4.2.2" />');
       codeList.add(
-          '    <PackageReference Include="Microsoft.Owin.Host.SystemWeb" Version="4.2.0" />');
+          '    <PackageReference Include="Microsoft.Owin.Host.SystemWeb" Version="4.2.2" />');
       codeList.add(
-          '    <PackageReference Include="Microsoft.AspNet.Cors" Version="5.2.7" />');
+          '    <PackageReference Include="Microsoft.AspNet.Cors" Version="5.2.9" />');
       codeList.add(
-          '    <PackageReference Include="Microsoft.AspNet.WebApi.Cors" Version="5.2.7" />');
+          '    <PackageReference Include="Microsoft.AspNet.WebApi.Cors" Version="5.2.9" />');
       codeList.add(
-          '    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.7" />');
+          '    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.9" />');
       codeList.add(
-          '    <PackageReference Include="Microsoft.Owin.Cors" Version="4.2.0" />');
+          '    <PackageReference Include="Microsoft.Owin.Cors" Version="4.2.2" />');
       codeList.add(
-          '    <PackageReference Include="Microsoft.Owin.Security.Jwt" Version="4.2.0" />');
+          '    <PackageReference Include="Microsoft.Owin.Security.Jwt" Version="4.2.2" />');
       codeList.add(
-          '    <PackageReference Include="Microsoft.Owin.Security.OAuth" Version="4.2.0" />');
+          '    <PackageReference Include="Microsoft.Owin.Security.OAuth" Version="4.2.2" />');
     }
     codeList.add(
-        '    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />');
+        '    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />');
     codeList.add(
-        '    <PackageReference Include="Microsoft.AspNet.WebApi.OwinSelfHost" Version="5.2.7" />');
+        '    <PackageReference Include="Microsoft.AspNet.WebApi.OwinSelfHost" Version="5.2.9" />');
     codeList.add(
         '    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="' +
             (nsgGenerator.isDotNetCore ? '5.0.7' : '3.1.21') +
             '" />');
     codeList.add(
-        '    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.15.0" />');
+        '    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.29.0" />');
     codeList.add('  </ItemGroup>');
     codeList.add('');
     codeList.add('');
