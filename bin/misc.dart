@@ -97,8 +97,10 @@ class Misc {
 
   static List<String> typesNeedingReferenceType = ['Reference', 'List', 'Enum'];
 
-  static bool isPrimitiveType(String typeName) =>
-      primitiveTypes.any((el) => typeName.contains(el));
+  static bool isPrimitiveType(String typeName) {
+    var split = typeName.split(RegExp(r'\W'));
+    return primitiveTypes.any((el) => split.contains(el));
+  }
 
   static List<String> primitiveTypes = [
     'UntypedReference',
