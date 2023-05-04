@@ -79,7 +79,7 @@ class NsgGenDataItem {
       }
     }
     var csTypes = <String, String>{};
-    // var typedFields = fields.where((field) => field.type == 'Reference');
+    // var typedFields = fields.where((field) => field.isReference);
     // for (var i in typedFields) {
     //   if (!csTypes.containsKey(i.referenceType)) {
     //     csTypes[i.referenceType] = i.dbType;
@@ -246,7 +246,8 @@ class NsgGenDataItem {
 
     var refs = fields.where((field) =>
         field.writeOnServer &&
-        ['Reference' /*, 'UntypedReference'*/].contains(field.type));
+        field.isReference &&
+        !field.type.startsWith('List'));
     if (refs.isNotEmpty) {
       codeList.add(
           'public override Dictionary<string, string> GetReferenceNames() => ReferenceNames;');
@@ -292,17 +293,17 @@ class NsgGenDataItem {
         }
       } else if (field.type == 'Guid') {
         codeList.add('ValueDictionary[Names.${field.name}] = Guid.Empty;');
-      } else if (field.type == 'Reference') {
-        codeList.add(
-            'ValueDictionary[Names.${field.name}] = "00000000-0000-0000-0000-000000000000";');
-        codeList.add('ValueDictionary[Names.${field.referenceName}] = null;');
       } else if (field.type == 'UntypedReference') {
         codeList.add(
             'ValueDictionary[Names.${field.name}] = "00000000-0000-0000-0000-000000000000.NO";');
       } else if (field.type.startsWith('List')) {
         codeList.add(
             'ValueDictionary[Names.${field.name}] = new List<${field.referenceType}>();');
-      } else if (field.type == 'Enum') {
+      } else if (field.isReference) {
+        codeList.add(
+            'ValueDictionary[Names.${field.name}] = "00000000-0000-0000-0000-000000000000";');
+        codeList.add('ValueDictionary[Names.${field.referenceName}] = null;');
+      } else if (field.type.startsWith('Enum')) {
         codeList.add('ValueDictionary[Names.${field.name}] = 0;');
       } else if (['Image', 'Binary'].contains(field.type)) {
         codeList.add('ValueDictionary[Names.${field.name}] = string.Empty;');
@@ -414,16 +415,7 @@ class NsgGenDataItem {
               'public IEnumerable<${field.referenceType}> ${field.name} { get; set; }');
           codeList.add('    = ${field.referenceType}.List();');
         }
-      } else if (field.type == 'Enum') {
-        codeList.add('/// <remarks>');
-        codeList.add('/// <see cref="${field.referenceType}"/> enum type');
-        codeList.add('/// </remarks>');
-        codeList.add('public int ${field.name}');
-        codeList.add('{');
-        codeList.add('get => (int)this[Names.${field.name}];');
-        codeList.add('set => this[Names.${field.name}] = value;');
-        codeList.add('}');
-      } else if (field.type == 'Reference') {
+      } else if (field.isReference) {
         codeList.add('/// <remarks> ');
         codeList.add('/// <see cref="${field.referenceType}"/> reference');
         codeList.add('/// </remarks> ');
@@ -445,6 +437,15 @@ class NsgGenDataItem {
         codeList.add('return NestReferences() && (SerializeFields == null ||');
         codeList.add(
             '    SerializeFields.Find(s => s.StartsWith(Names.${field.name})) != default);');
+        codeList.add('}');
+      } else if (field.type.startsWith('Enum')) {
+        codeList.add('/// <remarks>');
+        codeList.add('/// <see cref="${field.referenceType}"/> enum type');
+        codeList.add('/// </remarks>');
+        codeList.add('public int ${field.name}');
+        codeList.add('{');
+        codeList.add('get => (int)this[Names.${field.name}];');
+        codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
       } else if (field.type == 'UntypedReference') {
         codeList.add('/// <remarks> ');
@@ -627,7 +628,7 @@ class NsgGenDataItem {
         "import '../${Misc.getDartUnderscoreName(nsgGenController.className)}_model.dart';");
     for (var field in fields) {
       if (!field.writeOnClient) continue;
-      if (field.type == 'Enum') {
+      if (field.type.startsWith('Enum')) {
         if (nsgGenerator.enums.isNotEmpty) {
           codeList.add("import '../enums.dart';");
         }

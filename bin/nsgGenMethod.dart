@@ -77,7 +77,7 @@ class NsgGenMethod {
       } else if (authorize == 'user') {
         codeList.add('[Authorize(Roles = UserRoles.User)]');
       } else if (authorize != 'none') {
-        throw Exception('Wrong authorization type in method $name()');
+        throw Exception('Wrong authorization type in method $name');
       }
       //POST or GET
       var apiType = 'HttpGet';
@@ -116,8 +116,7 @@ class NsgGenMethod {
       } else if (authorize == 'user') {
         codeList.add('[Authorize(Roles = UserRoles.User)]');
       } else if (authorize != 'none') {
-        throw Exception(
-            'Wrong authorization type in method $name([FromBody] ${genDataItem.typeName} items)');
+        throw Exception('Wrong authorization type in method ${name}Create');
       }
       codeList.add('[HttpPost]');
       // codeList.add(
@@ -148,8 +147,7 @@ class NsgGenMethod {
       } else if (authorize == 'user') {
         codeList.add('[Authorize(Roles = UserRoles.User)]');
       } else if (authorize != 'none') {
-        throw Exception(
-            'Wrong authorization type in method $name([FromBody] ${genDataItem.typeName} items)');
+        throw Exception('Wrong authorization type in method ${name}Post');
       }
       codeList.add('[HttpPost]');
       // codeList.add(
@@ -180,8 +178,7 @@ class NsgGenMethod {
       } else if (authorize == 'user') {
         codeList.add('[Authorize(Roles = UserRoles.User)]');
       } else if (authorize != 'none') {
-        throw Exception(
-            'Wrong authorization type in method $name([FromBody] ${genDataItem.typeName} items)');
+        throw Exception('Wrong authorization type in method ${name}Delete');
       }
       codeList.add('[HttpPost]');
       // codeList.add(

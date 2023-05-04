@@ -92,19 +92,24 @@ class Misc {
   static String cutTableRowTypeNameEnding(String typeName) =>
       typeName.replaceAll(RegExp(r"[.]Строка"), '');
 
-  static List<String> typesNeedingReferenceType = [
-    'Reference',
-    'List<Reference>',
-    'Enum',
-    'List<Enum>'
-  ];
+  static bool needToSpecifyType(String typeName) =>
+      typesNeedingReferenceType.any((el) => typeName.startsWith(el));
+
+  static List<String> typesNeedingReferenceType = ['Reference', 'List', 'Enum'];
+
+  static bool isPrimitiveType(String typeName) =>
+      primitiveTypes.any((el) => typeName.contains(el));
 
   static List<String> primitiveTypes = [
+    'UntypedReference',
     'Enum',
     'int',
     'double',
     'String',
+    'Guid',
     'bool',
-    'DateTime'
+    'DateTime',
+    'Image',
+    'Binary'
   ];
 }

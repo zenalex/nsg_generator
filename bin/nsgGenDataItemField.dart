@@ -57,9 +57,9 @@ class NsgGenDataItemField {
         ? parsedJson['defaultReferenceType'] ?? ''
         : parsedJson['referenceType'] ?? '';
     var type = (parsedJson['type'] ?? '').toString();
-    bool isReference = Misc.typesNeedingReferenceType.contains(type);
+    bool isReference = Misc.needToSpecifyType(type);
     if (type == 'Date') type = 'DateTime';
-    if (['Reference', 'UntypedReference'].contains(type)) {
+    if (type.startsWith('Reference') || type == 'UntypedReference') {
       if (referenceName.isEmpty) {
         if (name.endsWith('Id')) {
           referenceName = name.substring(0, name.length - 2);
@@ -68,13 +68,22 @@ class NsgGenDataItemField {
           name += 'Id';
         }
       }
-    } else if (referenceType.isEmpty &&
+    }
+    if (referenceType.isEmpty &&
         type != 'List<Reference>' &&
-        (type.startsWith('List<') && type.endsWith('>'))) {
+        type != 'List<Enum>' &&
+        (type.startsWith('List<') ||
+            type.startsWith('Enum<') ||
+            type.startsWith('Reference<')) &&
+        type.endsWith('>')) {
       referenceType =
           type.substring(type.indexOf('<') + 1, type.lastIndexOf('>'));
-      isReference = !Misc.primitiveTypes.contains(referenceType);
+      if (referenceType.contains('<') && referenceType.endsWith('>')) {
+        referenceType = referenceType.substring(
+            referenceType.indexOf('<') + 1, referenceType.lastIndexOf('>'));
+      }
     }
+    isReference = !Misc.isPrimitiveType(type);
     return NsgGenDataItemField(
         name: name,
         type: type,
@@ -142,21 +151,22 @@ class NsgGenDataItemField {
       return 'NsgDataImageField';
     } else if (type == 'Binary') {
       return 'NsgDataBinaryField';
-    } else if (type == 'Enum') {
+    } else if (type.startsWith('Enum')) {
       return 'NsgDataEnumReferenceField<$referenceType>';
-    } else if (type == 'Reference') {
-      return 'NsgDataReferenceField<$referenceType>';
     } else if (type.startsWith('List')) {
       if (isReference) {
         return 'NsgDataReferenceListField<$referenceType>';
       } else {
-        return 'NsgDataListLield<$referenceType>';
+        return 'NsgDataListField<$referenceType>';
       }
+    } else if (isReference) {
+      return 'NsgDataReferenceField<$referenceType>';
     } else if (type == 'UntypedReference') {
       return 'NsgDataUntypedReferenceField';
     } else {
-      print("get nsgDataType for field type $type couldn't be found");
-      throw Exception();
+      var message = "get nsgDataType for field type $type couldn't be found";
+      print(message);
+      throw Exception(message);
     }
   }
 
@@ -197,10 +207,7 @@ class NsgGenDataItemField {
         codeList.add(
             '  List<$referenceType> get $dartName => getFieldValue($fieldNameVar) as List<$referenceType>;');
       }
-    } else if (type == 'Enum') {
-      codeList.add(
-          '  $referenceType get $dartName => NsgEnum.fromValue($referenceType, getFieldValue($fieldNameVar)) as $referenceType;');
-    } else if (type == 'Reference') {
+    } else if (isReference) {
       codeList.add(
           '  String get $dartName => getFieldValue($fieldNameVar).toString();');
       codeList.add(
@@ -210,6 +217,9 @@ class NsgGenDataItemField {
       codeList.add(
           '   return await getReferentAsync<$referenceType>($fieldNameVar);');
       codeList.add('  }');
+    } else if (type.startsWith('Enum')) {
+      codeList.add(
+          '  $referenceType get $dartName => NsgEnum.fromValue($referenceType, getFieldValue($fieldNameVar)) as $referenceType;');
     } else if (type == 'UntypedReference') {
       codeList.add(
           '  String get $dartName => getFieldValue($fieldNameVar).toString();');
@@ -221,8 +231,9 @@ class NsgGenDataItemField {
           .add('   return await getReferentAsync<NsgDataItem>($fieldNameVar);');
       codeList.add('  }');
     } else {
-      print("write getter for field type $type couldn't be found");
-      throw Exception();
+      var message = "write getter for field type $type couldn't be found";
+      print(message);
+      throw Exception(message);
     }
     codeList.add('');
   }
@@ -243,12 +254,6 @@ class NsgGenDataItemField {
     } else if (type == 'Binary') {
       codeList.add(
           '  set $dartName(List<int> value) => setFieldValue($fieldNameVar, value);');
-    } else if (type == 'Reference') {
-      codeList.add(
-          '  set $dartName(String value) => setFieldValue($fieldNameVar, value);');
-      codeList.add(
-          '  set ${Misc.getDartName(referenceName)}($referenceType value) =>');
-      codeList.add('    setFieldValue($fieldNameVar, value.id);');
     } else if (type == 'UntypedReference') {
       codeList.add(
           '  set $dartName(String value) => setFieldValue($fieldNameVar, value);');
@@ -264,7 +269,13 @@ class NsgGenDataItemField {
         codeList.add(
             '  set $dartName(List<$referenceType> value) => setFieldValue($fieldNameVar, value);');
       }
-    } else if (type == 'Enum') {
+    } else if (isReference) {
+      codeList.add(
+          '  set $dartName(String value) => setFieldValue($fieldNameVar, value);');
+      codeList.add(
+          '  set ${Misc.getDartName(referenceName)}($referenceType value) =>');
+      codeList.add('    setFieldValue($fieldNameVar, value.id);');
+    } else if (type.startsWith('Enum')) {
       codeList.add(
           '  set $dartName($referenceType value) => setFieldValue($fieldNameVar, value);');
     } else {
