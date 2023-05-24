@@ -11,6 +11,7 @@ class NsgGenerator {
   final String cSharpNamespace;
   String dartPath;
   final String applicationName;
+  final bool useStaticDatabaseNames;
   final List<NsgGenController> controllers;
   final List<NsgGenEnum> enums;
   bool doCSharp = true;
@@ -29,6 +30,7 @@ class NsgGenerator {
       required this.cSharpNamespace,
       required this.dartPath,
       required this.applicationName,
+      this.useStaticDatabaseNames = false,
       this.controllers = const [],
       this.enums = const []});
 
@@ -60,6 +62,7 @@ class NsgGenerator {
         cSharpNamespace: parsedJson['cSharpNamespace'] ?? '',
         dartPath: parsedJson['dartPath'] ?? '',
         applicationName: parsedJson['applicationName'] ?? 'application',
+        useStaticDatabaseNames: parsedJson['useStaticDatabaseNames'] == 'true',
         controllers: (parsedJson['controller'] as List)
             .map((i) => NsgGenController.fromJson(i))
             .toList(),

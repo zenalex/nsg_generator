@@ -41,7 +41,6 @@ class NsgGenDataItem {
   }
 
   factory NsgGenDataItem.fromJson(Map<String, dynamic> parsedJson) {
-    var methods = (parsedJson['methods'] ?? []) as List;
     var tn = parsedJson['typeName'] ?? '';
     return NsgGenDataItem(
         typeName: tn,
@@ -220,7 +219,7 @@ class NsgGenDataItem {
       if (field.writeOnServer && field.dbName.isNotEmpty) {
         if (databaseType.isEmpty ||
             field.dbName.contains('.') ||
-            !useStaticDatabaseNames) {
+            !nsgGenerator.useStaticDatabaseNames && !useStaticDatabaseNames) {
           codeList.add('[Names.${field.name}] = "${field.dbName}",');
         } else {
           codeList.add(
