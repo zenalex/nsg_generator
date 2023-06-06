@@ -103,6 +103,7 @@ class Misc {
   }
 
   static List<String> primitiveTypes = [
+    'Object',
     'UntypedReference',
     'Enum',
     'int',

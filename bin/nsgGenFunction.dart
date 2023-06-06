@@ -348,7 +348,7 @@ class NsgGenFunction {
     }
     if (isReference) {
       codeList
-          .add('public Task<IEnumerable<$returnType>> On$name($paramTNString)');
+          .add('public async Task<IEnumerable<$returnType>> On$name($paramTNString)');
       codeList.add('{');
       codeList.add('throw new NotImplementedException();');
       codeList.add('}');
@@ -364,7 +364,7 @@ class NsgGenFunction {
             'INsgTokenExtension user, HttpRequestMessage requestMessage';
       }
       codeList
-          .add('public Task<HttpResponseMessage> On$name($uriParamTNString)');
+          .add('public async Task<HttpResponseMessage> On$name($uriParamTNString)');
       codeList.add('{');
       codeList.add(
           'HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);');
