@@ -15,6 +15,7 @@ class NsgGenDataItem {
   final String presentation;
   final int maxHttpGetItems;
   final String periodFieldName;
+  final String lastEditedFieldName;
   final bool useStaticDatabaseNames;
   final List<NsgGenDataItemField> fields;
   bool checkLastModifiedDate = false;
@@ -31,6 +32,7 @@ class NsgGenDataItem {
       this.presentation = '',
       this.maxHttpGetItems = 100,
       this.periodFieldName = '',
+      this.lastEditedFieldName = '',
       this.useStaticDatabaseNames = false,
       this.isTableRow = false,
       this.fields = const []}) {
@@ -52,6 +54,7 @@ class NsgGenDataItem {
         presentation: parsedJson['presentation'] ?? '',
         maxHttpGetItems: parsedJson['maxHttpGetItems'] ?? 100,
         periodFieldName: parsedJson['periodFieldName'] ?? '',
+        lastEditedFieldName: parsedJson['lastEditedFieldName'] ?? '',
         useStaticDatabaseNames: parsedJson['useStaticDatabaseNames'] == 'true',
         isTableRow: parsedJson['isTableRow'] == 'true',
         entityType:
@@ -208,6 +211,11 @@ class NsgGenDataItem {
           'public override Guid GetId() => NsgSoft.Common.NsgService.StringToGuid(${pkField.name});');
       codeList.add(
           'public override void SetId(object value) => ${pkField.name} = value.ToString();');
+      codeList.add('');
+    }
+    if (lastEditedFieldName.isNotEmpty) {
+      codeList.add(
+          'public override string LastEditedFieldName => Names.${lastEditedFieldName};');
       codeList.add('');
     }
     codeList.add(
