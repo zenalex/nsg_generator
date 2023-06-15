@@ -576,6 +576,12 @@ class NsgGenDataItem {
       }
       codeList.add('}');
       codeList.add('');
+      codeList.add(
+          'public override CheckRightsResult CheckRightsPost(INsgTokenExtension user, IEnumerable<NsgServerDataItem> nsgObjects)');
+      codeList.add('{');
+      codeList.add('return new CheckRightsResult() { AccessGranted = true };');
+      codeList.add('}');
+      codeList.add('');
     }
     if (nsgMethod.allowDelete) {
       codeList.add(
