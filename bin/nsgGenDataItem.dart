@@ -17,8 +17,8 @@ class NsgGenDataItem {
   final String periodFieldName;
   final String lastEditedFieldName;
   final bool useStaticDatabaseNames;
+  final bool isDistributed;
   final List<NsgGenDataItemField> fields;
-  bool checkLastModifiedDate = false;
   bool allowCreate = false;
   bool isTableRow = false;
   String databaseTypeTable = '';
@@ -34,6 +34,7 @@ class NsgGenDataItem {
       this.periodFieldName = '',
       this.lastEditedFieldName = '',
       this.useStaticDatabaseNames = false,
+      this.isDistributed = false,
       this.isTableRow = false,
       this.fields = const []}) {
     this.isTableRow |= this.databaseType.endsWith('.Строка');
@@ -56,6 +57,7 @@ class NsgGenDataItem {
         periodFieldName: parsedJson['periodFieldName'] ?? '',
         lastEditedFieldName: parsedJson['lastEditedFieldName'] ?? '',
         useStaticDatabaseNames: parsedJson['useStaticDatabaseNames'] == 'true',
+        isDistributed: parsedJson['isDistributed'] == 'true',
         isTableRow: parsedJson['isTableRow'] == 'true',
         entityType:
             NsgGenDataItemEntityType.parse(parsedJson['entityType'] ?? '', tn),
@@ -125,11 +127,8 @@ class NsgGenDataItem {
       if (description.isNotEmpty) {
         Misc.writeDescription(codeList, description, true);
       }
-      if (entityType == NsgGenDataItemEntityType.userSettings) {
-        codeList.add('public partial class $typeName : NsgServerUserSettings');
-      } else {
-        codeList.add('public partial class $typeName : NsgServerMetadataItem');
-      }
+      codeList.add(
+          'public partial class $typeName : ${NsgGenDataItemEntityType.inheritanceCS[entityType]}');
       codeList.add('{');
 
       codeList.add('public $typeName() : this(null, null) { }');
@@ -206,7 +205,7 @@ class NsgGenDataItem {
       throw Exception('There is no Primary key in $typeName');
     });
 
-    if (entityType != NsgGenDataItemEntityType.userSettings) {
+    if (entityType == NsgGenDataItemEntityType.dataItem) {
       codeList.add(
           'public override Guid GetId() => NsgSoft.Common.NsgService.StringToGuid(${pkField.name});');
       codeList.add(
@@ -281,12 +280,14 @@ class NsgGenDataItem {
     }
     codeList.add('public override void SetDefaultValues()');
     codeList.add('{');
-    if (entityType == NsgGenDataItemEntityType.userSettings)
+    if (entityType != NsgGenDataItemEntityType.dataItem)
       codeList.add('base.SetDefaultValues();');
     fields.forEach((field) {
       if (!field.writeOnServer) return;
-      if (entityType == NsgGenDataItemEntityType.userSettings &&
-          [pkField.name, 'Settings', 'UserId'].contains(field.name)) return;
+      if (entityType != NsgGenDataItemEntityType.dataItem &&
+          (field.name == pkField.name ||
+              NsgGenDataItemEntityType.typeFields[entityType]!
+                  .contains(field.name))) return;
       if (field.type == 'int') {
         codeList.add('ValueDictionary[Names.${field.name}] = 0;');
       } else if (field.type == 'double') {
@@ -323,31 +324,25 @@ class NsgGenDataItem {
     codeList.add('');
 
     codeList.add('#region Names');
-    if (entityType == NsgGenDataItemEntityType.userSettings) {
+    if (isDistributed) {
+      codeList.add('public override bool IsDistributed => true;');
+    }
+    if (entityType != NsgGenDataItemEntityType.dataItem) {
       codeList.add('public override string Names_Id => Names.${pkField.name};');
       codeList.add('');
-      var usField = fields.firstWhere((f) => f.name == 'Settings',
-          orElse: () => NsgGenDataItemField(name: 'null', type: 'null'));
-      if (usField.name == 'null') {
-        var errorMessage =
-            'UserSettings - the required field "Settings" couldn\'t be found';
-        print(errorMessage);
-        throw Exception(errorMessage);
-      }
-      codeList.add(
-          'public override string Names_Settings => Names.${usField.name};');
-      codeList.add('');
-      usField = fields.firstWhere((f) => f.name == 'UserId',
-          orElse: () => NsgGenDataItemField(name: 'null', type: 'null'));
-      if (usField.name == 'null') {
-        var errorMessage =
-            'UserSettings - the required field "UserId" couldn\'t be found';
-        print(errorMessage);
-        throw Exception(errorMessage);
-      }
-      codeList
-          .add('public override string Names_UserId => Names.${usField.name};');
-      codeList.add('');
+      NsgGenDataItemEntityType.typeFields[entityType]!.forEach((element) {
+        var usField = fields.firstWhere((f) => f.name == element,
+            orElse: () => NsgGenDataItemField(name: 'null', type: 'null'));
+        if (usField.name == 'null') {
+          var errorMessage =
+              '${entityType} - the required field "${element}" couldn\'t be found';
+          print(errorMessage);
+          throw Exception(errorMessage);
+        }
+        codeList.add(
+            'public override string Names_${element} => Names.${usField.name};');
+        codeList.add('');
+      });
     }
     codeList.add('public static class Names');
     codeList.add('{');
@@ -376,8 +371,10 @@ class NsgGenDataItem {
     codeList.add('#region Properties');
     fields.forEach((field) {
       if (!field.writeOnServer) return;
-      if (entityType == NsgGenDataItemEntityType.userSettings &&
-          [pkField.name, 'Settings', 'UserId'].contains(field.name)) return;
+      if (entityType != NsgGenDataItemEntityType.dataItem &&
+          (field.name == pkField.name ||
+              NsgGenDataItemEntityType.typeFields[entityType]!
+                  .contains(field.name))) return;
       if (field.description.isNotEmpty) {
         Misc.writeDescription(codeList, field.description, true);
       }
@@ -491,10 +488,6 @@ class NsgGenDataItem {
       //if (element.type == 'Image') nsgMethod.addImageMethod(element);
       codeList.add('');
     });
-    if (checkLastModifiedDate) {
-      codeList.add('public DateTime LastModified { get; set; }');
-      codeList.add('');
-    }
     codeList.add('#endregion Properties');
 
     codeList.add('}');
@@ -561,7 +554,8 @@ class NsgGenDataItem {
           'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post(INsgTokenExtension user, NsgFindParams findParams, IEnumerable<NsgServerDataItem> items)');
       codeList.add('{');
       if (nsgMethod.genDataItem.databaseType.isNotEmpty) {
-        if (nsgMethod.name == 'UserSettings') {
+        if (nsgMethod.genDataItem.entityType !=
+            NsgGenDataItemEntityType.dataItem) {
           codeList.add(
               'return await Post<${nsgMethod.genDataItem.typeName}>(user, findParams, items);');
         } else {
@@ -576,19 +570,14 @@ class NsgGenDataItem {
       }
       codeList.add('}');
       codeList.add('');
-      codeList.add(
-          'public override CheckRightsResult CheckRightsPost(INsgTokenExtension user, IEnumerable<NsgServerDataItem> nsgObjects)');
-      codeList.add('{');
-      codeList.add('return new CheckRightsResult() { AccessGranted = true };');
-      codeList.add('}');
-      codeList.add('');
     }
     if (nsgMethod.allowDelete) {
       codeList.add(
           'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Delete(INsgTokenExtension user, IEnumerable<NsgServerDataItem> items)');
       codeList.add('{');
       if (nsgMethod.genDataItem.databaseType.isNotEmpty) {
-        if (nsgMethod.name == 'UserSettings') {
+        if (nsgMethod.genDataItem.entityType !=
+            NsgGenDataItemEntityType.dataItem) {
           codeList.add(
               'return await Delete<${nsgMethod.genDataItem.typeName}>(user, items.Cast<${nsgMethod.genDataItem.typeName}>());');
         } else {
@@ -602,6 +591,14 @@ class NsgGenDataItem {
       } else {
         codeList.add('throw new NotImplementedException();');
       }
+      codeList.add('}');
+      codeList.add('');
+    }
+    if (nsgMethod.allowPost) {
+      codeList.add(
+          'public override CheckRightsResult CheckRightsPost(INsgTokenExtension user, IEnumerable<NsgServerDataItem> nsgObjects)');
+      codeList.add('{');
+      codeList.add('return new CheckRightsResult() { AccessGranted = true };');
       codeList.add('}');
       codeList.add('');
     }
@@ -652,12 +649,8 @@ class NsgGenDataItem {
       codeList.add('');
       Misc.writeDescription(codeList, description, false);
     }
-    if (entityType == NsgGenDataItemEntityType.userSettings) {
-      codeList.add(
-          'class ${typeName}Generated extends NsgDataItem with NsgUserSettings {');
-    } else {
-      codeList.add('class ${typeName}Generated extends NsgDataItem {');
-    }
+    codeList.add(
+        'class ${typeName}Generated extends NsgDataItem${NsgGenDataItemEntityType.inheritanceDart[entityType]} {');
     fields.forEach((_) {
       if (!_.writeOnClient) return;
       codeList.add(
@@ -676,6 +669,11 @@ class NsgGenDataItem {
     codeList.add('  @override');
     codeList.add('  String get typeName => \'$typeName\';');
     codeList.add('');
+    if (nsgGenMethod.genDataItem.isDistributed) {
+      codeList.add('  @override');
+      codeList.add('  bool get isDistributed => true;');
+      codeList.add('');
+    }
     codeList.add('  @override');
     codeList.add('  void initialize() {');
     fields.forEach((_) {
@@ -733,8 +731,7 @@ class NsgGenDataItem {
           orElse: () => NsgGenDataItemField(name: '', type: ''));
       if (nameField.name.isNotEmpty) {
         codeList.add('  @override');
-        codeList
-            .add('  String toString() => ${Misc.getDartName(nameField.name)};');
+        codeList.add('  String toString() => ${nameField.dartName};');
         codeList.add('');
       }
     }
@@ -755,12 +752,6 @@ class NsgGenDataItem {
       _.writeGetter(nsgGenController, this, codeList);
       _.writeSetter(nsgGenController, this, codeList);
     });
-    if (checkLastModifiedDate) {
-      var lm = NsgGenDataItemField(name: 'LastModified', type: 'DateTime');
-      lm.writeGetter(nsgGenController, this, codeList);
-      lm.writeSetter(nsgGenController, this, codeList);
-      codeList.add('');
-    }
     if (periodFieldName.isNotEmpty) {
       codeList.add('  @override');
       codeList.add('  String get periodFieldName => name$periodFieldName;');
@@ -797,18 +788,59 @@ class NsgGenDataItem {
 
 enum NsgGenDataItemEntityType {
   dataItem,
-  userSettings;
+  userSettings,
+  exchangeRules,
+  exchangeRulesMergingTable;
 
   static NsgGenDataItemEntityType parse(String v, String typeName) {
     if (typeName == 'UserSettings')
       return NsgGenDataItemEntityType.userSettings;
+    if (typeName == 'ExchangeRules')
+      return NsgGenDataItemEntityType.exchangeRules;
+    if (typeName == 'ExchangeRulesMergingTable')
+      return NsgGenDataItemEntityType.exchangeRulesMergingTable;
     switch (v) {
       case 'dataItem':
         return NsgGenDataItemEntityType.dataItem;
       case 'userSettings':
         return NsgGenDataItemEntityType.userSettings;
+      case 'exchangeRules':
+        return NsgGenDataItemEntityType.exchangeRules;
+      case 'exchangeRulesMergingTable':
+        return NsgGenDataItemEntityType.exchangeRulesMergingTable;
       default:
         return NsgGenDataItemEntityType.dataItem;
     }
   }
+
+  static Map<NsgGenDataItemEntityType, List<String>> typeFields = {
+    NsgGenDataItemEntityType.userSettings: ['Name', 'Settings', 'UserId'],
+    NsgGenDataItemEntityType.exchangeRules: [
+      'ObjectType',
+      'Periodicity',
+      'PriorityForClient',
+      'MergingRules'
+    ],
+    NsgGenDataItemEntityType.exchangeRulesMergingTable: [
+      'FieldName',
+      'PriorityForClient'
+    ]
+  };
+
+  static Map<NsgGenDataItemEntityType, String> inheritanceCS = {
+    NsgGenDataItemEntityType.dataItem: 'NsgServerMetadataItem',
+    NsgGenDataItemEntityType.userSettings: 'NsgServerUserSettings',
+    NsgGenDataItemEntityType.exchangeRules: 'NsgServerExchangeRules',
+    NsgGenDataItemEntityType.exchangeRulesMergingTable:
+        'NsgServerExchangeRulesMergingTable'
+  };
+
+  static Map<NsgGenDataItemEntityType, String> inheritanceDart = {
+    NsgGenDataItemEntityType.dataItem: '',
+    NsgGenDataItemEntityType.userSettings: ' with NsgUserSettings',
+    NsgGenDataItemEntityType.exchangeRules: ' /*with NsgExchangeRules*/',
+    NsgGenDataItemEntityType.exchangeRulesMergingTable:
+        ' /*with NsgExchangeRulesMergingTable*/'
+    // TODO: добавить классы в nsg_data
+  };
 }

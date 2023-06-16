@@ -175,10 +175,10 @@ class NsgGenDataItemField {
     if (['id', 'ownerid'].contains(name.toLowerCase())) {
       codeList.add('  @override');
     }
-    if (dataItem.entityType == NsgGenDataItemEntityType.userSettings) {
-      if (['name', 'settings', 'userid'].contains(name.toLowerCase())) {
-        codeList.add('  @override');
-      }
+    if (dataItem.entityType != NsgGenDataItemEntityType.dataItem &&
+        NsgGenDataItemEntityType.typeFields[dataItem.entityType]!
+            .contains(name)) {
+      codeList.add('  @override');
     }
     if (type == 'String' || type == 'Guid') {
       codeList.add(
@@ -243,10 +243,11 @@ class NsgGenDataItemField {
     if (['id', 'ownerid'].contains(name.toLowerCase())) {
       codeList.add('  @override');
     }
-    if (dataItem.entityType == NsgGenDataItemEntityType.userSettings) {
-      if (['name', 'settings', 'userId'].contains(name.toLowerCase())) {
-        codeList.add('  @override');
-      }
+    if (dataItem.entityType != NsgGenDataItemEntityType.dataItem &&
+        !type.startsWith('List') &&
+        NsgGenDataItemEntityType.typeFields[dataItem.entityType]!
+            .contains(name)) {
+      codeList.add('  @override');
     }
     if (type == 'Image') {
       codeList.add(

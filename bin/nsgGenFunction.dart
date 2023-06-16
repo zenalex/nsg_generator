@@ -347,8 +347,8 @@ class NsgGenFunction {
       });
     }
     if (isReference) {
-      codeList
-          .add('public async Task<IEnumerable<$returnType>> On$name($paramTNString)');
+      codeList.add(
+          'public async Task<IEnumerable<$returnType>> On$name($paramTNString)');
       codeList.add('{');
       codeList.add('throw new NotImplementedException();');
       codeList.add('}');
@@ -363,8 +363,8 @@ class NsgGenFunction {
         uriParamTNString =
             'INsgTokenExtension user, HttpRequestMessage requestMessage';
       }
-      codeList
-          .add('public async Task<HttpResponseMessage> On$name($uriParamTNString)');
+      codeList.add(
+          'public async Task<HttpResponseMessage> On$name($uriParamTNString)');
       codeList.add('{');
       codeList.add(
           'HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);');
@@ -414,14 +414,13 @@ class NsgGenFunction {
 
     // if (type.startsWith('List') && isReference) {
     //   codeList.add(
-    //       '  Future<List<$dartType>> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
+    //       '  Future<List<$dartType>> $dartName($paramTNString) async {');
     // } else
     if (isReference && !type.startsWith('List')) {
-      codeList.add(
-          '  Future<$dartType?> ${Misc.getDartName(name)}($paramTNString) async {');
+      codeList.add('  Future<$dartType?> $dartName($paramTNString) async {');
     } else {
-      codeList.add(
-          '  Future<List<$dartType>> ${Misc.getDartName(name)}($paramTNString) async {');
+      codeList
+          .add('  Future<List<$dartType>> $dartName($paramTNString) async {');
     }
     codeList.add(
         '    var progress = NsgProgressDialogHelper(showProgress: showProgress, isStoppable: isStoppable, textDialog: textDialog);');

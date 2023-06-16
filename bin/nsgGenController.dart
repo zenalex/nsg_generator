@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:async';
 
 import 'misc.dart';
+import 'nsgGenDataItem.dart';
 import 'nsgGenMethod.dart';
 import 'nsgGenFunction.dart';
 import 'nsgGenerator.dart';
@@ -471,7 +472,7 @@ class NsgGenController {
 
   static void generateImplMetadataGetMethodBody(
       NsgGenerator nsgGenerator, List<String> codeList, NsgGenMethod m) async {
-    if (m.name == 'UserSettings') {
+    if (m.genDataItem.entityType != NsgGenDataItemEntityType.dataItem) {
       codeList.add(
           'return await Get<${m.genDataItem.typeName}>(user, findParams);');
     } else {

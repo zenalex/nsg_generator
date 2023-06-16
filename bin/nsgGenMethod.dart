@@ -16,7 +16,6 @@ class NsgGenMethod {
   final bool allowGetter;
   final bool allowCreate;
   final bool allowPost;
-  final bool checkLastModifiedDate;
   final bool allowDelete;
 
   late NsgGenDataItem genDataItem;
@@ -31,12 +30,11 @@ class NsgGenMethod {
       this.allowGetter = true,
       this.allowCreate = false,
       this.allowPost = false,
-      this.checkLastModifiedDate = false,
       this.allowDelete = false});
 
   factory NsgGenMethod.fromJson(Map<String, dynamic> parsedJson) {
     var name = (parsedJson['name'] ?? '').toString();
-    var isUserSettings = name == 'UserSettings';
+    var needsAllCRUD = name == 'UserSettings' || name == 'ExchangeRules';
     return NsgGenMethod(
         name: name,
         description: parsedJson['description'] ?? '',
@@ -55,11 +53,10 @@ class NsgGenMethod {
         allowGetter: (parsedJson.containsKey('allowGetter')
                 ? parsedJson['allowGetter'] != 'false'
                 : true) ||
-            isUserSettings,
+            needsAllCRUD,
         allowCreate: parsedJson['allowCreate'] == 'true',
-        allowPost: parsedJson['allowPost'] == 'true' || isUserSettings,
-        checkLastModifiedDate: parsedJson['checkLastModifiedDate'] == 'true',
-        allowDelete: parsedJson['allowDelete'] == 'true' || isUserSettings);
+        allowPost: parsedJson['allowPost'] == 'true' || needsAllCRUD,
+        allowDelete: parsedJson['allowDelete'] == 'true' || needsAllCRUD);
   }
 
   Future generateCode(List<String> codeList, NsgGenerator nsgGenerator,
@@ -138,7 +135,6 @@ class NsgGenMethod {
     }
     //Generate post data method
     if (allowPost) {
-      genDataItem.checkLastModifiedDate = checkLastModifiedDate;
       codeList.add('[Route("$apiPrefix/Post")]');
       //Authorization
       if (!controller.useAuthorization) {
