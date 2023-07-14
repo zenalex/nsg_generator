@@ -6,7 +6,6 @@ class NsgGenDataItemField {
   final String name;
   final String type;
   final String dbName;
-  final String dbType;
   final int maxLength;
   final String description;
   final String apiPrefix;
@@ -25,7 +24,6 @@ class NsgGenDataItemField {
       {required this.name,
       required this.type,
       this.dbName = '',
-      this.dbType = '',
       this.maxLength = 0,
       this.description = '',
       this.apiPrefix = '',
@@ -88,7 +86,6 @@ class NsgGenDataItemField {
         name: name,
         type: type,
         dbName: parsedJson['databaseName'] ?? '',
-        dbType: parsedJson['databaseType'] ?? '',
         maxLength: ml ??
             (defaultMaxLength.containsKey(type) ? defaultMaxLength[type] : 0),
         description: parsedJson.containsKey('description')
@@ -245,6 +242,7 @@ class NsgGenDataItemField {
     }
     if (dataItem.entityType != NsgGenDataItemEntityType.dataItem &&
         !type.startsWith('List') &&
+        allowPost &&
         NsgGenDataItemEntityType.typeFields[dataItem.entityType]!
             .contains(name)) {
       codeList.add('  @override');
