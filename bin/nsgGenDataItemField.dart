@@ -261,6 +261,7 @@ class NsgGenDataItemField {
       codeList.add('    setFieldValue($fieldNameVar, value);');
     } else if (type.startsWith('List')) {
       if (isReference) {
+        return; // не вводить лишний перенос строки
         //Отменил запись setter из-за смены возвращаемого типа на NsgDataTable
         // codeList.add(
         //     '  set $dartName(List<$referenceType> value) => setFieldValue($fieldNameVar, value);');
