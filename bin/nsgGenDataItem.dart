@@ -838,9 +838,8 @@ enum NsgGenDataItemEntityType {
   static Map<NsgGenDataItemEntityType, String> inheritanceDart = {
     NsgGenDataItemEntityType.dataItem: '',
     NsgGenDataItemEntityType.userSettings: ' with NsgUserSettings',
-    NsgGenDataItemEntityType.exchangeRules: ' /*with NsgExchangeRules*/',
+    NsgGenDataItemEntityType.exchangeRules: ' with NsgExchangeRules',
     NsgGenDataItemEntityType.exchangeRulesMergingTable:
-        ' /*with NsgExchangeRulesMergingTable*/'
-    // TODO: добавить классы в nsg_data
+        ' with NsgExchangeRulesMergingTable'
   };
 }
