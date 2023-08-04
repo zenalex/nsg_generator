@@ -16,6 +16,27 @@ class Misc {
     }
   }
 
+  static RegExp upperCaseRE = RegExp(r'[A-ZА-Я]');
+  static String getCamelCaseName(String dn, {bool startWithAcronym = false}) {
+    if (dn.isEmpty) return dn;
+    var firstUpperCaseIndex = dn.indexOf(upperCaseRE);
+    if (firstUpperCaseIndex == -1) {
+      if (startWithAcronym) return dn.toUpperCase();
+      firstUpperCaseIndex = 1;
+    }
+    if (firstUpperCaseIndex == 0) {
+      return dn;
+    }
+    if (firstUpperCaseIndex > 1) {
+      if (!startWithAcronym) firstUpperCaseIndex = 1;
+    }
+    var fc = dn.substring(0, firstUpperCaseIndex);
+    if (fc.length != dn.length) {
+      dn = fc.toUpperCase() + dn.substring(firstUpperCaseIndex);
+    }
+    return dn;
+  }
+
   static RegExp nonUpperCaseRE = RegExp(r'[^A-ZА-Я]');
   static String getDartName(String dn) {
     if (dn.isEmpty) return dn;

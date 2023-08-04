@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'nsgGenCSProject.dart';
 import 'nsgGenController.dart';
+import 'nsgGenDataItem.dart';
 import 'nsgGenEnum.dart';
 
 class NsgGenerator {
@@ -14,6 +15,7 @@ class NsgGenerator {
   final bool useStaticDatabaseNames;
   final List<NsgGenController> controllers;
   final List<NsgGenEnum> enums;
+  final Map<String, NsgGenDataItem> dataItems = Map();
   bool doCSharp = true;
   bool doDart = true;
   bool forceOverwrite = false;

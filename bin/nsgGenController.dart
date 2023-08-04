@@ -517,6 +517,10 @@ class NsgGenController {
     print('load Controller $className start');
     await Future.forEach<NsgGenMethod>(methods, (element) async {
       await element.loadGenDataItem(nsgGenerator);
+      if (!nsgGenerator.dataItems.containsKey(element.genDataItem.typeName)) {
+        nsgGenerator.dataItems[element.genDataItem.typeName] =
+            element.genDataItem;
+      }
     });
     print('load $className finished');
   }

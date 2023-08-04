@@ -51,13 +51,13 @@ class NsgGenDataItemField {
 
     var name = parsedJson['name'].toString();
     var referenceName = (parsedJson['referenceName'] ?? '').toString();
-    var referenceType = parsedJson.containsKey('defaultReferenceType')
+    String referenceType = parsedJson.containsKey('defaultReferenceType')
         ? parsedJson['defaultReferenceType'] ?? ''
         : parsedJson['referenceType'] ?? '';
     var type = (parsedJson['type'] ?? '').toString();
     bool isReference = Misc.needToSpecifyType(type);
     if (type == 'Date') type = 'DateTime';
-    if (type.startsWith('Reference') || type == 'UntypedReference') {
+    if (type.startsWith('Reference') || type.startsWith('UntypedReference')) {
       if (referenceName.isEmpty) {
         if (name.endsWith('Id')) {
           referenceName = name.substring(0, name.length - 2);
@@ -67,18 +67,34 @@ class NsgGenDataItemField {
         }
       }
     }
+    var untTypes = (parsedJson.containsKey('referenceTypes')
+            ? parsedJson['referenceTypes'] as List
+            : List.empty())
+        .map((e) => e as Map<String, dynamic>)
+        .toList();
+    // if (type.startsWith('UntypedReference') && type != 'UntypedReference') {
+    // } else
     if (referenceType.isEmpty &&
         type != 'List<Reference>' &&
         type != 'List<Enum>' &&
+        type != 'UntypedReference' &&
         (type.startsWith('List<') ||
             type.startsWith('Enum<') ||
-            type.startsWith('Reference<')) &&
+            type.startsWith('Reference<') ||
+            type.startsWith('UntypedReference<')) &&
         type.endsWith('>')) {
       referenceType =
           type.substring(type.indexOf('<') + 1, type.lastIndexOf('>'));
       if (referenceType.contains('<') && referenceType.endsWith('>')) {
         referenceType = referenceType.substring(
             referenceType.indexOf('<') + 1, referenceType.lastIndexOf('>'));
+      }
+      if (referenceType.contains(',')) {
+        var split = referenceType.split(',');
+        referenceType = split[0].trim();
+        var referenceTypes =
+            split.map((e) => {'alias': Misc.getDartName(e.trim())}).toList();
+        untTypes.addAll(referenceTypes);
       }
     }
     isReference = !Misc.isPrimitiveType(type);
@@ -111,11 +127,7 @@ class NsgGenDataItemField {
         allowPost: parsedJson.containsKey('allowPost')
             ? parsedJson['allowPost'] != 'false'
             : true,
-        referenceTypes: (parsedJson.containsKey('referenceTypes')
-                ? parsedJson['referenceTypes'] as List
-                : List.empty())
-            .map((e) => e as Map<String, dynamic>)
-            .toList());
+        referenceTypes: untTypes);
   }
 
   static Map<String, int> defaultMaxLength = <String, int>{
@@ -158,7 +170,7 @@ class NsgGenDataItemField {
       }
     } else if (isReference) {
       return 'NsgDataReferenceField<$referenceType>';
-    } else if (type == 'UntypedReference') {
+    } else if (type.startsWith('UntypedReference')) {
       return 'NsgDataUntypedReferenceField';
     } else {
       var message = "get nsgDataType for field type $type couldn't be found";
@@ -217,7 +229,7 @@ class NsgGenDataItemField {
     } else if (type.startsWith('Enum')) {
       codeList.add(
           '  $referenceType get $dartName => NsgEnum.fromValue($referenceType, getFieldValue($fieldNameVar)) as $referenceType;');
-    } else if (type == 'UntypedReference') {
+    } else if (type.startsWith('UntypedReference')) {
       codeList.add(
           '  String get $dartName => getFieldValue($fieldNameVar).toString();');
       codeList.add(
@@ -253,7 +265,7 @@ class NsgGenDataItemField {
     } else if (type == 'Binary') {
       codeList.add(
           '  set $dartName(List<int> value) => setFieldValue($fieldNameVar, value);');
-    } else if (type == 'UntypedReference') {
+    } else if (type.startsWith('UntypedReference')) {
       codeList.add(
           '  set $dartName(String value) => setFieldValue($fieldNameVar, value);');
       codeList.add(

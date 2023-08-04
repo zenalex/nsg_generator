@@ -89,18 +89,31 @@ class NsgGenDataItem {
     //     csTypes[i.referenceType] = i.dbType;
     //   }
     // }
-    var untypedFields = fields.where(
-        (field) => field.writeOnServer && field.type == 'UntypedReference');
+    var untypedFields = fields.where((field) =>
+        field.writeOnServer && field.type.startsWith('UntypedReference'));
     for (var i in untypedFields) {
       assert(i.referenceTypes != null);
       for (var j in i.referenceTypes!) {
+        var alias = j['alias'].toString();
+        var aliasUp = alias;
+        if (!nsgGenerator.dataItems.containsKey(aliasUp)) {
+          aliasUp = Misc.getCamelCaseName(alias);
+        }
+        if (!nsgGenerator.dataItems.containsKey(aliasUp)) {
+          aliasUp = Misc.getCamelCaseName(alias, startWithAcronym: true);
+        }
+        if (nsgGenerator.dataItems.containsKey(aliasUp)) {
+          var type = nsgGenerator.dataItems[aliasUp]!;
+          j['databaseType'] = type.databaseType;
+          j['namespace'] = type.databaseTypeNamespace;
+        }
+
         if (j.containsKey('namespace')) {
           var ns = j['namespace'].toString();
           if (ns.isNotEmpty && !namespaces.contains(ns)) {
             namespaces.add(ns);
           }
         }
-        var alias = j['alias'].toString();
         var databaseType = j['databaseType'].toString();
         if (!csTypes.containsKey(alias)) {
           csTypes[alias] = Misc.cutTableRowTypeNameEnding(databaseType);
@@ -301,7 +314,7 @@ class NsgGenDataItem {
         }
       } else if (field.type == 'Guid') {
         codeList.add('ValueDictionary[Names.${field.name}] = Guid.Empty;');
-      } else if (field.type == 'UntypedReference') {
+      } else if (field.type.startsWith('UntypedReference')) {
         codeList.add(
             'ValueDictionary[Names.${field.name}] = "00000000-0000-0000-0000-000000000000.NO";');
       } else if (field.type.startsWith('List')) {
@@ -451,7 +464,7 @@ class NsgGenDataItem {
         codeList.add('get => (int)this[Names.${field.name}];');
         codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
-      } else if (field.type == 'UntypedReference') {
+      } else if (field.type.startsWith('UntypedReference')) {
         codeList.add('/// <remarks> ');
         codeList.add(
             '/// Untyped reference (${field.referenceTypes!.map((e) => e['databaseType'].toString()).join(', ')})');
@@ -690,7 +703,7 @@ class NsgGenDataItem {
             _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
           codeList.add(
               '    addField(${_.nsgDataType}(${_.fieldNameVar}, maxDecimalPlaces: ${_.maxLength}), primaryKey: ${_.isPrimary});');
-        } else if (_.type == 'UntypedReference') {
+        } else if (_.type.startsWith('UntypedReference')) {
           var defaultReferenceType = _.referenceType;
           if ((defaultReferenceType.isEmpty) &&
               _.referenceTypes != null &&
