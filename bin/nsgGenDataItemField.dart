@@ -68,8 +68,9 @@ class NsgGenDataItemField {
       }
     }
     var untTypes = (parsedJson.containsKey('referenceTypes')
-            ? parsedJson['referenceTypes'] as List<String>
-            : List<String>.empty())
+            ? parsedJson['referenceTypes'] as List
+            : List.empty())
+        .cast<String>()
         .toList();
     // if (type.startsWith('UntypedReference') && type != 'UntypedReference') {
     // } else
