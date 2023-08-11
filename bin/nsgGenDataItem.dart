@@ -93,28 +93,20 @@ class NsgGenDataItem {
         field.writeOnServer && field.type.startsWith('UntypedReference'));
     for (var i in untypedFields) {
       assert(i.referenceTypes != null);
-      for (var j in i.referenceTypes!) {
-        var alias = j['alias'].toString();
-        var aliasUp = alias;
-        if (!nsgGenerator.dataItems.containsKey(aliasUp)) {
-          aliasUp = Misc.getCamelCaseName(alias);
+      for (var alias in i.referenceTypes!) {
+        NsgGenDataItem? type;
+        if (nsgGenerator.dataItems.containsKey(alias)) {
+          type = nsgGenerator.dataItems[alias]!;
         }
-        if (!nsgGenerator.dataItems.containsKey(aliasUp)) {
-          aliasUp = Misc.getCamelCaseName(alias, startWithAcronym: true);
-        }
-        if (nsgGenerator.dataItems.containsKey(aliasUp)) {
-          var type = nsgGenerator.dataItems[aliasUp]!;
-          j['databaseType'] = type.databaseType;
-          j['namespace'] = type.databaseTypeNamespace;
-        }
+        if (type == null) continue;
 
-        if (j.containsKey('namespace')) {
-          var ns = j['namespace'].toString();
+        if (type.databaseTypeNamespace.isNotEmpty) {
+          var ns = type.databaseTypeNamespace;
           if (ns.isNotEmpty && !namespaces.contains(ns)) {
             namespaces.add(ns);
           }
         }
-        var databaseType = j['databaseType'].toString();
+        var databaseType = type.databaseType;
         if (!csTypes.containsKey(alias)) {
           csTypes[alias] = Misc.cutTableRowTypeNameEnding(databaseType);
         }
@@ -257,7 +249,8 @@ class NsgGenDataItem {
           'public static Dictionary<string, string> ClientServerTypes = new Dictionary<string, string>');
       codeList.add('{');
       for (var i in csTypes.entries) {
-        codeList.add('["${i.key}"] = ${i.value}.Новый().TableName,');
+        codeList.add(
+            '["${Misc.getDartName(i.key)}"] = ${i.value}.Новый().TableName,');
       }
       codeList.add('};');
       codeList.add('');
@@ -467,7 +460,7 @@ class NsgGenDataItem {
       } else if (field.type.startsWith('UntypedReference')) {
         codeList.add('/// <remarks> ');
         codeList.add(
-            '/// Untyped reference (${field.referenceTypes!.map((e) => e['databaseType'].toString()).join(', ')})');
+            '/// Untyped reference (${field.referenceTypes!.map((e) => nsgGenerator.dataItems[e]?.databaseType).join(', ')})');
         codeList.add('/// </remarks> ');
         codeList.add(
             '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000.NO")]');
@@ -708,7 +701,7 @@ class NsgGenDataItem {
           if ((defaultReferenceType.isEmpty) &&
               _.referenceTypes != null &&
               _.referenceTypes!.isNotEmpty) {
-            defaultReferenceType = _.referenceTypes!.first['alias'].toString();
+            defaultReferenceType = _.referenceTypes!.first.toString();
             defaultReferenceType = defaultReferenceType[0].toUpperCase() +
                 defaultReferenceType.substring(1);
           }

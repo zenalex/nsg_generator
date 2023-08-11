@@ -18,7 +18,7 @@ class NsgGenDataItemField {
   final bool writeOnClient;
   final bool writeOnServer;
   final bool allowPost;
-  final List<Map<String, dynamic>>? referenceTypes;
+  final List<String>? referenceTypes;
 
   NsgGenDataItemField(
       {required this.name,
@@ -68,16 +68,14 @@ class NsgGenDataItemField {
       }
     }
     var untTypes = (parsedJson.containsKey('referenceTypes')
-            ? parsedJson['referenceTypes'] as List
-            : List.empty())
-        .map((e) => e as Map<String, dynamic>)
+            ? parsedJson['referenceTypes'] as List<String>
+            : List<String>.empty())
         .toList();
     // if (type.startsWith('UntypedReference') && type != 'UntypedReference') {
     // } else
     if (referenceType.isEmpty &&
         type != 'List<Reference>' &&
         type != 'List<Enum>' &&
-        type != 'UntypedReference' &&
         (type.startsWith('List<') ||
             type.startsWith('Enum<') ||
             type.startsWith('Reference<') ||
@@ -92,8 +90,7 @@ class NsgGenDataItemField {
       if (referenceType.contains(',')) {
         var split = referenceType.split(',');
         referenceType = split[0].trim();
-        var referenceTypes =
-            split.map((e) => {'alias': Misc.getDartName(e.trim())}).toList();
+        var referenceTypes = split.map((e) => e.trim()).toList();
         untTypes.addAll(referenceTypes);
       }
     }
