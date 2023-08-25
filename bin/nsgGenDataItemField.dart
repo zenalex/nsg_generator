@@ -88,12 +88,10 @@ class NsgGenDataItemField {
         referenceType = referenceType.substring(
             referenceType.indexOf('<') + 1, referenceType.lastIndexOf('>'));
       }
-      if (referenceType.contains(',')) {
-        var split = referenceType.split(',');
-        referenceType = split[0].trim();
-        var referenceTypes = split.map((e) => e.trim()).toList();
-        untTypes.addAll(referenceTypes);
-      }
+      var split = referenceType.split(',');
+      referenceType = split[0].trim();
+      var referenceTypes = split.map((e) => e.trim()).toList();
+      untTypes.addAll(referenceTypes);
     }
     isReference = !Misc.isPrimitiveType(type);
     return NsgGenDataItemField(
