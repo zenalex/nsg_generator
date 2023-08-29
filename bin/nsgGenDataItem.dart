@@ -512,6 +512,10 @@ class NsgGenDataItem {
     codeList.add('using System.Linq;');
     codeList.add('using System.Threading.Tasks;');
     codeList.add('using NsgServerClasses;');
+    if (nsgMethod.allowCreate &&
+        nsgMethod.genDataItem.databaseTypeNamespace.isNotEmpty) {
+      codeList.add('using ${nsgMethod.genDataItem.databaseTypeNamespace};');
+    }
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
     codeList.add('{');
