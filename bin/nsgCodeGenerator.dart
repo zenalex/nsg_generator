@@ -46,10 +46,11 @@ void main(List<String> args) async {
 }
 
 void startGenerator(NsgGeneratorArgs args) async {
+  Directory.current = args.serviceConfigPath;
   var text = await readFile(args.serviceConfigPath);
   var generator = NsgGenerator.fromJson(json.decode(text));
-  generator.doCSharp = args.doCSharp;
-  generator.doDart = args.doDart;
+  generator.doCSharp &= args.doCSharp;
+  generator.doDart &= args.doDart;
   generator.forceOverwrite = args.forceOverwrite;
   generator.copyCsproj = args.copyCsproj;
   generator.copyProgramCs = args.copyProgramCs;

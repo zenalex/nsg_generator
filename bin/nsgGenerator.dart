@@ -32,6 +32,8 @@ class NsgGenerator {
       required this.cSharpNamespace,
       required this.dartPath,
       required this.applicationName,
+      this.doCSharp = true,
+      this.doDart = true,
       this.useStaticDatabaseNames = false,
       this.controllers = const [],
       this.enums = const []});
@@ -63,6 +65,8 @@ class NsgGenerator {
         cSharpPath: parsedJson['cSharpPath'] ?? '',
         cSharpNamespace: parsedJson['cSharpNamespace'] ?? '',
         dartPath: parsedJson['dartPath'] ?? '',
+        doCSharp: parsedJson['doCSharp'] != 'false',
+        doDart: parsedJson['doDart'] != 'false',
         applicationName: parsedJson['applicationName'] ?? 'application',
         useStaticDatabaseNames: parsedJson['useStaticDatabaseNames'] == 'true',
         controllers: (parsedJson['controller'] as List)
