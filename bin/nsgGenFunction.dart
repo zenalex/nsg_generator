@@ -110,6 +110,14 @@ class NsgGenFunction {
     return returnType;
   }
 
+  String get primType {
+    var primType = type;
+    if (primType.startsWith('Enum') || primType.contains('Enum<')) {
+      return 'int';
+    }
+    return primType;
+  }
+
   void writeMethod(NsgGenController nsgGenController, List<String> codeList) {
     if (description.isNotEmpty) {
       Misc.writeDescription(codeList, description, false);
@@ -204,10 +212,6 @@ class NsgGenFunction {
       codeList.add(
           'public async Task<HttpResponseMessage> $name($uriParamTNString)');
     } else {
-      var primType = type;
-      if (type.startsWith('Enum')) {
-        primType = 'int';
-      }
       codeList.add(
           'public async Task<Dictionary<string, IEnumerable<$primType>>> $name([FromBody] NsgFindParams findParams)');
     }
@@ -284,10 +288,6 @@ class NsgGenFunction {
       codeList.add(
           'Task<System.Net.Http.HttpResponseMessage> $name($uriParamTNString);');
     } else {
-      var primType = type;
-      if (type.startsWith('Enum')) {
-        primType = 'int';
-      }
       codeList.add(
           'Task<Dictionary<string, IEnumerable<$primType>>> $name($paramTNString);');
     }
@@ -328,10 +328,6 @@ class NsgGenFunction {
           'public async Task<System.Net.Http.HttpResponseMessage> $name($uriParamTNString)');
       codeList.add('    => await On$name($uriParamNString);');
     } else {
-      var primType = type;
-      if (type.startsWith('Enum')) {
-        primType = 'int';
-      }
       codeList.add(
           'public async Task<Dictionary<string, IEnumerable<$primType>>> $name($paramTNString)');
       codeList.add('    => await On$name($paramNString);');
@@ -380,10 +376,6 @@ class NsgGenFunction {
       codeList.add('return response;');
       codeList.add('}');
     } else {
-      var primType = type;
-      if (type.startsWith('Enum')) {
-        primType = 'int';
-      }
       codeList.add(
           'public async Task<Dictionary<string, IEnumerable<$primType>>> On$name($paramTNString)');
       codeList.add('{');
