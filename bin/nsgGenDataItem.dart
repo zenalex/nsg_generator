@@ -592,7 +592,7 @@ class NsgGenDataItem {
               'return await Delete<${nsgMethod.genDataItem.typeName}>(user, items.Cast<${nsgMethod.genDataItem.typeName}>());');
         } else {
           codeList.add(
-              'NsgServerMetadataItem.SetDeleteMarkAll<${nsgMethod.genDataItem.typeName}>(items);');
+              'NsgServerMetadataItem.SetDeleteMarkAll<${nsgMethod.genDataItem.typeName}>(user, items);');
           codeList.add(
               'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
           codeList.add('RES[RESULTS] = items;');
