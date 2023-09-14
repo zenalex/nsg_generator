@@ -104,8 +104,7 @@ generation_config.json - Основной файл, содержащий опи�
                 {
                     "name": "GetBrandOfModel",
                     "description": "Получение бренда, выпускающего данную модель",
-                    "type": "Reference",
-                    "referenceType": "BrandItem",
+                    "type": "Reference<BrandItem>",
                     "authorize": "user",
                     "params": [
                         {
@@ -485,6 +484,11 @@ Uri сервера
             "name": "OriginCountry",
             "databaseName": "СтранаПроисхождения",
             "type": "Reference<CategoryItem>"
+        },
+        {
+            "name": "DesignedBy",
+            "databaseName": "КемРазработана",
+            "type": "UntypedReference<PersonItem, CompanyItem>"
         },
         {
             "name": "Specs",
