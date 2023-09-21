@@ -519,6 +519,25 @@ class NsgGenController {
     if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
       await File(fn).writeAsString(codeList.join('\r\n'));
     }
+
+    codeList.clear();
+    codeList.add('using NsgServerClasses;');
+    codeList.add('using NsgSoft.DataObjects;');
+    codeList.add('');
+    codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
+    codeList.add('{');
+    codeList.add('public class ServerTokenItem : NsgTokenItem');
+    codeList.add('{');
+    codeList.add('public ПользователиСервисов Пользователь;');
+    codeList.add(
+        '//public override NsgDataDictionary DbUser => Пользователь.Пользователь;');
+    codeList.add('}');
+    codeList.add('}');
+    Misc.indentCSharpCode(codeList);
+    fn = '${nsgGenerator.cSharpPath}/Controllers/ServerTokenItem.cs';
+    if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
+      await File(fn).writeAsString(codeList.join('\r\n'));
+    }
   }
 
   Future load(NsgGenerator nsgGenerator) async {

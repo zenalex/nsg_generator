@@ -148,6 +148,7 @@ class NsgGenCSProject {
       codeList.add('{');
       codeList.add(
           'string baseAddress = System.Configuration.ConfigurationManager.AppSettings["URL"] ?? "http://127.0.0.1:5000/";');
+      codeList.add('NsgServerClasses.AuthSmsDataController.ForceReal = true;');
       codeList.add('try');
       codeList.add('{');
       codeList.add('using (WebApp.Start<Startup>(url: baseAddress))');
