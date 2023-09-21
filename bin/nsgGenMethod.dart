@@ -32,31 +32,41 @@ class NsgGenMethod {
       this.allowPost = false,
       this.allowDelete = false});
 
+  static Map<String, String> obsoleteKeys = {
+    'api_prefix': 'apiPrefix',
+  };
+
   factory NsgGenMethod.fromJson(Map<String, dynamic> parsedJson) {
+    Misc.checkObsoleteKeysInJSON('method', parsedJson, obsoleteKeys);
     var name = (parsedJson['name'] ?? '').toString();
-    var needsAllCRUD = name == 'UserSettings' || name == 'ExchangeRules';
-    return NsgGenMethod(
-        name: name,
-        description: parsedJson['description'] ?? '',
-        apiPrefix: parsedJson.containsKey('apiPrefix')
-            ? parsedJson['apiPrefix']
-            : parsedJson.containsKey('api_prefix')
-                ? parsedJson['api_prefix']
-                : name,
-        authorize: parsedJson['authorize'] ?? 'none',
-        getterType: (parsedJson.containsKey('getterType')
-                ? parsedJson['getterType']
-                : parsedJson['type'] ?? 'POST')
-            .toString()
-            .toUpperCase(),
-        dataTypeFlie: parsedJson['dataTypeFile'] ?? '',
-        allowGetter: (parsedJson.containsKey('allowGetter')
-                ? parsedJson['allowGetter'] != 'false'
-                : true) ||
-            needsAllCRUD,
-        allowCreate: parsedJson['allowCreate'] == 'true',
-        allowPost: parsedJson['allowPost'] == 'true' || needsAllCRUD,
-        allowDelete: parsedJson['allowDelete'] == 'true' || needsAllCRUD);
+    try {
+      var needsAllCRUD = name == 'UserSettings' || name == 'ExchangeRules';
+      return NsgGenMethod(
+          name: name,
+          description: parsedJson['description'] ?? '',
+          apiPrefix: parsedJson.containsKey('apiPrefix')
+              ? parsedJson['apiPrefix']
+              : parsedJson.containsKey('api_prefix')
+                  ? parsedJson['api_prefix']
+                  : name,
+          authorize: parsedJson['authorize'] ?? 'none',
+          getterType: (parsedJson.containsKey('getterType')
+                  ? parsedJson['getterType']
+                  : parsedJson['type'] ?? 'POST')
+              .toString()
+              .toUpperCase(),
+          dataTypeFlie: parsedJson['dataTypeFile'] ?? '',
+          allowGetter: (parsedJson.containsKey('allowGetter')
+                  ? parsedJson['allowGetter'] != 'false'
+                  : true) ||
+              needsAllCRUD,
+          allowCreate: parsedJson['allowCreate'] == 'true',
+          allowPost: parsedJson['allowPost'] == 'true' || needsAllCRUD,
+          allowDelete: parsedJson['allowDelete'] == 'true' || needsAllCRUD);
+    } catch (e) {
+      print('--- ERROR parsing method \'$name\' ---');
+      rethrow;
+    }
   }
 
   Future generateCode(List<String> codeList, NsgGenerator nsgGenerator,

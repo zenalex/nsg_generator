@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'misc.dart';
 import 'nsgGeneratorArgs.dart';
 import 'nsgGenerator.dart';
 
@@ -45,10 +46,16 @@ void main(List<String> args) async {
   startGenerator(nsgArgs);
 }
 
-void startGenerator(NsgGeneratorArgs args) async {
+Future startGenerator(NsgGeneratorArgs args) async {
   Directory.current = args.serviceConfigPath;
-  var text = await readFile(args.serviceConfigPath);
-  var generator = NsgGenerator.fromJson(json.decode(text));
+  NsgGenerator generator;
+  try {
+    var text = await readFile(args.serviceConfigPath);
+    generator = NsgGenerator.fromJson(json.decode(text));
+  } catch (e) {
+    print('--- ERROR parsing generator_config.json ---');
+    rethrow;
+  }
   generator.doCSharp &= args.doCSharp;
   generator.doDart &= args.doDart;
   generator.forceOverwrite = args.forceOverwrite;
@@ -63,9 +70,12 @@ void startGenerator(NsgGeneratorArgs args) async {
   }
   print('STARTING ${DateTime.now()}');
   print('controllers: ${generator.controllers.length}');
-  await generator
-      .writeCode(args.serviceConfigPath)
-      .whenComplete(() => print('FINISHED ${DateTime.now()}\n'));
+  try {
+    await generator.writeCode(args.serviceConfigPath);
+  } finally {
+    if (Misc.warnings.length > 0) print(Misc.warnings.join('\n'));
+    print('FINISHED ${DateTime.now()}\n');
+  }
 }
 
 Future<String> readFile(String path) async {

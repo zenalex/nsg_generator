@@ -17,6 +17,8 @@ class NsgGenEnum {
       this.description = ''});
 
   factory NsgGenEnum.fromJson(Map<String, dynamic> parsedJson) {
+    Misc.checkObsoleteKeysInJSON(
+        'enum', parsedJson, {'class_name': 'className'});
     return NsgGenEnum(
         className: parsedJson.containsKey('className')
             ? parsedJson['className']

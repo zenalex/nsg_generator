@@ -39,40 +39,52 @@ class NsgGenerator {
       this.enums = const []});
 
   factory NsgGenerator.fromJson(Map<String, dynamic> parsedJson) {
-    var targetFramework = parsedJson['targetFramework'] ?? 'net5.0';
-    if (targetFramework.isEmpty) targetFramework = 'net5.0';
-    var isDotNetCore = [
-      'netcoreapp1.0',
-      'netcoreapp1.1',
-      'netcoreapp2.0',
-      'netcoreapp2.1',
-      'netcoreapp2.2',
-      'netcoreapp3.0',
-      'netcoreapp3.1',
-      'net5.0',
-      'net6.0',
-      'net7.0'
-    ].contains(targetFramework);
-    var enums = <NsgGenEnum>[];
-    if (parsedJson.containsKey('enums')) {
-      enums = (parsedJson['enums'] as List)
-          .map((i) => NsgGenEnum.fromJson(i))
+    String currentProperty = 'targetFramework';
+    try {
+      var targetFramework = parsedJson['targetFramework'] ?? 'net5.0';
+      if (targetFramework.isEmpty) targetFramework = 'net5.0';
+      var isDotNetCore = [
+        'netcoreapp1.0',
+        'netcoreapp1.1',
+        'netcoreapp2.0',
+        'netcoreapp2.1',
+        'netcoreapp2.2',
+        'netcoreapp3.0',
+        'netcoreapp3.1',
+        'net5.0',
+        'net6.0',
+        'net7.0'
+      ].contains(targetFramework);
+      var enums = <NsgGenEnum>[];
+      if (parsedJson.containsKey('enums')) {
+        currentProperty = 'enums';
+        enums = (parsedJson['enums'] as List)
+            .map((i) => NsgGenEnum.fromJson(i))
+            .toList();
+      }
+      currentProperty = 'controller';
+      var controllers = (parsedJson['controller'] as List)
+          .map((i) => NsgGenController.fromJson(i))
           .toList();
+      currentProperty = '';
+      return NsgGenerator(
+          targetFramework: targetFramework,
+          isDotNetCore: isDotNetCore,
+          cSharpPath: parsedJson['cSharpPath'] ?? '',
+          cSharpNamespace: parsedJson['cSharpNamespace'] ?? '',
+          dartPath: parsedJson['dartPath'] ?? '',
+          doCSharp: parsedJson['doCSharp'] != 'false',
+          doDart: parsedJson['doDart'] != 'false',
+          applicationName: parsedJson['applicationName'] ?? 'application',
+          useStaticDatabaseNames:
+              parsedJson['useStaticDatabaseNames'] == 'true',
+          controllers: controllers,
+          enums: enums);
+    } catch (e) {
+      print(
+          '--- ERROR parsing${currentProperty.isEmpty ? '' : ' property \'$currentProperty\' from'} generation_config.json ---');
+      rethrow;
     }
-    return NsgGenerator(
-        targetFramework: targetFramework,
-        isDotNetCore: isDotNetCore,
-        cSharpPath: parsedJson['cSharpPath'] ?? '',
-        cSharpNamespace: parsedJson['cSharpNamespace'] ?? '',
-        dartPath: parsedJson['dartPath'] ?? '',
-        doCSharp: parsedJson['doCSharp'] != 'false',
-        doDart: parsedJson['doDart'] != 'false',
-        applicationName: parsedJson['applicationName'] ?? 'application',
-        useStaticDatabaseNames: parsedJson['useStaticDatabaseNames'] == 'true',
-        controllers: (parsedJson['controller'] as List)
-            .map((i) => NsgGenController.fromJson(i))
-            .toList(),
-        enums: enums);
   }
 
   String get genPathName => 'generated';

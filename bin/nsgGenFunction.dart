@@ -32,68 +32,79 @@ class NsgGenFunction {
       this.dialogText = '',
       this.params = const []});
 
+  static Map<String, String> obsoleteKeys = {
+    'api_prefix': 'apiPrefix',
+  };
+
   factory NsgGenFunction.fromJson(Map<String, dynamic> parsedJson) {
-    var httpGet =
-        parsedJson.containsKey('httpGet') && parsedJson['httpGet'] == 'true';
-    var httpPost =
-        parsedJson.containsKey('httpPost') && parsedJson['httpPost'] == 'true';
-    var apiType = parsedJson['apiType'];
-    if (apiType != null) {
-      apiType = apiType.toString().toLowerCase();
-      httpGet |= apiType.toString().contains('get');
-      httpPost |= apiType.toString().contains('post');
-    }
-    if (!httpGet && !httpPost) {
-      httpPost = true;
-      apiType = 'post';
-    }
-    if (apiType == null || apiType == '') {
-      if (httpGet && httpPost)
-        apiType = 'get, post';
-      else if (httpGet)
-        apiType = 'get';
-      else if (httpPost) apiType = 'post';
-    }
-    var type = (parsedJson['type'] ?? '').toString();
-    bool isReference = Misc.needToSpecifyType(type);
-    var referenceType = (parsedJson['referenceType'] ?? '').toString();
-    if (referenceType.isEmpty &&
-        type != 'List<Reference>' &&
-        type != 'List<Enum>' &&
-        (type.startsWith('List<') ||
-            type.startsWith('Enum<') ||
-            type.startsWith('Reference<')) &&
-        type.endsWith('>')) {
-      referenceType =
-          type.substring(type.indexOf('<') + 1, type.lastIndexOf('>'));
-      if (referenceType.contains('<') && referenceType.endsWith('>')) {
-        referenceType = referenceType.substring(
-            referenceType.indexOf('<') + 1, referenceType.lastIndexOf('>'));
+    Misc.checkObsoleteKeysInJSON('function', parsedJson, obsoleteKeys);
+    var name = parsedJson['name'] ?? '';
+    try {
+      var httpGet =
+          parsedJson.containsKey('httpGet') && parsedJson['httpGet'] == 'true';
+      var httpPost = parsedJson.containsKey('httpPost') &&
+          parsedJson['httpPost'] == 'true';
+      var apiType = parsedJson['apiType'];
+      if (apiType != null) {
+        apiType = apiType.toString().toLowerCase();
+        httpGet |= apiType.toString().contains('get');
+        httpPost |= apiType.toString().contains('post');
       }
+      if (!httpGet && !httpPost) {
+        httpPost = true;
+        apiType = 'post';
+      }
+      if (apiType == null || apiType == '') {
+        if (httpGet && httpPost)
+          apiType = 'get, post';
+        else if (httpGet)
+          apiType = 'get';
+        else if (httpPost) apiType = 'post';
+      }
+      var type = (parsedJson['type'] ?? '').toString();
+      bool isReference = Misc.needToSpecifyType(type);
+      var referenceType = (parsedJson['referenceType'] ?? '').toString();
+      if (referenceType.isEmpty &&
+          type != 'List<Reference>' &&
+          type != 'List<Enum>' &&
+          (type.startsWith('List<') ||
+              type.startsWith('Enum<') ||
+              type.startsWith('Reference<')) &&
+          type.endsWith('>')) {
+        referenceType =
+            type.substring(type.indexOf('<') + 1, type.lastIndexOf('>'));
+        if (referenceType.contains('<') && referenceType.endsWith('>')) {
+          referenceType = referenceType.substring(
+              referenceType.indexOf('<') + 1, referenceType.lastIndexOf('>'));
+        }
+      }
+      isReference = !Misc.isPrimitiveType(type);
+      return NsgGenFunction(
+          name: name,
+          apiType: apiType,
+          httpGet: httpGet,
+          httpPost: httpPost,
+          description: parsedJson['description'] ?? '',
+          apiPrefix: parsedJson.containsKey('apiPrefix')
+              ? parsedJson['apiPrefix']
+              : parsedJson.containsKey('api_prefix')
+                  ? parsedJson['api_prefix']
+                  : parsedJson['name'],
+          authorize: parsedJson['authorize'] ?? 'none',
+          type: parsedJson['type'] ?? '',
+          referenceName: parsedJson['referenceName'] ?? '',
+          referenceType: referenceType,
+          isReference: isReference,
+          dialogText: parsedJson['dialogText'] ?? '',
+          params: parsedJson.containsKey('params')
+              ? (parsedJson['params'] as List)
+                  .map((i) => NsgGenMethodParam.fromJson(i))
+                  .toList()
+              : []);
+    } catch (e) {
+      print('--- ERROR parsing function \'$name\' ---');
+      rethrow;
     }
-    isReference = !Misc.isPrimitiveType(type);
-    return NsgGenFunction(
-        name: parsedJson['name'] ?? '',
-        apiType: apiType,
-        httpGet: httpGet,
-        httpPost: httpPost,
-        description: parsedJson['description'] ?? '',
-        apiPrefix: parsedJson.containsKey('apiPrefix')
-            ? parsedJson['apiPrefix']
-            : parsedJson.containsKey('api_prefix')
-                ? parsedJson['api_prefix']
-                : parsedJson['name'],
-        authorize: parsedJson['authorize'] ?? 'none',
-        type: parsedJson['type'] ?? '',
-        referenceName: parsedJson['referenceName'] ?? '',
-        referenceType: referenceType,
-        isReference: isReference,
-        dialogText: parsedJson['dialogText'] ?? '',
-        params: parsedJson.containsKey('params')
-            ? (parsedJson['params'] as List)
-                .map((i) => NsgGenMethodParam.fromJson(i))
-                .toList()
-            : []);
   }
 
   String get dartName => Misc.getDartName(name);
@@ -496,30 +507,36 @@ class NsgGenMethodParam {
       this.isReference = false});
 
   factory NsgGenMethodParam.fromJson(Map<String, dynamic> parsedJson) {
-    var type = (parsedJson['type'] ?? '').toString();
-    bool isReference = Misc.needToSpecifyType(type);
-    var referenceType = (parsedJson['referenceType'] ?? '').toString();
-    if (type == 'Date') type = 'DateTime';
-    if (referenceType.isEmpty &&
-        type != 'List<Reference>' &&
-        type != 'List<Enum>' &&
-        (type.startsWith('List<') ||
-            type.startsWith('Enum<') ||
-            type.startsWith('Reference<')) &&
-        type.endsWith('>')) {
-      referenceType =
-          type.substring(type.indexOf('<') + 1, type.lastIndexOf('>'));
-      if (referenceType.contains('<') && referenceType.endsWith('>')) {
-        referenceType = referenceType.substring(
-            referenceType.indexOf('<') + 1, referenceType.lastIndexOf('>'));
+    var name = parsedJson['name'];
+    try {
+      var type = (parsedJson['type'] ?? '').toString();
+      bool isReference = Misc.needToSpecifyType(type);
+      var referenceType = (parsedJson['referenceType'] ?? '').toString();
+      if (type == 'Date') type = 'DateTime';
+      if (referenceType.isEmpty &&
+          type != 'List<Reference>' &&
+          type != 'List<Enum>' &&
+          (type.startsWith('List<') ||
+              type.startsWith('Enum<') ||
+              type.startsWith('Reference<')) &&
+          type.endsWith('>')) {
+        referenceType =
+            type.substring(type.indexOf('<') + 1, type.lastIndexOf('>'));
+        if (referenceType.contains('<') && referenceType.endsWith('>')) {
+          referenceType = referenceType.substring(
+              referenceType.indexOf('<') + 1, referenceType.lastIndexOf('>'));
+        }
       }
+      isReference = !Misc.isPrimitiveType(type);
+      return NsgGenMethodParam(
+          name: parsedJson['name'],
+          type: type,
+          referenceType: referenceType,
+          isReference: isReference);
+    } catch (e) {
+      print('--- ERROR parsing function param \'$name\' ---');
+      rethrow;
     }
-    isReference = !Misc.isPrimitiveType(type);
-    return NsgGenMethodParam(
-        name: parsedJson['name'],
-        type: type,
-        referenceType: referenceType,
-        isReference: isReference);
   }
 
   String get returnType {

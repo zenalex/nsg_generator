@@ -35,7 +35,15 @@ class NsgGenController {
       this.methods = const [],
       this.functions = const []});
 
+  static Map<String, String> obsoleteKeys = {
+    'class_name': 'className',
+    'api_prefix': 'apiPrefix',
+    'impl_controller_name': 'implControllerName',
+    'impl_auth_controller_name': 'implAuthControllerName',
+  };
+
   factory NsgGenController.fromJson(Map<String, dynamic> parsedJson) {
+    Misc.checkObsoleteKeysInJSON('controller', parsedJson, obsoleteKeys);
     var className = parsedJson.containsKey('className')
         ? parsedJson['className']
         : parsedJson['class_name'];

@@ -136,4 +136,17 @@ class Misc {
     'Image',
     'Binary'
   ];
+
+  static List<String> warnings = [];
+  static void checkObsoleteKeysInJSON(String objectType,
+      Map<String, dynamic> parsedJson, Map<String, String> obsoleteKeys) {
+    obsoleteKeys.forEach((key, value) {
+      if (parsedJson.containsKey(key)) {
+        var message = value.isEmpty
+            ? '--- Key $key is no longer used in $objectType declaration ---'
+            : '--- Obsolete key \'$key\' in $objectType declaration. Use \'$value\' instead ---';
+        if (!warnings.contains(message)) warnings.add(message);
+      }
+    });
+  }
 }

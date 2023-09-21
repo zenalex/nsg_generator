@@ -45,25 +45,31 @@ class NsgGenDataItem {
 
   factory NsgGenDataItem.fromJson(Map<String, dynamic> parsedJson) {
     var tn = parsedJson['typeName'] ?? '';
-    return NsgGenDataItem(
-        typeName: tn,
-        description: parsedJson.containsKey('description')
-            ? parsedJson['description'] ?? ''
-            : parsedJson['databaseType'] ?? '',
-        databaseType: parsedJson['databaseType'] ?? '',
-        databaseTypeNamespace: parsedJson['databaseTypeNamespace'] ?? '',
-        presentation: parsedJson['presentation'] ?? '',
-        maxHttpGetItems: parsedJson['maxHttpGetItems'] ?? 100,
-        periodFieldName: parsedJson['periodFieldName'] ?? '',
-        lastEditedFieldName: parsedJson['lastEditedFieldName'] ?? '',
-        useStaticDatabaseNames: parsedJson['useStaticDatabaseNames'] == 'true',
-        isDistributed: parsedJson['isDistributed'] == 'true',
-        isTableRow: parsedJson['isTableRow'] == 'true',
-        entityType:
-            NsgGenDataItemEntityType.parse(parsedJson['entityType'] ?? '', tn),
-        fields: (parsedJson['fields'] as List)
-            .map((i) => NsgGenDataItemField.fromJson(i))
-            .toList());
+    try {
+      return NsgGenDataItem(
+          typeName: tn,
+          description: parsedJson.containsKey('description')
+              ? parsedJson['description'] ?? ''
+              : parsedJson['databaseType'] ?? '',
+          databaseType: parsedJson['databaseType'] ?? '',
+          databaseTypeNamespace: parsedJson['databaseTypeNamespace'] ?? '',
+          presentation: parsedJson['presentation'] ?? '',
+          maxHttpGetItems: parsedJson['maxHttpGetItems'] ?? 100,
+          periodFieldName: parsedJson['periodFieldName'] ?? '',
+          lastEditedFieldName: parsedJson['lastEditedFieldName'] ?? '',
+          useStaticDatabaseNames:
+              parsedJson['useStaticDatabaseNames'] == 'true',
+          isDistributed: parsedJson['isDistributed'] == 'true',
+          isTableRow: parsedJson['isTableRow'] == 'true',
+          entityType: NsgGenDataItemEntityType.parse(
+              parsedJson['entityType'] ?? '', tn),
+          fields: (parsedJson['fields'] as List)
+              .map((i) => NsgGenDataItemField.fromJson(i))
+              .toList());
+    } catch (e) {
+      print('--- ERROR parsing type \'$tn\' ---');
+      rethrow;
+    }
   }
 
   void writeCode(NsgGenerator nsgGenerator, NsgGenMethod nsgMethod) async {
