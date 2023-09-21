@@ -528,7 +528,9 @@ class NsgGenController {
     codeList.add('{');
     codeList.add('public class ServerTokenItem : NsgTokenItem');
     codeList.add('{');
-    codeList.add('public ПользователиСервисов Пользователь;');
+    codeList.add('// TODO: уточнить тип');
+    codeList
+        .add('public /*ПользователиСервисов*/NsgDataDictionary Пользователь;');
     codeList.add(
         '//public override NsgDataDictionary DbUser => Пользователь.Пользователь;');
     codeList.add('}');
