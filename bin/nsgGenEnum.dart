@@ -40,66 +40,73 @@ class NsgGenEnum {
   }
 
   Future generateCode(NsgGenerator nsgGenerator) async {
-    if (nsgGenerator.doCSharp) {
-      var codeList = <String>[];
-      codeList.add('using System;');
-      codeList.add('using System.Collections.Generic;');
-      codeList.add('using System.Linq;');
-      codeList.add('using NsgServerClasses;');
-      codeList.add('');
-      codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
-      codeList.add('{');
-      if (description.isNotEmpty) {
-        Misc.writeDescription(codeList, description, true);
-      }
-      codeList.add('public class $className : NsgServerEnum');
-      codeList.add('{');
-      assert(values != null);
-      values!.forEach((i) {
+    var currentStage = 'C#';
+    try {
+      if (nsgGenerator.doCSharp) {
+        var codeList = <String>[];
+        codeList.add('using System;');
+        codeList.add('using System.Collections.Generic;');
+        codeList.add('using System.Linq;');
+        codeList.add('using NsgServerClasses;');
+        codeList.add('');
+        codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
+        codeList.add('{');
+        if (description.isNotEmpty) {
+          Misc.writeDescription(codeList, description, true);
+        }
+        codeList.add('public class $className : NsgServerEnum');
+        codeList.add('{');
+        assert(values != null);
+        values!.forEach((i) {
+          codeList.add(
+              'public static $className ${i.codeName} { get; } = new $className(${i.value}, "${i.name}");');
+        });
+        codeList.add('');
         codeList.add(
-            'public static $className ${i.codeName} { get; } = new $className(${i.value}, "${i.name}");');
-      });
-      codeList.add('');
-      codeList.add(
-          'private $className(int val, string name) : base(val, name) { }');
-      codeList.add('');
-      codeList.add('public static IEnumerable<$className> List()');
-      codeList.add('{');
-      codeList.add(
-          'return new[] { ${values!.map((e) => e.codeName).join(', ')} };');
-      codeList.add('}');
-      codeList.add('');
-      codeList.add('public static explicit operator $className(string name)');
-      codeList.add('{');
-      codeList.add('foreach ($className i in List())');
-      codeList.add('{');
-      codeList.add(
-          'if (string.Equals(i.Name, name, StringComparison.OrdinalIgnoreCase))');
-      codeList.add('    return i;');
-      codeList.add('}');
-      codeList.add('return null;');
-      codeList.add('}');
-      codeList.add('');
-      codeList.add('public static explicit operator $className(int value)');
-      codeList.add('{');
-      codeList.add('foreach ($className i in List())');
-      codeList.add('{');
-      codeList.add('if (i.Value == value)');
-      codeList.add('    return i;');
-      codeList.add('}');
-      codeList.add('return null;');
-      codeList.add('}');
-      codeList.add('}');
-      codeList.add('}');
-      Misc.indentCSharpCode(codeList);
+            'private $className(int val, string name) : base(val, name) { }');
+        codeList.add('');
+        codeList.add('public static IEnumerable<$className> List()');
+        codeList.add('{');
+        codeList.add(
+            'return new[] { ${values!.map((e) => e.codeName).join(', ')} };');
+        codeList.add('}');
+        codeList.add('');
+        codeList.add('public static explicit operator $className(string name)');
+        codeList.add('{');
+        codeList.add('foreach ($className i in List())');
+        codeList.add('{');
+        codeList.add(
+            'if (string.Equals(i.Name, name, StringComparison.OrdinalIgnoreCase))');
+        codeList.add('    return i;');
+        codeList.add('}');
+        codeList.add('return null;');
+        codeList.add('}');
+        codeList.add('');
+        codeList.add('public static explicit operator $className(int value)');
+        codeList.add('{');
+        codeList.add('foreach ($className i in List())');
+        codeList.add('{');
+        codeList.add('if (i.Value == value)');
+        codeList.add('    return i;');
+        codeList.add('}');
+        codeList.add('return null;');
+        codeList.add('}');
+        codeList.add('}');
+        codeList.add('}');
+        Misc.indentCSharpCode(codeList);
 
-      var fn = '${nsgGenerator.cSharpPath}/Enums/$className.cs';
-      //if (!File(fn).existsSync()) {
-      await File(fn).writeAsString(codeList.join('\r\n'));
-      //}
-    }
-    if (nsgGenerator.doDart) {
-      await generateCodeDart(nsgGenerator);
+        var fn = '${nsgGenerator.cSharpPath}/Enums/$className.cs';
+        //if (!File(fn).existsSync()) {
+        await File(fn).writeAsString(codeList.join('\r\n'));
+        //}
+      }
+      if (nsgGenerator.doDart) {
+        currentStage = 'Dart';
+        await generateCodeDart(nsgGenerator);
+      }
+    } catch (e) {
+      print('--- ERROR generating $currentStage enum $className ---');
+      rethrow;
     }
   }
 
