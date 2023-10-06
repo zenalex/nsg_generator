@@ -38,6 +38,7 @@ generation_config.json - Основной файл, содержащий опи�
     "cSharpNamespace": "TechControlServer",
     "dartPath": "C:/Users/SergeiFdrv/source/repos/MyApp/Client/lib/model",
     "applicationName": "my_app",
+    "useStaticDatabaseNames": "true",
     "controller": [
         {
             "apiPrefix": "Api",

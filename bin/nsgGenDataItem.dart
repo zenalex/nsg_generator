@@ -299,7 +299,8 @@ class NsgGenDataItem {
       if (entityType != NsgGenDataItemEntityType.dataItem &&
           (field.name == pkField.name ||
               NsgGenDataItemEntityType.typeFields[entityType]!
-                  .contains(field.name))) return;
+                      .contains(field.name) &&
+                  !field.nsgDataType.contains('Reference'))) return;
       if (field.type == 'int') {
         codeList.add('ValueDictionary[Names.${field.name}] = 0;');
       } else if (field.type == 'double') {
