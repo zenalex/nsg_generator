@@ -347,6 +347,8 @@ class NsgGenCSProject {
           'config.Formatters.JsonFormatter.SerializerSettings.DefaultValueHandling =');
       codeList
           .add('    Newtonsoft.Json.DefaultValueHandling.IgnoreAndPopulate;');
+      codeList.add(
+          'config.Formatters.JsonFormatter.SerializerSettings.Converters.Add(new UtcDateTimeConverter());');
       codeList.add('app.UseWebApi(config);');
       codeList.add('');
       nsgGenerator.controllers.forEach((controller) {

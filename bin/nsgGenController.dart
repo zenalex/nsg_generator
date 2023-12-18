@@ -194,7 +194,7 @@ class NsgGenController {
         codeList.add('#region types');
         methods.forEach((el) {
           codeList.add(
-              'NsgServerDataItem.Types.Add("${Misc.getDartName(el.genDataItem.typeName)}", new ${el.genDataItem.typeName}());');
+              'NsgServerDataItem.Types.TryAdd("${Misc.getDartName(el.genDataItem.typeName)}", new ${el.genDataItem.typeName}());');
         });
         codeList.add('#endregion');
         codeList.add(
