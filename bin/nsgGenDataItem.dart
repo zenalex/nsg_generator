@@ -9,8 +9,10 @@ import 'nsgGenerator.dart';
 class NsgGenDataItem {
   final String typeName;
   final NsgGenDataItemEntityType entityType;
-  final String extend;
+  final bool allowExtend;
   final String additionalDataField;
+  final String extensionTypeField;
+  final String extend;
   final String description;
   final String databaseType;
   final String databaseTypeNamespace;
@@ -28,8 +30,10 @@ class NsgGenDataItem {
   NsgGenDataItem(
       {required this.typeName,
       this.entityType = NsgGenDataItemEntityType.dataItem,
-      this.extend = '',
+      this.allowExtend = false,
       this.additionalDataField = '',
+      this.extensionTypeField = '',
+      this.extend = '',
       this.description = '',
       this.databaseType = '',
       this.databaseTypeNamespace = '',
@@ -52,8 +56,10 @@ class NsgGenDataItem {
     try {
       return NsgGenDataItem(
           typeName: tn,
-          extend: parsedJson['extends'] ?? '',
+          allowExtend: parsedJson['allowExtend'] == 'true',
           additionalDataField: parsedJson['additionalDataField'] ?? '',
+          extensionTypeField: parsedJson['extensionTypeField'] ?? '',
+          extend: parsedJson['extends'] ?? '',
           description: parsedJson.containsKey('description')
               ? parsedJson['description'] ?? ''
               : parsedJson['databaseType'] ?? '',
@@ -95,6 +101,9 @@ class NsgGenDataItem {
     NsgGenDataItem? baseObject;
     if (extend.isNotEmpty && nsgGenerator.dataItems.containsKey(extend)) {
       baseObject = nsgGenerator.dataItems[extend]!;
+      if (!baseObject.allowExtend) {
+        throw Exception('Extension of ${baseObject.typeName} is not allowed');
+      }
       databaseType = baseObject.databaseType;
       databaseTypeNamespace = baseObject.databaseTypeNamespace;
     } else if (databaseType.isNotEmpty) {
@@ -214,19 +223,19 @@ class NsgGenDataItem {
       codeList.add('}');
       codeList.add('}');
       codeList.add('');
-      if (additionalDataField.isNotEmpty) {
+      if (baseObject != null && baseObject.additionalDataField.isNotEmpty) {
         codeList.add(
             'protected override void NsgToServerObject(NsgMultipleObject obj)');
         codeList.add('{');
-        codeList.add('FromJson(this.$additionalDataField);');
+        codeList.add('FromJson(this.${baseObject.additionalDataField});');
         codeList.add('base.NsgToServerObject(obj);');
         codeList.add('}');
         codeList.add('');
         codeList.add(
             'public override void ServerToNsgObject(INsgTokenExtension user, NsgMultipleObject nsgObject)');
         codeList.add('{');
-        codeList.add('this.$additionalDataField = ToJson();');
         codeList.add('base.ServerToNsgObject(user, nsgObject);');
+        codeList.add('this.${baseObject.additionalDataField} = ToJson();');
         codeList.add('}');
         codeList.add('');
       }
@@ -766,6 +775,22 @@ class NsgGenDataItem {
     if (nsgGenMethod.genDataItem.isDistributed) {
       codeList.add('  @override');
       codeList.add('  bool get isDistributed => true;');
+      codeList.add('');
+    }
+    bool isExtension =
+        baseObject != null && baseObject.additionalDataField.isNotEmpty;
+    if (isExtension) {
+      codeList.add('  @override');
+      codeList.add('  bool get additionalDataField => true;');
+      codeList.add('');
+    }
+    bool isBaseObject = allowExtend && extensionTypeField.isNotEmpty;
+    if (isBaseObject) {
+      codeList.add('  @override');
+      codeList.add('  bool get allowExtend => true;');
+      codeList.add('');
+      codeList.add('  @override');
+      codeList.add('  bool get extensionTypeField => true;');
       codeList.add('');
     }
     codeList.add('  @override');
