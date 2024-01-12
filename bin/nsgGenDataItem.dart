@@ -228,6 +228,7 @@ class NsgGenDataItem {
         codeList.add('this.$additionalDataField = ToJson();');
         codeList.add('base.ServerToNsgObject(user, nsgObject);');
         codeList.add('}');
+        codeList.add('');
       }
     }
     //print(typeName);
@@ -346,7 +347,7 @@ class NsgGenDataItem {
     }
     codeList.add('public override void SetDefaultValues()');
     codeList.add('{');
-    if (entityType != NsgGenDataItemEntityType.dataItem)
+    if (entityType != NsgGenDataItemEntityType.dataItem || baseObject != null)
       codeList.add('base.SetDefaultValues();');
     fields.forEach((field) {
       if (!field.writeOnServer) return;
