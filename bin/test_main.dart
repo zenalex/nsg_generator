@@ -76,12 +76,26 @@ class Project {
       'C:/Users/pro5/source/repos/sal_ad_app_a/lib/model');
   static Project CognitiveTraining = Project(
       'C:/Users/pro5/source/repos/cognitive_training/json',
-      '', doCSharp: false,
+      'C:/Users/pro5/source/repos/cognitive_training_server',
       'C:/Users/pro5/source/repos/cognitive_training/lib/model');
   static Project NsgChats = Project(
       'C:/Users/pro5/source/repos/nsg_chats_server/GenerationConfig',
       'C:/Users/pro5/source/repos/nsg_chats_server',
-      '', doDart: false);
+      '',
+      doDart: false);
+  static Project TestProj = Project('C:/Users/pro5/source/repos/test_proj/json',
+      '', 'C:/Users/pro5/source/repos/test_proj/lib/model');
+  static Project NsgLocalization = Project(
+      'C:/Users/pro5/source/repos/nsg_localization_server/json', '', '');
+  static Project ScifForklift = Project(
+      'C:/Users/pro5/source/repos/scif_forklift_server/json',
+      'C:/Users/pro5/source/repos/scif_forklift_server',
+      'C:/Users/pro5/source/repos/scif_forklift_app/lib/model');
+  static Project GPT = Project(
+      'C:/Users/pro5/source/repos/ChatGPTServer/GenerationConfig',
+      'C:/Users/pro5/source/repos/ChatGPTServer',
+      '',
+      doDart: false);
   String configPath;
   String csPath;
   String dartPath;
