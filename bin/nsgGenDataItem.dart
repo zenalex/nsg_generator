@@ -239,6 +239,12 @@ class NsgGenDataItem {
         codeList.add('}');
         codeList.add('');
       }
+      if (allowExtend && extensionTypeField.isNotEmpty) {
+        codeList.add('public override bool AllowExtend => true;');
+        codeList.add(
+            'public override string ExtensionTypeField => Names.$extensionTypeField;');
+        codeList.add('');
+      }
     }
     //print(typeName);
     NsgGenDataItemField pkField;
@@ -781,16 +787,13 @@ class NsgGenDataItem {
         baseObject != null && baseObject.additionalDataField.isNotEmpty;
     if (isExtension) {
       codeList.add('  @override');
-      codeList.add('  bool get additionalDataField => true;');
+      codeList.add('  String get additionalDataField => true;');
       codeList.add('');
     }
     bool isBaseObject = allowExtend && extensionTypeField.isNotEmpty;
     if (isBaseObject) {
       codeList.add('  @override');
       codeList.add('  bool get allowExtend => true;');
-      codeList.add('');
-      codeList.add('  @override');
-      codeList.add('  bool get extensionTypeField => true;');
       codeList.add('');
     }
     codeList.add('  @override');
