@@ -787,7 +787,8 @@ class NsgGenDataItem {
         baseObject != null && baseObject.additionalDataField.isNotEmpty;
     if (isExtension) {
       codeList.add('  @override');
-      codeList.add('  String get additionalDataField => true;');
+      codeList.add(
+          '  String get additionalDataField => name${baseObject.additionalDataField};');
       codeList.add('');
     }
     bool isBaseObject = allowExtend && extensionTypeField.isNotEmpty;
