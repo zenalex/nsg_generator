@@ -783,18 +783,20 @@ class NsgGenDataItem {
       codeList.add('  bool get isDistributed => true;');
       codeList.add('');
     }
-    bool isExtension =
-        baseObject != null && baseObject.additionalDataField.isNotEmpty;
-    if (isExtension) {
+    if (additionalDataField.isNotEmpty) {
       codeList.add('  @override');
-      codeList.add(
-          '  String get additionalDataField => name${baseObject.additionalDataField};');
+      codeList
+          .add('  String get additionalDataField => name$additionalDataField;');
       codeList.add('');
     }
     bool isBaseObject = allowExtend && extensionTypeField.isNotEmpty;
     if (isBaseObject) {
       codeList.add('  @override');
       codeList.add('  bool get allowExtend => true;');
+      codeList.add('');
+      codeList.add('  @override');
+      codeList
+          .add('  String get extensionTypeField => name$extensionTypeField;');
       codeList.add('');
     }
     codeList.add('  @override');
