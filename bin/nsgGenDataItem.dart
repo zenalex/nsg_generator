@@ -223,19 +223,33 @@ class NsgGenDataItem {
       codeList.add('}');
       codeList.add('}');
       codeList.add('');
-      if (baseObject != null && baseObject.additionalDataField.isNotEmpty) {
+      if (baseObject != null &&
+          baseObject.additionalDataField.isNotEmpty &&
+          fields.isNotEmpty) {
         codeList.add(
             'protected override void NsgToServerObject(NsgMultipleObject obj)');
         codeList.add('{');
-        codeList.add('FromJson(this.${baseObject.additionalDataField});');
         codeList.add('base.NsgToServerObject(obj);');
+        codeList.add('FromJson(this.${baseObject.additionalDataField}, new[]');
+        codeList.add('{');
+        fields.forEach((field) {
+          codeList.add('Names.${field.name},');
+        });
+        codeList.add('});');
         codeList.add('}');
         codeList.add('');
         codeList.add(
             'public override void ServerToNsgObject(INsgTokenExtension user, NsgMultipleObject nsgObject)');
         codeList.add('{');
+        codeList.add('this.${baseObject.additionalDataField} = ToJson(new[]');
+        codeList.add('{');
+        fields.forEach((field) {
+          codeList.add('Names.${field.name},');
+        });
+        codeList.add('});');
+        codeList.add(
+            'this.ChangedProperties.Add(${baseObject.typeName}.Names.AdditionalProperties);');
         codeList.add('base.ServerToNsgObject(user, nsgObject);');
-        codeList.add('this.${baseObject.additionalDataField} = ToJson();');
         codeList.add('}');
         codeList.add('');
       }
