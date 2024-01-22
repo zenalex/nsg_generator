@@ -14,6 +14,8 @@ class NsgGenFunction {
   final String referenceName;
   final String referenceType;
   final bool isReference;
+  final bool isNullable;
+  final bool useProgressDialog;
   final String dialogText;
   final List<NsgGenMethodParam> params;
 
@@ -28,7 +30,9 @@ class NsgGenFunction {
       required this.type,
       this.referenceName = '',
       this.referenceType = '',
+      this.isNullable = true,
       this.isReference = false,
+      this.useProgressDialog = false,
       this.dialogText = '',
       this.params = const []});
 
@@ -94,7 +98,13 @@ class NsgGenFunction {
           type: parsedJson['type'] ?? '',
           referenceName: parsedJson['referenceName'] ?? '',
           referenceType: referenceType,
+          isNullable: parsedJson.containsKey('isNullable')
+              ? parsedJson['isNullable'] != 'false'
+              : true,
           isReference: isReference,
+          useProgressDialog: parsedJson.containsKey('useProgressDialog')
+              ? parsedJson['useProgressDialog'] != 'false'
+              : true,
           dialogText: parsedJson['dialogText'] ?? '',
           params: parsedJson.containsKey('params')
               ? (parsedJson['params'] as List)
@@ -411,74 +421,88 @@ class NsgGenFunction {
         paramTNString += p.returnType + ' ' + p.name + ', ';
       });
     }
-    var dlg = dialogText.isEmpty ? '' : ' = \'$dialogText\'';
-    paramTNString +=
-        '{NsgDataRequestParams? filter, bool showProgress = false, bool isStoppable = false, String? textDialog$dlg}';
+    if (useProgressDialog) {
+      var dlg = dialogText.isEmpty ? '' : ' = \'$dialogText\'';
+      paramTNString +=
+          '{NsgDataRequestParams? filter, bool showProgress = false, bool isStoppable = false, String? textDialog$dlg}';
+    } else {
+      paramTNString += '{NsgDataRequestParams? filter}';
+    }
 
     // if (type.startsWith('List') && isReference) {
     //   codeList.add(
     //       '  Future<List<$dartType>> $dartName($paramTNString) async {');
     // } else
     if (isReference && !type.startsWith('List')) {
-      codeList.add('  Future<$dartType?> $dartName($paramTNString) async {');
+      String functionType = dartType;
+      if (isNullable) functionType += '?';
+      codeList.add('  Future<$functionType> $dartName($paramTNString) async {');
     } else {
       codeList
           .add('  Future<List<$dartType>> $dartName($paramTNString) async {');
     }
-    codeList.add(
-        '    var progress = NsgProgressDialogHelper(showProgress: showProgress, isStoppable: isStoppable, textDialog: textDialog);');
-    codeList.add('    try {');
-    codeList.add('      var params = <String, dynamic>{};');
+    var _ = '';
+    if (useProgressDialog) {
+      codeList.add(
+          '    var progress = NsgProgressDialogHelper(showProgress: showProgress, isStoppable: isStoppable, textDialog: textDialog);');
+      codeList.add('    try {');
+      _ = '  ';
+    }
+    codeList.add('$_    var params = <String, dynamic>{};');
     if (params.isNotEmpty) {
       params.forEach((p) {
         if (p.type == 'String') {
-          codeList.add('      params[\'${p.name}\'] = ${p.name};');
+          codeList.add('$_    params[\'${p.name}\'] = ${p.name};');
         } else if (p.type == 'DateTime') {
           codeList.add(
-              '      params[\'${p.name}\'] = ${p.name}.toIso8601String();');
+              '$_    params[\'${p.name}\'] = ${p.name}.toIso8601String();');
         } else if (p.type.startsWith('List')) {
           if (p.isReference) {
             codeList.add(
-                '      params[\'${p.name}\'] = ${p.name}.map((obj) => obj.toJson()).toList();');
+                '$_    params[\'${p.name}\'] = ${p.name}.map((obj) => obj.toJson()).toList();');
           } else {
-            codeList.add('      params[\'${p.name}\'] = ${p.name};');
+            codeList.add('$_    params[\'${p.name}\'] = ${p.name};');
           }
         } else if (p.isReference) {
-          codeList.add('      params[\'${p.name}\'] = ${p.name}.toJson();');
+          codeList.add('$_    params[\'${p.name}\'] = ${p.name}.toJson();');
         } else if (p.type.startsWith('Enum')) {
-          codeList.add('      params[\'${p.name}\'] = ${p.name}.value;');
+          codeList.add('$_    params[\'${p.name}\'] = ${p.name}.value;');
         } else {
-          codeList.add('      params[\'${p.name}\'] = ${p.name}.toString();');
+          codeList.add('$_    params[\'${p.name}\'] = ${p.name}.toString();');
         }
       });
     }
-    codeList.add('      filter ??= NsgDataRequestParams();');
-    codeList.add('      filter.params?.addAll(params);');
-    codeList.add('      filter.params ??= params;');
+    codeList.add('$_    filter ??= NsgDataRequestParams();');
+    codeList.add('$_    filter.params?.addAll(params);');
+    codeList.add('$_    filter.params ??= params;');
     if (isReference) {
       if (type.startsWith('List')) {
         codeList.add(
-            '      var res = await NsgDataRequest<$dartType>().requestItems(');
+            '$_    var res = await NsgDataRequest<$dartType>().requestItems(');
       } else {
         codeList.add(
-            '      var res = await NsgDataRequest<$dartType>().requestItem(');
+            '$_    var res = await NsgDataRequest<$dartType>().requestItem(');
       }
     } else /*if (type.startsWith('List'))*/ {
       codeList.add(
-          '      var res = await NsgSimpleRequest<$dartType>().requestItems(');
-      codeList.add('          provider: provider!,');
+          '$_    var res = await NsgSimpleRequest<$dartType>().requestItems(');
+      codeList.add('$_        provider: provider!,');
       // } else {
       //   codeList.add(
       //       '      var res = await NsgSimpleRequest<$dartType>().requestItem(');
     }
     codeList
-        .add('          function: \'/${controller.apiPrefix}/$apiPrefix\',');
-    codeList.add('          method: \'${apiType.toUpperCase()}\',');
-    codeList.add('          filter: filter,');
-    codeList.add('          autoRepeate: true,');
-    codeList.add('          autoRepeateCount: 3,');
-    codeList.add('          cancelToken: progress.cancelToken);');
-    codeList.add('      return res;');
+        .add('$_        function: \'/${controller.apiPrefix}/$apiPrefix\',');
+    codeList.add('$_        method: \'${apiType.toUpperCase()}\',');
+    codeList.add('$_        filter: filter,');
+    codeList.add('$_        autoRepeate: true,');
+    if (useProgressDialog) {
+      codeList.add('$_        autoRepeateCount: 3,');
+      codeList.add('$_        cancelToken: progress.cancelToken);');
+    } else {
+      codeList.add('$_        autoRepeateCount: 3);');
+    }
+    codeList.add('$_    return res;');
     // codeList.add('    } catch (e) {');
     // if (type == 'List<Reference>') {
     //   codeList.add('      return [];');
@@ -487,9 +511,11 @@ class NsgGenFunction {
     // } else {
     //   codeList.add('      return <$dartType>[];');
     // }
-    codeList.add('    } finally {');
-    codeList.add('      progress.hide();');
-    codeList.add('    }');
+    if (useProgressDialog) {
+      codeList.add('    } finally {');
+      codeList.add('      progress.hide();');
+      codeList.add('    }');
+    }
     codeList.add('  }');
   }
 }
