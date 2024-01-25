@@ -34,7 +34,9 @@ class NsgGenEnum {
     var parsedEnumJson = json.decode(text);
     values = (parsedEnumJson['values'] as List)
         .map((i) => NsgGenEnumItem(
-            codeName: i['codeName'], name: i['name'], value: i['value']))
+            codeName: i['codeName'],
+            name: i['name'] ?? i['codeName'],
+            value: i['value']))
         .toList();
     //print('$class_name Enum initialized');
   }

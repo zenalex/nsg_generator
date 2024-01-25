@@ -334,6 +334,7 @@ Uri сервера
 Требуемые поля в **ExchangeRules**:  
 - идентификатор (ключевое поле, тип String или Guid)
 - objectType (тип String)
+- lastExchangeDate (тип DateTime)
 - periodicity (тип int)
 - priorityForClient (тип bool)
 - mergingRules (тип List&lt;ExchangeRulesMergingTable&gt;)
@@ -765,7 +766,7 @@ Uri сервера
 "codeName": "Unknown",
 ```
 
-Имя для человека  
+Имя для человека. По умолчанию равно ```codeName```  
 ```json
 "name": "Неизвестно",
 ```

@@ -959,6 +959,7 @@ enum NsgGenDataItemEntityType {
     NsgGenDataItemEntityType.userSettings: ['Name', 'Settings', 'UserId'],
     NsgGenDataItemEntityType.exchangeRules: [
       'ObjectType',
+      'LastExchangeDate',
       'Periodicity',
       'PriorityForClient',
       'MergingRules'
