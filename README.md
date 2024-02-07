@@ -234,6 +234,11 @@ Uri сервера
 "useAuthorization": "true",
 ```
 
+Использует ли клиент метрику (вызывать на клиентской части NsgMetrica.activate())  
+```json
+"useMetrics": "true",
+```
+
 [не используется]
 ```json
 "uploadEnabled": "true",

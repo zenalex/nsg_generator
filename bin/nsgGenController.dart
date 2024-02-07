@@ -15,6 +15,7 @@ class NsgGenController {
   final String dataType;
   final String serverUri;
   final bool useAuthorization;
+  final bool useMetrics;
   final bool uploadEnabled;
   final bool loginRequired;
   final bool writeOnClient;
@@ -29,6 +30,7 @@ class NsgGenController {
       required this.dataType,
       required this.serverUri,
       this.useAuthorization = false,
+      this.useMetrics = false,
       this.uploadEnabled = false,
       this.loginRequired = true,
       this.writeOnClient = true,
@@ -65,6 +67,7 @@ class NsgGenController {
         dataType: parsedJson['dataType'] ?? '',
         serverUri: parsedJson['serverUri'] ?? '',
         useAuthorization: parsedJson['useAuthorization'] == 'true',
+        useMetrics: parsedJson['useMetrics'] == 'true',
         uploadEnabled: parsedJson['uploadEnabled'] == 'true',
         loginRequired: parsedJson.containsKey('loginRequired')
             ? parsedJson['loginRequired'] != 'false'
@@ -617,7 +620,9 @@ class NsgGenController {
     codeList.add('  @override');
     codeList.add('  Future onInit() async {');
     codeList.add('    final info = await PackageInfo.fromPlatform();');
-    codeList.add('    NsgMetrica.activate();');
+    if (useMetrics) {
+      codeList.add('    NsgMetrica.activate();');
+    }
     codeList.add('    NsgMetrica.reportAppStart();');
     codeList.add(
         '    provider ??= NsgDataProvider(applicationName: \'${nsgGenerator.applicationName}\', applicationVersion: info.version, firebaseToken: \'\');');
