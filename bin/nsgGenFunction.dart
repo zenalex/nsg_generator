@@ -16,6 +16,7 @@ class NsgGenFunction {
   final bool isReference;
   final bool isNullable;
   final bool useProgressDialog;
+  final int retryCount;
   final String dialogText;
   final List<NsgGenMethodParam> params;
 
@@ -33,6 +34,7 @@ class NsgGenFunction {
       this.isNullable = true,
       this.isReference = false,
       this.useProgressDialog = false,
+      this.retryCount = 3,
       this.dialogText = '',
       this.params = const []});
 
@@ -83,6 +85,9 @@ class NsgGenFunction {
         }
       }
       isReference = !Misc.isPrimitiveType(type);
+
+      var retryCount = parsedJson['retryCount'] ?? 3;
+      if (retryCount is String) retryCount = int.parse(retryCount);
       return NsgGenFunction(
           name: name,
           apiType: apiType,
@@ -105,6 +110,7 @@ class NsgGenFunction {
           useProgressDialog: parsedJson.containsKey('useProgressDialog')
               ? parsedJson['useProgressDialog'] != 'false'
               : true,
+          retryCount: retryCount,
           dialogText: parsedJson['dialogText'] ?? '',
           params: parsedJson.containsKey('params')
               ? (parsedJson['params'] as List)
@@ -495,12 +501,12 @@ class NsgGenFunction {
         .add('$_        function: \'/${controller.apiPrefix}/$apiPrefix\',');
     codeList.add('$_        method: \'${apiType.toUpperCase()}\',');
     codeList.add('$_        filter: filter,');
-    codeList.add('$_        autoRepeate: true,');
+    codeList.add('$_        autoRepeate: ${retryCount > 0},');
     if (useProgressDialog) {
-      codeList.add('$_        autoRepeateCount: 3,');
+      codeList.add('$_        autoRepeateCount: $retryCount,');
       codeList.add('$_        cancelToken: progress.cancelToken);');
     } else {
-      codeList.add('$_        autoRepeateCount: 3);');
+      codeList.add('$_        autoRepeateCount: $retryCount);');
     }
     codeList.add('$_    return res;');
     // codeList.add('    } catch (e) {');
