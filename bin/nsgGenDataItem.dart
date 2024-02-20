@@ -53,6 +53,7 @@ class NsgGenDataItem {
 
   factory NsgGenDataItem.fromJson(Map<String, dynamic> parsedJson) {
     var tn = parsedJson['typeName'] ?? '';
+    var fields = parsedJson['fields'];
     try {
       return NsgGenDataItem(
           typeName: tn,
@@ -75,9 +76,9 @@ class NsgGenDataItem {
           isTableRow: parsedJson['isTableRow'] == 'true',
           entityType: NsgGenDataItemEntityType.parse(
               parsedJson['entityType'] ?? '', tn),
-          fields: (parsedJson['fields'] as List)
-              .map((i) => NsgGenDataItemField.fromJson(i))
-              .toList());
+          fields: (fields is List)
+              ? fields.map((i) => NsgGenDataItemField.fromJson(i)).toList()
+              : <NsgGenDataItemField>[]);
     } catch (e) {
       print('--- ERROR parsing type \'$tn\' ---');
       rethrow;
@@ -813,56 +814,58 @@ class NsgGenDataItem {
           .add('  String get extensionTypeField => name$extensionTypeField;');
       codeList.add('');
     }
-    codeList.add('  @override');
-    codeList.add('  void initialize() {');
-    if (baseObject != null) {
-      codeList.add('    super.initialize();');
-    }
-    fields.forEach((_) {
-      if (!_.writeOnClient) return;
-      if (_.isPrimary) {
-        codeList.add(
-            '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
-      } else {
-        if (_.type == 'String' &&
-            _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
+    if (fields.isNotEmpty) {
+      codeList.add('  @override');
+      codeList.add('  void initialize() {');
+      if (baseObject != null) {
+        codeList.add('    super.initialize();');
+      }
+      fields.forEach((_) {
+        if (!_.writeOnClient) return;
+        if (_.isPrimary) {
           codeList.add(
-              '    addField(${_.nsgDataType}(${_.fieldNameVar}, maxLength: ${_.maxLength}), primaryKey: ${_.isPrimary});');
-        } else if (_.type == 'double' &&
-            _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
-          codeList.add(
-              '    addField(${_.nsgDataType}(${_.fieldNameVar}, maxDecimalPlaces: ${_.maxLength}), primaryKey: ${_.isPrimary});');
-        } else if (_.type.startsWith('UntypedReference')) {
-          var defaultReferenceType = _.referenceType;
-          if ((defaultReferenceType.isEmpty) &&
-              _.referenceTypes != null &&
-              _.referenceTypes!.isNotEmpty) {
-            defaultReferenceType = _.referenceTypes!.first.toString();
-            defaultReferenceType = defaultReferenceType[0].toUpperCase() +
-                defaultReferenceType.substring(1);
-          }
-          if (defaultReferenceType.isNotEmpty) {
+              '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+        } else {
+          if (_.type == 'String' &&
+              _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
             codeList.add(
-                '    addField(${_.nsgDataType}(${_.fieldNameVar}, defaultReferentType: $defaultReferenceType), primaryKey: ${_.isPrimary});');
+                '    addField(${_.nsgDataType}(${_.fieldNameVar}, maxLength: ${_.maxLength}), primaryKey: ${_.isPrimary});');
+          } else if (_.type == 'double' &&
+              _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
+            codeList.add(
+                '    addField(${_.nsgDataType}(${_.fieldNameVar}, maxDecimalPlaces: ${_.maxLength}), primaryKey: ${_.isPrimary});');
+          } else if (_.type.startsWith('UntypedReference')) {
+            var defaultReferenceType = _.referenceType;
+            if ((defaultReferenceType.isEmpty) &&
+                _.referenceTypes != null &&
+                _.referenceTypes!.isNotEmpty) {
+              defaultReferenceType = _.referenceTypes!.first.toString();
+              defaultReferenceType = defaultReferenceType[0].toUpperCase() +
+                  defaultReferenceType.substring(1);
+            }
+            if (defaultReferenceType.isNotEmpty) {
+              codeList.add(
+                  '    addField(${_.nsgDataType}(${_.fieldNameVar}, defaultReferentType: $defaultReferenceType), primaryKey: ${_.isPrimary});');
+            } else {
+              codeList.add(
+                  '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+            }
           } else {
             codeList.add(
                 '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
           }
-        } else {
-          codeList.add(
-              '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
         }
-      }
-    });
-    fields.forEach((_) {
-      if (!_.writeOnClient) return;
-      if (_.userVisibility) {
-        codeList.add(
-            "    fieldList.fields[${_.fieldNameVar}]?.presentation = '${_.userName}';");
-      }
-    });
-    codeList.add('  }');
-    codeList.add('');
+      });
+      fields.forEach((_) {
+        if (!_.writeOnClient) return;
+        if (_.userVisibility) {
+          codeList.add(
+              "    fieldList.fields[${_.fieldNameVar}]?.presentation = '${_.userName}';");
+        }
+      });
+      codeList.add('  }');
+      codeList.add('');
+    }
     if (presentation.isNotEmpty) {
       codeList.add('  @override');
       codeList
