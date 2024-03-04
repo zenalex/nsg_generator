@@ -8,22 +8,23 @@ import 'nsgGenerator.dart';
 class NsgGenEnum {
   final String className;
   final String dataTypeFile;
+  final bool useLocalization;
   String description;
   List<NsgGenEnumItem>? values;
 
   NsgGenEnum(
       {required this.className,
       required this.dataTypeFile,
+      required this.useLocalization,
       this.description = ''});
 
   factory NsgGenEnum.fromJson(Map<String, dynamic> parsedJson) {
     Misc.checkObsoleteKeysInJSON(
         'enum', parsedJson, {'class_name': 'className'});
     return NsgGenEnum(
-        className: parsedJson.containsKey('className')
-            ? parsedJson['className']
-            : parsedJson['class_name'],
+        className: parsedJson['className'],
         dataTypeFile: parsedJson['dataTypeFile'] ?? '',
+        useLocalization: parsedJson['useLocalization'] == 'true',
         description: parsedJson['description'] ?? '');
   }
 
@@ -147,6 +148,10 @@ class NsgGenEnum {
   Future generateEnumDart(NsgGenerator nsgGenerator) async {
     var codeList = <String>[];
     codeList.add('import \'package:nsg_data/nsg_data.dart\';');
+    if (useLocalization) {
+      codeList.add(
+          'import \'package:flutter_gen/gen_l10n/app_localizations.dart\';');
+    }
     codeList.add('');
     if (description.isNotEmpty) {
       Misc.writeDescription(codeList, description, false);
@@ -160,6 +165,18 @@ class NsgGenEnum {
     codeList.add(
         '  $className(dynamic value, String name) : super(value: value, name: name);');
     codeList.add('');
+    if (useLocalization) {
+      codeList.add(
+          '  static final Map<int, String Function(AppLocalizations)> names = {');
+      var lowerCaseClassName = Misc.getDartName(className);
+      values!.forEach((i) {
+        var iCodeName = Misc.getDartName(i.codeName);
+        codeList.add(
+            '    $iCodeName.value: (AppLocalizations loc) => loc.${lowerCaseClassName}_$iCodeName,');
+      });
+      codeList.add('  };');
+      codeList.add('');
+    }
     codeList.add('  @override');
     codeList.add('  void initialize() {');
     codeList.add('    NsgEnum.listAllValues[runtimeType] = <int, $className>{');

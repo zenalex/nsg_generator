@@ -80,9 +80,9 @@ class Misc {
           presentation = presentation.replaceFirst(
               s, '\$' + Misc.getDartName(s.substring(1, s.length - 1)));
         }
-        print(s);
+        print('getDartToString: $s');
       });
-      print(allMatches.length);
+      print('getDartToString: ${allMatches.length}');
     }
     return Misc.getDartName('\'' + presentation + '\'');
   }
