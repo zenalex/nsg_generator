@@ -66,15 +66,11 @@ class NsgGenController {
                 : 'AuthControllerImplementation',
         dataType: parsedJson['dataType'] ?? '',
         serverUri: parsedJson['serverUri'] ?? '',
-        useAuthorization: parsedJson['useAuthorization'] == 'true',
-        useMetrics: parsedJson['useMetrics'] == 'true',
-        uploadEnabled: parsedJson['uploadEnabled'] == 'true',
-        loginRequired: parsedJson.containsKey('loginRequired')
-            ? parsedJson['loginRequired'] != 'false'
-            : true,
-        writeOnClient: parsedJson.containsKey('writeOnClient')
-            ? parsedJson['writeOnClient'] != 'false'
-            : true,
+        useAuthorization: Misc.parseBool(parsedJson['useAuthorization']),
+        useMetrics: Misc.parseBool(parsedJson['useMetrics']),
+        uploadEnabled: Misc.parseBool(parsedJson['uploadEnabled']),
+        loginRequired: Misc.parseBoolOrTrue(parsedJson['loginRequired']),
+        writeOnClient: Misc.parseBoolOrTrue(parsedJson['writeOnClient']),
         methods: (parsedJson['method'] as List)
             .map((i) => NsgGenMethod.fromJson(i))
             .toList(),

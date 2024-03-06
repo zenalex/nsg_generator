@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'misc.dart';
 import 'nsgGenCSProject.dart';
 import 'nsgGenController.dart';
 import 'nsgGenDataItem.dart';
@@ -73,11 +74,11 @@ class NsgGenerator {
           cSharpPath: parsedJson['cSharpPath'] ?? '',
           cSharpNamespace: parsedJson['cSharpNamespace'] ?? '',
           dartPath: parsedJson['dartPath'] ?? '',
-          doCSharp: parsedJson['doCSharp'] != 'false',
-          doDart: parsedJson['doDart'] != 'false',
+          doCSharp: Misc.parseBoolOrTrue(parsedJson['doCSharp']),
+          doDart: Misc.parseBoolOrTrue(parsedJson['doDart']),
           applicationName: parsedJson['applicationName'] ?? 'application',
           useStaticDatabaseNames:
-              parsedJson['useStaticDatabaseNames'] == 'true',
+              Misc.parseBool(parsedJson['useStaticDatabaseNames']),
           controllers: controllers,
           enums: enums);
     } catch (e) {

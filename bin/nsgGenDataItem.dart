@@ -57,7 +57,7 @@ class NsgGenDataItem {
     try {
       return NsgGenDataItem(
           typeName: tn,
-          allowExtend: parsedJson['allowExtend'] == 'true',
+          allowExtend: Misc.parseBool(parsedJson['allowExtend']),
           additionalDataField: parsedJson['additionalDataField'] ?? '',
           extensionTypeField: parsedJson['extensionTypeField'] ?? '',
           extend: parsedJson['extends'] ?? '',
@@ -71,9 +71,9 @@ class NsgGenDataItem {
           periodFieldName: parsedJson['periodFieldName'] ?? '',
           lastEditedFieldName: parsedJson['lastEditedFieldName'] ?? '',
           useStaticDatabaseNames:
-              parsedJson['useStaticDatabaseNames'] == 'true',
-          isDistributed: parsedJson['isDistributed'] == 'true',
-          isTableRow: parsedJson['isTableRow'] == 'true',
+              Misc.parseBool(parsedJson['useStaticDatabaseNames']),
+          isDistributed: Misc.parseBool(parsedJson['isDistributed']),
+          isTableRow: Misc.parseBool(parsedJson['isTableRow']),
           entityType: NsgGenDataItemEntityType.parse(
               parsedJson['entityType'] ?? '', tn),
           fields: (fields is List)

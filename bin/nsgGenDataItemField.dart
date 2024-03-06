@@ -118,21 +118,15 @@ class NsgGenDataItemField {
               : parsedJson.containsKey('api_prefix')
                   ? parsedJson['api_prefix']
                   : name,
-          isPrimary: parsedJson['isPrimary'] == 'true',
+          isPrimary: Misc.parseBool(parsedJson['isPrimary']),
           referenceName: referenceName,
           referenceType: referenceType,
           isReference: isReference,
-          userVisibility: parsedJson['userVisibility'] == 'true',
+          userVisibility: Misc.parseBool(parsedJson['userVisibility']),
           userName: userName,
-          writeOnClient: parsedJson.containsKey('writeOnClient')
-              ? parsedJson['writeOnClient'] != 'false'
-              : true,
-          writeOnServer: parsedJson.containsKey('writeOnServer')
-              ? parsedJson['writeOnServer'] != 'false'
-              : true,
-          allowPost: parsedJson.containsKey('allowPost')
-              ? parsedJson['allowPost'] != 'false'
-              : true,
+          writeOnClient: Misc.parseBoolOrTrue(parsedJson['writeOnClient']),
+          writeOnServer: Misc.parseBoolOrTrue(parsedJson['writeOnServer']),
+          allowPost: Misc.parseBoolOrTrue(parsedJson['allowPost']),
           referenceTypes: untTypes);
     } catch (e) {
       print(

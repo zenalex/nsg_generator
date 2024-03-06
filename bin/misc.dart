@@ -149,4 +149,12 @@ class Misc {
       }
     });
   }
+
+  static bool parseBool(Object? field) {
+    return field == true || field == 'true';
+  }
+
+  static bool parseBoolOrTrue(Object? field) {
+    return field != false && field != 'false';
+  }
 }

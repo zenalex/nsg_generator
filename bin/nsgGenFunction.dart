@@ -46,10 +46,8 @@ class NsgGenFunction {
     Misc.checkObsoleteKeysInJSON('function', parsedJson, obsoleteKeys);
     var name = parsedJson['name'] ?? '';
     try {
-      var httpGet =
-          parsedJson.containsKey('httpGet') && parsedJson['httpGet'] == 'true';
-      var httpPost = parsedJson.containsKey('httpPost') &&
-          parsedJson['httpPost'] == 'true';
+      var httpGet = Misc.parseBool(parsedJson['httpGet']);
+      var httpPost = Misc.parseBool(parsedJson['httpPost']);
       var apiType = parsedJson['apiType'];
       if (apiType != null) {
         apiType = apiType.toString().toLowerCase();
@@ -103,13 +101,10 @@ class NsgGenFunction {
           type: parsedJson['type'] ?? '',
           referenceName: parsedJson['referenceName'] ?? '',
           referenceType: referenceType,
-          isNullable: parsedJson.containsKey('isNullable')
-              ? parsedJson['isNullable'] != 'false'
-              : true,
+          isNullable: Misc.parseBoolOrTrue(parsedJson['isNullable']),
           isReference: isReference,
-          useProgressDialog: parsedJson.containsKey('useProgressDialog')
-              ? parsedJson['useProgressDialog'] != 'false'
-              : true,
+          useProgressDialog:
+              Misc.parseBoolOrTrue(parsedJson['useProgressDialog']),
           retryCount: retryCount,
           dialogText: parsedJson['dialogText'] ?? '',
           params: parsedJson.containsKey('params')

@@ -24,7 +24,7 @@ class NsgGenEnum {
     return NsgGenEnum(
         className: parsedJson['className'],
         dataTypeFile: parsedJson['dataTypeFile'] ?? '',
-        useLocalization: parsedJson['useLocalization'] == 'true',
+        useLocalization: Misc.parseBool(parsedJson['useLocalization']),
         description: parsedJson['description'] ?? '');
   }
 

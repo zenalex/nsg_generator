@@ -56,13 +56,12 @@ class NsgGenMethod {
               .toString()
               .toUpperCase(),
           dataTypeFlie: parsedJson['dataTypeFile'] ?? '',
-          allowGetter: (parsedJson.containsKey('allowGetter')
-                  ? parsedJson['allowGetter'] != 'false'
-                  : true) ||
-              needsAllCRUD,
-          allowCreate: parsedJson['allowCreate'] == 'true',
-          allowPost: parsedJson['allowPost'] == 'true' || needsAllCRUD,
-          allowDelete: parsedJson['allowDelete'] == 'true' || needsAllCRUD);
+          allowGetter:
+              Misc.parseBoolOrTrue(parsedJson['allowGetter']) || needsAllCRUD,
+          allowCreate: Misc.parseBool(parsedJson['allowCreate']),
+          allowPost: Misc.parseBool(parsedJson['allowPost']) || needsAllCRUD,
+          allowDelete:
+              Misc.parseBool(parsedJson['allowDelete']) || needsAllCRUD);
     } catch (e) {
       print('--- ERROR parsing method \'$name\' ---');
       rethrow;
