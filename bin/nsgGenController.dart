@@ -71,9 +71,11 @@ class NsgGenController {
         uploadEnabled: Misc.parseBool(parsedJson['uploadEnabled']),
         loginRequired: Misc.parseBoolOrTrue(parsedJson['loginRequired']),
         writeOnClient: Misc.parseBoolOrTrue(parsedJson['writeOnClient']),
-        methods: (parsedJson['method'] as List)
-            .map((i) => NsgGenMethod.fromJson(i))
-            .toList(),
+        methods: parsedJson.containsKey('method')
+            ? (parsedJson['method'] as List)
+                .map((i) => NsgGenMethod.fromJson(i))
+                .toList()
+            : [],
         functions: parsedJson.containsKey('functions')
             ? (parsedJson['functions'] as List)
                 .map((i) => NsgGenFunction.fromJson(i))
