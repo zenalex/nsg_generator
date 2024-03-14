@@ -11,7 +11,6 @@ class NsgGenFunction {
   final String apiPrefix;
   final String authorize;
   final String type;
-  final String referenceName;
   final String referenceType;
   final bool isReference;
   final bool isNullable;
@@ -29,7 +28,6 @@ class NsgGenFunction {
       this.apiPrefix = '',
       required this.authorize,
       required this.type,
-      this.referenceName = '',
       this.referenceType = '',
       this.isNullable = true,
       this.isReference = false,
@@ -40,6 +38,9 @@ class NsgGenFunction {
 
   static Map<String, String> obsoleteKeys = {
     'api_prefix': 'apiPrefix',
+    'referenceName': '',
+    'httpGet': 'apiType = \'get, post\'',
+    'httpPost': 'apiType = \'get, post\'',
   };
 
   factory NsgGenFunction.fromJson(Map<String, dynamic> parsedJson) {
@@ -99,7 +100,6 @@ class NsgGenFunction {
                   : parsedJson['name'],
           authorize: parsedJson['authorize'] ?? 'none',
           type: parsedJson['type'] ?? '',
-          referenceName: parsedJson['referenceName'] ?? '',
           referenceType: referenceType,
           isNullable: Misc.parseBoolOrTrue(parsedJson['isNullable']),
           isReference: isReference,

@@ -5,7 +5,7 @@ import 'nsgGenDataItem.dart';
 class NsgGenDataItemField {
   final String name;
   final String type;
-  final String dbName;
+  final String databaseName;
   final int maxLength;
   final String description;
   final String apiPrefix;
@@ -23,7 +23,7 @@ class NsgGenDataItemField {
   NsgGenDataItemField(
       {required this.name,
       required this.type,
-      this.dbName = '',
+      this.databaseName = '',
       this.maxLength = 0,
       this.description = '',
       this.apiPrefix = '',
@@ -107,7 +107,7 @@ class NsgGenDataItemField {
       return NsgGenDataItemField(
           name: name,
           type: type,
-          dbName: parsedJson['databaseName'] ?? '',
+          databaseName: parsedJson['databaseName'] ?? '',
           maxLength: ml ??
               (defaultMaxLength.containsKey(type) ? defaultMaxLength[type] : 0),
           description: parsedJson.containsKey('description')

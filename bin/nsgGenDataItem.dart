@@ -309,14 +309,14 @@ class NsgGenDataItem {
     }
     codeList.add('{');
     fields.forEach((field) {
-      if (field.writeOnServer && field.dbName.isNotEmpty) {
+      if (field.writeOnServer && field.databaseName.isNotEmpty) {
         if (databaseType.isEmpty ||
-            field.dbName.contains('.') ||
+            field.databaseName.contains('.') ||
             !nsgGenerator.useStaticDatabaseNames && !useStaticDatabaseNames) {
-          codeList.add('[Names.${field.name}] = "${field.dbName}",');
+          codeList.add('[Names.${field.name}] = "${field.databaseName}",');
         } else {
           codeList.add(
-              '[Names.${field.name}] = ${databaseType}.Names.${field.dbName},');
+              '[Names.${field.name}] = ${databaseType}.Names.${field.databaseName},');
         }
       }
     });
