@@ -44,7 +44,8 @@ class NsgGenFunction {
   };
 
   factory NsgGenFunction.fromJson(Map<String, dynamic> parsedJson) {
-    Misc.checkObsoleteKeysInJSON('function', parsedJson, obsoleteKeys);
+    Misc.checkObsoleteKeysInJSON('function', parsedJson, obsoleteKeys,
+        throwIfAny: true);
     var name = parsedJson['name'] ?? '';
     try {
       var httpGet = Misc.parseBool(parsedJson['httpGet']);
@@ -95,9 +96,7 @@ class NsgGenFunction {
           description: parsedJson['description'] ?? '',
           apiPrefix: parsedJson.containsKey('apiPrefix')
               ? parsedJson['apiPrefix']
-              : parsedJson.containsKey('api_prefix')
-                  ? parsedJson['api_prefix']
-                  : parsedJson['name'],
+              : parsedJson['name'],
           authorize: parsedJson['authorize'] ?? 'none',
           type: parsedJson['type'] ?? '',
           referenceType: referenceType,

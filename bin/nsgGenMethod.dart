@@ -37,7 +37,8 @@ class NsgGenMethod {
   };
 
   factory NsgGenMethod.fromJson(Map<String, dynamic> parsedJson) {
-    Misc.checkObsoleteKeysInJSON('method', parsedJson, obsoleteKeys);
+    Misc.checkObsoleteKeysInJSON('method', parsedJson, obsoleteKeys,
+        throwIfAny: true);
     var name = (parsedJson['name'] ?? '').toString();
     try {
       var needsAllCRUD = name == 'UserSettings' || name == 'ExchangeRules';
@@ -46,9 +47,7 @@ class NsgGenMethod {
           description: parsedJson['description'] ?? '',
           apiPrefix: parsedJson.containsKey('apiPrefix')
               ? parsedJson['apiPrefix']
-              : parsedJson.containsKey('api_prefix')
-                  ? parsedJson['api_prefix']
-                  : name,
+              : name,
           authorize: parsedJson['authorize'] ?? 'none',
           getterType: (parsedJson.containsKey('getterType')
                   ? parsedJson['getterType']

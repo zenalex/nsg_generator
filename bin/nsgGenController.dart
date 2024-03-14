@@ -45,25 +45,18 @@ class NsgGenController {
   };
 
   factory NsgGenController.fromJson(Map<String, dynamic> parsedJson) {
-    Misc.checkObsoleteKeysInJSON('controller', parsedJson, obsoleteKeys);
-    var className = parsedJson.containsKey('className')
-        ? parsedJson['className']
-        : parsedJson['class_name'];
+    Misc.checkObsoleteKeysInJSON('controller', parsedJson, obsoleteKeys,
+        throwIfAny: true);
+    var className = parsedJson['className'];
     return NsgGenController(
-        apiPrefix: parsedJson.containsKey('apiPrefix')
-            ? parsedJson['apiPrefix']
-            : parsedJson['api_prefix'],
+        apiPrefix: parsedJson['apiPrefix'],
         className: className,
         implControllerName: parsedJson.containsKey('implControllerName')
             ? parsedJson['implControllerName']
-            : parsedJson.containsKey('impl_controller_name')
-                ? parsedJson['impl_controller_name']
-                : className + 'Implementation',
+            : className + 'Implementation',
         implAuthControllerName: parsedJson.containsKey('implAuthControllerName')
             ? parsedJson['implAuthControllerName']
-            : parsedJson.containsKey('impl_auth_controller_name')
-                ? parsedJson['impl_auth_controller_name']
-                : 'AuthControllerImplementation',
+            : 'AuthControllerImplementation',
         dataType: parsedJson['dataType'] ?? '',
         serverUri: parsedJson['serverUri'] ?? '',
         useAuthorization: Misc.parseBool(parsedJson['useAuthorization']),
@@ -311,7 +304,7 @@ class NsgGenController {
   }
 
   Future generateImplController(NsgGenerator nsgGenerator) async {
-    // ${impl_controller_name}.Designer.cs
+    // ${implControllerName}.Designer.cs
     var codeList = <String>[];
     codeList.add('using System;');
     codeList.add('using System.Collections.Generic;');
@@ -410,7 +403,7 @@ class NsgGenController {
         '${nsgGenerator.cSharpPath}/Controllers/$implControllerName.Designer.cs';
     await File(fn).writeAsString(codeList.join('\r\n'));
 
-    // ${impl_controller_name}.cs
+    // ${implControllerName}.cs
     codeList.clear();
     codeList.add('using System;');
     codeList.add('using System.Collections.Generic;');
@@ -446,7 +439,7 @@ class NsgGenController {
     codeList.add('{');
     codeList.add('public partial class $implControllerName');
     codeList.add('{');
-    // codeList.add('public ${impl_controller_name}()');
+    // codeList.add('public ${implControllerName}()');
     // codeList.add('{');
     // codeList.add('}');
     // codeList.add('');
@@ -672,7 +665,7 @@ class NsgGenController {
     //generate main class ControllerName.dart
     //----------------------------------------------------------
     codeList = <String>[];
-    //codeList.add("import '${nsgGenerator.getDartName(class_name)}Model.dart';");
+    //codeList.add("import '${nsgGenerator.getDartName(className)}Model.dart';");
     codeList.add(
         "import '${nsgGenerator.genPathName}/${Misc.getDartUnderscoreName(className)}.g.dart';");
     codeList.add('');

@@ -20,7 +20,8 @@ class NsgGenEnum {
 
   factory NsgGenEnum.fromJson(Map<String, dynamic> parsedJson) {
     Misc.checkObsoleteKeysInJSON(
-        'enum', parsedJson, {'class_name': 'className'});
+        'enum', parsedJson, {'class_name': 'className'},
+        throwIfAny: true);
     return NsgGenEnum(
         className: parsedJson['className'],
         dataTypeFile: parsedJson['dataTypeFile'] ?? '',
@@ -29,7 +30,7 @@ class NsgGenEnum {
   }
 
   Future load(NsgGenerator nsgGenerator) async {
-    //print('$class_name Enum initializing');
+    //print('$className Enum initializing');
     var text =
         await File('${nsgGenerator.jsonPath}/$dataTypeFile').readAsString();
     var parsedEnumJson = json.decode(text);
@@ -39,7 +40,7 @@ class NsgGenEnum {
             name: i['name'] ?? i['codeName'],
             value: i['value']))
         .toList();
-    //print('$class_name Enum initialized');
+    //print('$className Enum initialized');
   }
 
   Future generateCode(NsgGenerator nsgGenerator) async {

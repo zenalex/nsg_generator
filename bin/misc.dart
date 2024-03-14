@@ -139,15 +139,21 @@ class Misc {
 
   static List<String> warnings = [];
   static void checkObsoleteKeysInJSON(String objectType,
-      Map<String, dynamic> parsedJson, Map<String, String> obsoleteKeys) {
+      Map<String, dynamic> parsedJson, Map<String, String> obsoleteKeys,
+      {bool throwIfAny = false}) {
+    var errors = <String>[];
     obsoleteKeys.forEach((key, value) {
       if (parsedJson.containsKey(key)) {
         var message = value.isEmpty
             ? '--- Key $key is no longer used in $objectType declaration ---'
             : '--- Obsolete key \'$key\' in $objectType declaration. Use \'$value\' instead ---';
         if (!warnings.contains(message)) warnings.add(message);
+        if (value.isNotEmpty) errors.add(message);
       }
     });
+    if (throwIfAny && errors.length > 0) {
+      throw Exception(errors.join('\n'));
+    }
   }
 
   static bool parseBool(Object? field) {
