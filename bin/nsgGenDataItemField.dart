@@ -39,8 +39,7 @@ class NsgGenDataItemField {
       this.referenceTypes});
 
   factory NsgGenDataItemField.fromJson(Map<String, dynamic> parsedJson) {
-    Misc.checkObsoleteKeysInJSON(
-        'field', parsedJson, {'api_prefix': 'apiPrefix'},
+    Misc.checkObsoleteKeysInJSON('field', parsedJson, {'api_prefix': ''},
         throwIfAny: true);
     String name = '';
     String currentProperty = 'name';
