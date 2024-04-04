@@ -152,32 +152,30 @@ class NsgGenEnum {
     if (useLocalization) {
       codeList.add(
           'import \'package:flutter_gen/gen_l10n/app_localizations.dart\';');
+      codeList.add('import \'package:get/get.dart\';');
     }
     codeList.add('');
     if (description.isNotEmpty) {
       Misc.writeDescription(codeList, description, false);
     }
     codeList.add('class $className extends NsgEnum {');
-    values!.forEach((i) {
-      codeList.add(
-          '  static $className ${Misc.getDartName(i.codeName)} = $className(${i.value}, \'${i.name}\');');
-    });
-    codeList.add('');
-    codeList.add(
-        '  $className(dynamic value, String name) : super(value: value, name: name);');
-    codeList.add('');
     if (useLocalization) {
-      codeList.add(
-          '  static final Map<int, String Function(AppLocalizations)> names = {');
       var lowerCaseClassName = Misc.getDartName(className);
       values!.forEach((i) {
         var iCodeName = Misc.getDartName(i.codeName);
         codeList.add(
-            '    $iCodeName.value: (AppLocalizations loc) => loc.${lowerCaseClassName}_$iCodeName,');
+            '  static $className ${Misc.getDartName(i.codeName)} = $className(${i.value}, (AppLocalizations.of(Get.context!) as AppLocalizations).${lowerCaseClassName}_$iCodeName);');
       });
-      codeList.add('  };');
-      codeList.add('');
+    } else {
+      values!.forEach((i) {
+        codeList.add(
+            '  static $className ${Misc.getDartName(i.codeName)} = $className(${i.value}, \'${i.name}\');');
+      });
     }
+    codeList.add('');
+    codeList.add(
+        '  $className(dynamic value, String name) : super(value: value, name: name);');
+    codeList.add('');
     codeList.add('  @override');
     codeList.add('  void initialize() {');
     codeList.add('    NsgEnum.listAllValues[runtimeType] = <int, $className>{');
