@@ -130,6 +130,7 @@ class Misc {
     'int',
     'double',
     'String',
+    'String<FilePath>',
     'Guid',
     'bool',
     'DateTime',

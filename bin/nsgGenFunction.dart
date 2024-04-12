@@ -29,8 +29,8 @@ class NsgGenFunction {
       required this.authorize,
       required this.type,
       this.referenceType = '',
-      this.isNullable = true,
       this.isReference = false,
+      this.isNullable = true,
       this.useProgressDialog = false,
       this.retryCount = 3,
       this.dialogText = '',
@@ -68,6 +68,9 @@ class NsgGenFunction {
         else if (httpPost) apiType = 'post';
       }
       var type = (parsedJson['type'] ?? '').toString();
+      if (type.startsWith('String<')) {
+        type = 'String';
+      }
       bool isReference = Misc.needToSpecifyType(type);
       var referenceType = (parsedJson['referenceType'] ?? '').toString();
       if (referenceType.isEmpty &&
@@ -100,8 +103,8 @@ class NsgGenFunction {
           authorize: parsedJson['authorize'] ?? 'none',
           type: parsedJson['type'] ?? '',
           referenceType: referenceType,
-          isNullable: Misc.parseBoolOrTrue(parsedJson['isNullable']),
           isReference: isReference,
+          isNullable: Misc.parseBoolOrTrue(parsedJson['isNullable']),
           useProgressDialog:
               Misc.parseBoolOrTrue(parsedJson['useProgressDialog']),
           retryCount: retryCount,
@@ -536,6 +539,9 @@ class NsgGenMethodParam {
     var name = parsedJson['name'];
     try {
       var type = (parsedJson['type'] ?? '').toString();
+      if (type.startsWith('String<')) {
+        type = 'String';
+      }
       bool isReference = Misc.needToSpecifyType(type);
       var referenceType = (parsedJson['referenceType'] ?? '').toString();
       if (type == 'Date') type = 'DateTime';

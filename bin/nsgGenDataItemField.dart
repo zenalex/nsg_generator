@@ -13,6 +13,7 @@ class NsgGenDataItemField {
   final String referenceName;
   final String referenceType;
   final bool isReference;
+  final bool isString;
   final bool userVisibility;
   final String userName;
   final bool writeOnClient;
@@ -31,6 +32,7 @@ class NsgGenDataItemField {
       this.referenceName = '',
       this.referenceType = '',
       this.isReference = false,
+      this.isString = false,
       this.userVisibility = false,
       this.userName = '',
       this.writeOnClient = true,
@@ -63,7 +65,10 @@ class NsgGenDataItemField {
           : parsedJson['referenceType'] ?? '';
       var type = (parsedJson['type'] ?? '').toString();
       bool isReference = Misc.needToSpecifyType(type);
-      if (type == 'Date') type = 'DateTime';
+      bool isString = false;
+      if (type == 'String' || type.startsWith('String<')) {
+        isString = true;
+      } else if (type == 'Date') type = 'DateTime';
       if (type.startsWith('Reference') || type.startsWith('UntypedReference')) {
         if (referenceName.isEmpty) {
           if (name.endsWith('Id')) {
@@ -120,6 +125,7 @@ class NsgGenDataItemField {
           referenceName: referenceName,
           referenceType: referenceType,
           isReference: isReference,
+          isString: isString,
           userVisibility: Misc.parseBool(parsedJson['userVisibility']),
           userName: userName,
           writeOnClient: Misc.parseBoolOrTrue(parsedJson['writeOnClient']),
@@ -135,6 +141,7 @@ class NsgGenDataItemField {
 
   static Map<String, int> defaultMaxLength = <String, int>{
     'String': 10000,
+    'String<FilePath>': 10000,
     'double': 2
   };
 
@@ -144,12 +151,12 @@ class NsgGenDataItemField {
       Misc.getDartName('name' + name[0].toUpperCase() + name.substring(1));
 
   String get dartType {
-    if (type == 'Guid') return 'String';
+    if (isString || type == 'Guid') return 'String';
     return type;
   }
 
   String get nsgDataType {
-    if (type == 'String' || type == 'Guid') {
+    if (isString || type == 'Guid') {
       return 'NsgDataStringField';
     } else if (type == 'DateTime') {
       return 'NsgDataDateField';
@@ -192,7 +199,16 @@ class NsgGenDataItemField {
             .contains(name)) {
       codeList.add('  @override');
     }
-    if (type == 'String' || type == 'Guid') {
+    if (type == 'String<FilePath>') {
+      if (nsgGenController.hasGetStreamFunction) {
+        codeList.add('  $dartType get $dartName => '
+            '\'\${NsgServerOptions.serverUri${nsgGenController.className}}/${nsgGenController.apiPrefix}'
+            '/GetStream?path=\${getFieldValue($fieldNameVar)}\';');
+      } else {
+        codeList.add(
+            '  $dartType get $dartName => getFieldValue($fieldNameVar).toString();');
+      }
+    } else if (type == 'String' || type == 'Guid') {
       codeList.add(
           '  $dartType get $dartName => getFieldValue($fieldNameVar).toString();');
     } else if (type == 'DateTime') {

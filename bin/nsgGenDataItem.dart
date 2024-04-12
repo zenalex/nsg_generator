@@ -397,6 +397,8 @@ class NsgGenDataItem {
         } else {
           codeList.add('ValueDictionary[Names.${field.name}] = string.Empty;');
         }
+      } else if (field.isString) {
+        codeList.add('ValueDictionary[Names.${field.name}] = string.Empty;');
       } else if (field.type == 'Guid') {
         codeList.add('ValueDictionary[Names.${field.name}] = Guid.Empty;');
       } else if (field.type.startsWith('UntypedReference')) {
@@ -738,14 +740,13 @@ class NsgGenDataItem {
     codeList.add("import 'dart:typed_data';");
     codeList.add(
         "import '../${Misc.getDartUnderscoreName(nsgGenController.className)}_model.dart';");
-    for (var field in fields) {
-      if (!field.writeOnClient) continue;
-      if (field.type.startsWith('Enum')) {
-        if (nsgGenerator.enums.isNotEmpty) {
-          codeList.add("import '../enums.dart';");
-        }
-        break;
-      }
+    var fieldsOnClient = fields.where((field) => field.writeOnClient);
+    if (nsgGenerator.enums.isNotEmpty &&
+        fieldsOnClient.any((field) => field.type.startsWith('Enum'))) {
+      codeList.add("import '../enums.dart';");
+    }
+    if (fieldsOnClient.any((field) => field.type == 'String<FilePath>')) {
+      codeList.add("import '../options/server_options.dart';");
     }
     if (description.isNotEmpty) {
       codeList.add('');
@@ -767,8 +768,7 @@ class NsgGenDataItem {
             "  static const ${_.fieldNameVar} = '${Misc.getDartName(_.name)}';");
       });
     }
-    fields.forEach((_) {
-      if (!_.writeOnClient) return;
+    fieldsOnClient.forEach((_) {
       codeList.add(
           "  static const ${_.fieldNameVar} = '${Misc.getDartName(_.name)}';");
     });
@@ -782,8 +782,7 @@ class NsgGenDataItem {
         }
       });
     }
-    fields.forEach((_) {
-      if (!_.writeOnClient) return;
+    fieldsOnClient.forEach((_) {
       if (_.userVisibility) {
         codeList.add("    ${_.fieldNameVar}: '${_.userName}',");
       }
@@ -814,19 +813,18 @@ class NsgGenDataItem {
           .add('  String get extensionTypeField => name$extensionTypeField;');
       codeList.add('');
     }
-    if (fields.isNotEmpty) {
+    if (fieldsOnClient.isNotEmpty) {
       codeList.add('  @override');
       codeList.add('  void initialize() {');
       if (baseObject != null) {
         codeList.add('    super.initialize();');
       }
-      fields.forEach((_) {
-        if (!_.writeOnClient) return;
+      fieldsOnClient.forEach((_) {
         if (_.isPrimary) {
           codeList.add(
               '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
         } else {
-          if (_.type == 'String' &&
+          if (_.isString &&
               _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
             codeList.add(
                 '    addField(${_.nsgDataType}(${_.fieldNameVar}, maxLength: ${_.maxLength}), primaryKey: ${_.isPrimary});');
@@ -856,8 +854,7 @@ class NsgGenDataItem {
           }
         }
       });
-      fields.forEach((_) {
-        if (!_.writeOnClient) return;
+      fieldsOnClient.forEach((_) {
         if (_.userVisibility) {
           codeList.add(
               "    fieldList.fields[${_.fieldNameVar}]?.presentation = '${_.userName}';");
@@ -871,8 +868,9 @@ class NsgGenDataItem {
       codeList
           .add('  String toString() => ${Misc.getDartToString(presentation)};');
       codeList.add('');
-    } else if (fields.isNotEmpty) {
-      var nameField = fields.firstWhere((f) => f.name.toLowerCase() == 'name',
+    } else if (fieldsOnClient.isNotEmpty) {
+      var nameField = fieldsOnClient.firstWhere(
+          (f) => f.name.toLowerCase() == 'name',
           orElse: () => NsgGenDataItemField(name: '', type: ''));
       if (nameField.name.isNotEmpty) {
         codeList.add('  @override');
@@ -889,8 +887,7 @@ class NsgGenDataItem {
     codeList.add('  NsgDataItem getNewObject() => $typeName();');
     codeList.add('');
 
-    fields.forEach((_) {
-      if (!_.writeOnClient) return;
+    fieldsOnClient.forEach((_) {
       if (_.description.isNotEmpty) {
         Misc.writeDescription(codeList, _.description, false, indent: 2);
       }
@@ -938,12 +935,16 @@ enum NsgGenDataItemEntityType {
   exchangeRulesMergingTable;
 
   static NsgGenDataItemEntityType parse(String v, String typeName) {
-    if (typeName == 'UserSettings')
-      return NsgGenDataItemEntityType.userSettings;
-    if (typeName == 'ExchangeRules')
-      return NsgGenDataItemEntityType.exchangeRules;
-    if (typeName == 'ExchangeRulesMergingTable')
-      return NsgGenDataItemEntityType.exchangeRulesMergingTable;
+    switch (typeName) {
+      case 'UserSettings':
+        return NsgGenDataItemEntityType.userSettings;
+      case 'ExchangeRules':
+        return NsgGenDataItemEntityType.exchangeRules;
+      case 'ExchangeRulesMergingTable':
+        return NsgGenDataItemEntityType.exchangeRulesMergingTable;
+      default:
+        break;
+    }
     switch (v) {
       case 'dataItem':
         return NsgGenDataItemEntityType.dataItem;

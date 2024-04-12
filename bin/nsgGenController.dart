@@ -21,6 +21,7 @@ class NsgGenController {
   final bool writeOnClient;
   final List<NsgGenMethod> methods;
   final List<NsgGenFunction> functions;
+  bool hasGetStreamFunction;
 
   NsgGenController(
       {required this.apiPrefix,
@@ -35,7 +36,8 @@ class NsgGenController {
       this.loginRequired = true,
       this.writeOnClient = true,
       this.methods = const [],
-      this.functions = const []});
+      this.functions = const [],
+      this.hasGetStreamFunction = false});
 
   static Map<String, String> obsoleteKeys = {
     'class_name': 'className',
@@ -48,6 +50,11 @@ class NsgGenController {
     Misc.checkObsoleteKeysInJSON('controller', parsedJson, obsoleteKeys,
         throwIfAny: true);
     var className = parsedJson['className'];
+    var functions = parsedJson.containsKey('functions')
+        ? (parsedJson['functions'] as List)
+            .map((i) => NsgGenFunction.fromJson(i))
+            .toList()
+        : <NsgGenFunction>[];
     return NsgGenController(
         apiPrefix: parsedJson['apiPrefix'],
         className: className,
@@ -69,11 +76,8 @@ class NsgGenController {
                 .map((i) => NsgGenMethod.fromJson(i))
                 .toList()
             : [],
-        functions: parsedJson.containsKey('functions')
-            ? (parsedJson['functions'] as List)
-                .map((i) => NsgGenFunction.fromJson(i))
-                .toList()
-            : []);
+        functions: functions,
+        hasGetStreamFunction: functions.any((f) => f.name == "GetStream"));
   }
 
   Future generateCode(NsgGenerator nsgGenerator) async {
