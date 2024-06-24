@@ -222,8 +222,8 @@ class NsgGenFunction {
       var uriParamNString = '';
       if (params.isNotEmpty) {
         for (var p in params) {
-          uriParamTNString += '[FromUri] ' + p.returnType + ' ' + p.name;
-          uriParamNString += p.name;
+          uriParamTNString += ', [FromUri] ${p.returnType} ${p.name}';
+          uriParamNString += ', ${p.name}';
         }
       }
       if (uriParamTNString.isEmpty) {
@@ -231,6 +231,9 @@ class NsgGenFunction {
         uriParamNString = controller.useAuthorization && authorize != 'none'
             ? 'user, requestMessage'
             : 'null, requestMessage';
+      } else {
+        uriParamTNString = uriParamTNString.substring(2);
+        uriParamNString = uriParamNString.substring(2);
       }
       paramNString = uriParamNString;
       codeList.add(
@@ -302,12 +305,14 @@ class NsgGenFunction {
       var uriParamTNString = '';
       if (params.isNotEmpty) {
         for (var p in params) {
-          uriParamTNString += '[FromUri] ' + p.returnType + ' ' + p.name;
+          uriParamTNString += ', [FromUri] ${p.returnType} ${p.name}';
         }
       }
       if (uriParamTNString.isEmpty) {
         uriParamTNString =
             'INsgTokenExtension user, System.Net.Http.HttpRequestMessage requestMessage';
+      } else {
+        uriParamTNString = uriParamTNString.substring(2);
       }
       codeList.add(
           'Task<System.Net.Http.HttpResponseMessage> $name($uriParamTNString);');
@@ -339,14 +344,17 @@ class NsgGenFunction {
       var uriParamNString = '';
       if (params.isNotEmpty) {
         for (var p in params) {
-          uriParamTNString += p.returnType + ' ' + p.name;
-          uriParamNString += p.name;
+          uriParamTNString += ', ${p.returnType} ${p.name}';
+          uriParamNString += ', ${p.name}';
         }
       }
       if (uriParamTNString.isEmpty) {
         uriParamTNString =
             'INsgTokenExtension user, System.Net.Http.HttpRequestMessage requestMessage';
         uriParamNString = 'user, requestMessage';
+      } else {
+        uriParamTNString = uriParamTNString.substring(2);
+        uriParamNString = uriParamNString.substring(2);
       }
       codeList.add(
           'public async Task<System.Net.Http.HttpResponseMessage> $name($uriParamTNString)');
@@ -376,12 +384,14 @@ class NsgGenFunction {
       var uriParamTNString = '';
       if (params.isNotEmpty) {
         for (var p in params) {
-          uriParamTNString += p.returnType + ' ' + p.name;
+          uriParamTNString += ', ${p.returnType} ${p.name}';
         }
       }
       if (uriParamTNString.isEmpty) {
         uriParamTNString =
             'INsgTokenExtension user, HttpRequestMessage requestMessage';
+      } else {
+        uriParamTNString = uriParamTNString.substring(2);
       }
       codeList.add(
           'public async Task<HttpResponseMessage> On$name($uriParamTNString)');
