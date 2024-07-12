@@ -5,6 +5,7 @@ import 'nsgGenCSProject.dart';
 import 'nsgGenController.dart';
 import 'nsgGenDataItem.dart';
 import 'nsgGenEnum.dart';
+import 'nsgGenLocalization.dart';
 
 class NsgGenerator {
   final String targetFramework;
@@ -14,6 +15,7 @@ class NsgGenerator {
   String dartPath;
   final String applicationName;
   final bool useStaticDatabaseNames;
+  final String defaultLocale;
   final List<NsgGenController> controllers;
   final List<NsgGenEnum> enums;
   final Map<String, NsgGenDataItem> dataItems = Map();
@@ -33,6 +35,7 @@ class NsgGenerator {
       required this.cSharpNamespace,
       required this.dartPath,
       required this.applicationName,
+      required this.defaultLocale,
       this.doCSharp = true,
       this.doDart = true,
       this.useStaticDatabaseNames = false,
@@ -79,6 +82,7 @@ class NsgGenerator {
           doCSharp: Misc.parseBoolOrTrue(parsedJson['doCSharp']),
           doDart: Misc.parseBoolOrTrue(parsedJson['doDart']),
           applicationName: parsedJson['applicationName'] ?? 'application',
+          defaultLocale: 'ru',
           useStaticDatabaseNames:
               Misc.parseBool(parsedJson['useStaticDatabaseNames']),
           controllers: controllers,
@@ -138,5 +142,6 @@ class NsgGenerator {
       await NsgGenController.generateControllerOptions(this, controllers);
     }
     await NsgGenEnum.generateEnums(this, enums);
+    await NsgGenLocalization.writeLocalization(this);
   }
 }
