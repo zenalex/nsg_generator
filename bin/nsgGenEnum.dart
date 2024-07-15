@@ -149,7 +149,7 @@ class NsgGenEnum {
   Future generateEnumDart(NsgGenerator nsgGenerator) async {
     var codeList = <String>[];
     codeList.add('import \'package:nsg_data/nsg_data.dart\';');
-    if (useLocalization) {
+    if (useLocalization || nsgGenerator.useLocalization) {
       codeList.add(
           'import \'package:flutter_gen/gen_l10n/app_localizations.dart\';');
       codeList.add('import \'package:get/get.dart\';');
@@ -159,7 +159,7 @@ class NsgGenEnum {
       Misc.writeDescription(codeList, description, false);
     }
     codeList.add('class $className extends NsgEnum {');
-    if (useLocalization) {
+    if (useLocalization || nsgGenerator.useLocalization) {
       var lowerCaseClassName = Misc.getDartName(className);
       values!.forEach((i) {
         var iCodeName = Misc.getDartName(i.codeName);

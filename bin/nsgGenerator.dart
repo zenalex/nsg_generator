@@ -15,6 +15,7 @@ class NsgGenerator {
   String dartPath;
   final String applicationName;
   final bool useStaticDatabaseNames;
+  final bool useLocalization;
   final String defaultLocale;
   final List<NsgGenController> controllers;
   final List<NsgGenEnum> enums;
@@ -35,6 +36,7 @@ class NsgGenerator {
       required this.cSharpNamespace,
       required this.dartPath,
       required this.applicationName,
+      required this.useLocalization,
       required this.defaultLocale,
       this.doCSharp = true,
       this.doDart = true,
@@ -82,7 +84,8 @@ class NsgGenerator {
           doCSharp: Misc.parseBoolOrTrue(parsedJson['doCSharp']),
           doDart: Misc.parseBoolOrTrue(parsedJson['doDart']),
           applicationName: parsedJson['applicationName'] ?? 'application',
-          defaultLocale: 'ru',
+          useLocalization: Misc.parseBool(parsedJson['useLocalization']),
+          defaultLocale: parsedJson['defaultLocale'] ?? 'ru',
           useStaticDatabaseNames:
               Misc.parseBool(parsedJson['useStaticDatabaseNames']),
           controllers: controllers,

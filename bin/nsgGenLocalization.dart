@@ -8,7 +8,10 @@ class NsgGenLocalization {
 
     var l10n = Directory('${Directory(generator.dartPath).parent.path}/l10n');
     var arbFile = File('${l10n.path}/app_${generator.defaultLocale}.arb');
-    generator.enums.where((en) => en.useLocalization).forEach((en) {
+    var enums = generator.useLocalization
+        ? generator.enums
+        : generator.enums.where((en) => en.useLocalization);
+    enums.forEach((en) {
       en.values?.forEach((ev) {
         localizationDict[
                 '${Misc.getDartName(en.className)}_${Misc.getDartName(ev.codeName)}'] =
