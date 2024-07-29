@@ -11,16 +11,9 @@ class NsgGenLocalization {
     var enums = generator.useLocalization
         ? generator.enums
         : generator.enums.where((en) => en.useLocalization);
-    enums.forEach((en) {
-      en.values?.forEach((ev) {
-        localizationDict[
-                '${Misc.getDartName(en.className)}_${Misc.getDartName(ev.codeName)}'] =
-            ev.name;
-      });
-    });
     if (arbFile.existsSync()) {
       var str = arbFile.readAsStringSync();
-      var regex = RegExp(r'"(\w+)"\s*:\s*"([^"]*)"');
+      var regex = RegExp(r'"(\w+)"\s*:\s*"(((\\.)|[^"])*)"');
 
       final matches = regex.allMatches(str);
 
@@ -34,6 +27,15 @@ class NsgGenLocalization {
         }
       });
     }
+
+    enums.forEach((en) {
+      en.values?.forEach((ev) {
+        var key =
+            '${Misc.getDartName(en.className)}_${Misc.getDartName(ev.codeName)}';
+        if (localizationDict.containsKey(key)) localizationDict.remove(key);
+        localizationDict[key] = ev.name;
+      });
+    });
 
     var codeList = <String>[];
     codeList.add("{");
