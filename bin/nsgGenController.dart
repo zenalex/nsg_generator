@@ -621,8 +621,10 @@ class NsgGenController {
     codeList.add('    NsgMetrica.reportAppStart();');
     codeList.add(
         '    provider ??= NsgDataProvider(applicationName: \'${nsgGenerator.applicationName}\', applicationVersion: info.version, firebaseToken: \'\');');
-    codeList
-        .add('    provider!.serverUri = NsgServerOptions.serverUri$className;');
+    // codeList
+    //     .add('    provider!.serverUri = NsgServerOptions.serverUri$className;');
+    codeList.add(
+        '    provider?.loadServerAddress(NsgServerOptions.availableServers);');
     if (!loginRequired) {
       codeList.add('    provider!.loginRequired = false;');
     }
@@ -691,6 +693,8 @@ class NsgGenController {
     controllers.forEach((c) {
       codeList.add(
           '  static const String serverUri${c.className} = \'${c.serverUri}\';');
+      codeList.add(
+          '  static NsgServerParams availableServers = NsgServerParams({\'${c.serverUri}\': \'main\'}, \'${c.serverUri}\');');
     });
     codeList.add('}');
 

@@ -375,6 +375,20 @@ class NsgGenDataItem {
       codeList.add('};');
       codeList.add('');
     }
+    var fieldsNotToReturn =
+        fields.where((f) => f.writeOnServer && !f.writeOnClient);
+    if (fieldsNotToReturn.isNotEmpty) {
+      codeList.add(
+          'public override IEnumerable<string> GetFieldsNotToReturn() => FieldsNotToReturn;');
+      codeList
+          .add('public static IEnumerable<string> FieldsNotToReturn = new[]');
+      codeList.add('{');
+      fieldsNotToReturn.forEach((field) {
+        codeList.add('Names.${field.name},');
+      });
+      codeList.add('};');
+      codeList.add('');
+    }
     codeList.add('public override void SetDefaultValues()');
     codeList.add('{');
     if (entityType != NsgGenDataItemEntityType.dataItem || baseObject != null)
