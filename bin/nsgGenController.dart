@@ -19,6 +19,7 @@ class NsgGenController {
   final bool uploadEnabled;
   final bool loginRequired;
   final bool writeOnClient;
+  final bool enableServerSwitch;
   final List<NsgGenMethod> methods;
   final List<NsgGenFunction> functions;
   bool hasGetStreamFunction;
@@ -35,6 +36,7 @@ class NsgGenController {
       this.uploadEnabled = false,
       this.loginRequired = true,
       this.writeOnClient = true,
+      this.enableServerSwitch = false,
       this.methods = const [],
       this.functions = const [],
       this.hasGetStreamFunction = false});
@@ -71,6 +73,7 @@ class NsgGenController {
         uploadEnabled: Misc.parseBool(parsedJson['uploadEnabled']),
         loginRequired: Misc.parseBoolOrTrue(parsedJson['loginRequired']),
         writeOnClient: Misc.parseBoolOrTrue(parsedJson['writeOnClient']),
+        enableServerSwitch: Misc.parseBool(parsedJson['enableServerSwitch']),
         methods: parsedJson.containsKey('method')
             ? (parsedJson['method'] as List)
                 .map((i) => NsgGenMethod.fromJson(i))
@@ -621,10 +624,13 @@ class NsgGenController {
     codeList.add('    NsgMetrica.reportAppStart();');
     codeList.add(
         '    provider ??= NsgDataProvider(applicationName: \'${nsgGenerator.applicationName}\', applicationVersion: info.version, firebaseToken: \'\');');
-    // codeList
-    //     .add('    provider!.serverUri = NsgServerOptions.serverUri$className;');
-    codeList.add(
-        '    provider?.loadServerAddress(NsgServerOptions.availableServers);');
+    if (enableServerSwitch) {
+      codeList.add(
+          '    provider?.loadServerAddress(NsgServerOptions.availableServers);');
+    } else {
+      codeList.add(
+          '    provider!.serverUri = NsgServerOptions.serverUri$className;');
+    }
     if (!loginRequired) {
       codeList.add('    provider!.loginRequired = false;');
     }
