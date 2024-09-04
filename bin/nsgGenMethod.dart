@@ -69,20 +69,27 @@ class NsgGenMethod {
 
   Future generateCode(List<String> codeList, NsgGenerator nsgGenerator,
       NsgGenController controller) async {
+    String authorizeAttr = '';
     if (allowGetter || allowPost || allowDelete) {
       Misc.writeDescription(codeList, description, true);
-    }
-    if (allowGetter) {
-      codeList.add('[Route("$apiPrefix")]');
 
       //Authorization
       if (!controller.useAuthorization) {
       } else if (authorize == 'anonymous') {
-        codeList.add('[Authorize]');
+        authorizeAttr = '[Authorize]';
       } else if (authorize == 'user') {
-        codeList.add('[Authorize(Roles = UserRoles.User)]');
+        authorizeAttr = '[Authorize(Roles = UserRoles.User)]';
+      } else if (authorize == 'admin') {
+        authorizeAttr = '[Authorize(Roles = UserRoles.Admin)]';
       } else if (authorize != 'none') {
         throw Exception('Wrong authorization type in method $name');
+      }
+    }
+    if (allowGetter) {
+      codeList.add('[Route("$apiPrefix")]');
+      //Authorization
+      if (authorizeAttr.isNotEmpty) {
+        codeList.add(authorizeAttr);
       }
       //POST or GET
       var apiType = 'HttpGet';
@@ -115,13 +122,8 @@ class NsgGenMethod {
       genDataItem.allowCreate = allowCreate;
       codeList.add('[Route("$apiPrefix/Create")]');
       //Authorization
-      if (!controller.useAuthorization) {
-      } else if (authorize == 'anonymous') {
-        codeList.add('[Authorize]');
-      } else if (authorize == 'user') {
-        codeList.add('[Authorize(Roles = UserRoles.User)]');
-      } else if (authorize != 'none') {
-        throw Exception('Wrong authorization type in method ${name}Create');
+      if (authorizeAttr.isNotEmpty) {
+        codeList.add(authorizeAttr);
       }
       codeList.add('[HttpPost]');
       // codeList.add(
@@ -145,13 +147,8 @@ class NsgGenMethod {
     if (allowPost) {
       codeList.add('[Route("$apiPrefix/Post")]');
       //Authorization
-      if (!controller.useAuthorization) {
-      } else if (authorize == 'anonymous') {
-        codeList.add('[Authorize]');
-      } else if (authorize == 'user') {
-        codeList.add('[Authorize(Roles = UserRoles.User)]');
-      } else if (authorize != 'none') {
-        throw Exception('Wrong authorization type in method ${name}Post');
+      if (authorizeAttr.isNotEmpty) {
+        codeList.add(authorizeAttr);
       }
       codeList.add('[HttpPost]');
       // codeList.add(
@@ -176,13 +173,8 @@ class NsgGenMethod {
     if (allowDelete) {
       codeList.add('[Route("$apiPrefix/Delete")]');
       //Authorization
-      if (!controller.useAuthorization) {
-      } else if (authorize == 'anonymous') {
-        codeList.add('[Authorize]');
-      } else if (authorize == 'user') {
-        codeList.add('[Authorize(Roles = UserRoles.User)]');
-      } else if (authorize != 'none') {
-        throw Exception('Wrong authorization type in method ${name}Delete');
+      if (authorizeAttr.isNotEmpty) {
+        codeList.add(authorizeAttr);
       }
       codeList.add('[HttpPost]');
       // codeList.add(
