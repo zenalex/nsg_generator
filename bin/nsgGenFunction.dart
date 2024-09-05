@@ -17,6 +17,7 @@ class NsgGenFunction {
   final bool useProgressDialog;
   final int retryCount;
   final String dialogText;
+  final List<String> loadReferences;
   final List<NsgGenMethodParam> params;
 
   NsgGenFunction(
@@ -34,6 +35,7 @@ class NsgGenFunction {
       this.useProgressDialog = false,
       this.retryCount = 3,
       this.dialogText = '',
+      this.loadReferences = const [],
       this.params = const []});
 
   static Map<String, String> obsoleteKeys = {
@@ -109,11 +111,16 @@ class NsgGenFunction {
               Misc.parseBoolOrTrue(parsedJson['useProgressDialog']),
           retryCount: retryCount,
           dialogText: parsedJson['dialogText'] ?? '',
+          loadReferences: parsedJson.containsKey('loadReferences')
+              ? (parsedJson['loadReferences'] as List)
+                  .map((i) => i.toString())
+                  .toList()
+              : const [],
           params: parsedJson.containsKey('params')
               ? (parsedJson['params'] as List)
                   .map((i) => NsgGenMethodParam.fromJson(i))
                   .toList()
-              : []);
+              : const []);
     } catch (e) {
       print('--- ERROR parsing function \'$name\' ---');
       rethrow;
@@ -488,6 +495,17 @@ class NsgGenFunction {
     codeList.add('$_    filter ??= NsgDataRequestParams();');
     codeList.add('$_    filter.params?.addAll(params);');
     codeList.add('$_    filter.params ??= params;');
+    if (loadReferences.isNotEmpty) {
+      codeList.add('$_    var loadReference = [');
+      loadReferences.forEach((s) {
+        if (s.contains('\$')) {
+          codeList.add('$_      \'${s}\',');
+        } else {
+          codeList.add('$_      ${s},');
+        }
+      });
+      codeList.add('$_    ];');
+    }
     if (isReference) {
       if (type.startsWith('List')) {
         codeList.add(
@@ -509,12 +527,16 @@ class NsgGenFunction {
     codeList.add('$_        method: \'${apiType.toUpperCase()}\',');
     codeList.add('$_        filter: filter,');
     codeList.add('$_        autoRepeate: ${retryCount > 0},');
+    var endParam = '$_        autoRepeateCount: $retryCount';
     if (useProgressDialog) {
-      codeList.add('$_        autoRepeateCount: $retryCount,');
-      codeList.add('$_        cancelToken: progress.cancelToken);');
-    } else {
-      codeList.add('$_        autoRepeateCount: $retryCount);');
+      codeList.add('$endParam,');
+      endParam = '$_        cancelToken: progress.cancelToken';
     }
+    if (loadReferences.isNotEmpty) {
+      codeList.add('$endParam,');
+      endParam = '$_        loadReference: loadReference';
+    }
+    codeList.add('$endParam);');
     codeList.add('$_    return res;');
     // codeList.add('    } catch (e) {');
     // if (type == 'List<Reference>') {
