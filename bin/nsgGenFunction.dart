@@ -17,7 +17,7 @@ class NsgGenFunction {
   final bool useProgressDialog;
   final int retryCount;
   final String dialogText;
-  final List<String> loadReferences;
+  final List<String> readReferences;
   final List<NsgGenMethodParam> params;
 
   NsgGenFunction(
@@ -35,7 +35,7 @@ class NsgGenFunction {
       this.useProgressDialog = false,
       this.retryCount = 3,
       this.dialogText = '',
-      this.loadReferences = const [],
+      this.readReferences = const [],
       this.params = const []});
 
   static Map<String, String> obsoleteKeys = {
@@ -111,8 +111,8 @@ class NsgGenFunction {
               Misc.parseBoolOrTrue(parsedJson['useProgressDialog']),
           retryCount: retryCount,
           dialogText: parsedJson['dialogText'] ?? '',
-          loadReferences: parsedJson.containsKey('loadReferences')
-              ? (parsedJson['loadReferences'] as List)
+          readReferences: parsedJson.containsKey('readReferences')
+              ? (parsedJson['readReferences'] as List)
                   .map((i) => i.toString())
                   .toList()
               : const [],
@@ -495,9 +495,9 @@ class NsgGenFunction {
     codeList.add('$_    filter ??= NsgDataRequestParams();');
     codeList.add('$_    filter.params?.addAll(params);');
     codeList.add('$_    filter.params ??= params;');
-    if (loadReferences.isNotEmpty) {
+    if (readReferences.isNotEmpty) {
       codeList.add('$_    var loadReference = [');
-      loadReferences.forEach((s) {
+      readReferences.forEach((s) {
         if (s.contains('\$')) {
           codeList.add('$_      \'${s}\',');
         } else {
@@ -532,7 +532,7 @@ class NsgGenFunction {
       codeList.add('$endParam,');
       endParam = '$_        cancelToken: progress.cancelToken';
     }
-    if (loadReferences.isNotEmpty) {
+    if (readReferences.isNotEmpty) {
       codeList.add('$endParam,');
       endParam = '$_        loadReference: loadReference';
     }
