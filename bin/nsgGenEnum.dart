@@ -164,7 +164,7 @@ class NsgGenEnum {
       values!.forEach((i) {
         var iCodeName = Misc.getDartName(i.codeName);
         codeList.add(
-            '  static $className ${Misc.getDartName(i.codeName)} = $className(${i.value}, (AppLocalizations.of(Get.context!) as AppLocalizations).${lowerCaseClassName}_$iCodeName);');
+            '  static $className get ${Misc.getDartName(i.codeName)} => $className(${i.value}, (AppLocalizations.of(Get.context!) as AppLocalizations).${lowerCaseClassName}_$iCodeName);');
       });
     } else {
       values!.forEach((i) {
