@@ -14,6 +14,7 @@ class NsgGenFunction {
   final String referenceType;
   final bool isReference;
   final bool isNullable;
+  final bool writeOnClient;
   final bool useProgressDialog;
   final int retryCount;
   final String dialogText;
@@ -32,6 +33,7 @@ class NsgGenFunction {
       this.referenceType = '',
       this.isReference = false,
       this.isNullable = true,
+      this.writeOnClient = true,
       this.useProgressDialog = false,
       this.retryCount = 3,
       this.dialogText = '',
@@ -107,6 +109,7 @@ class NsgGenFunction {
           referenceType: referenceType,
           isReference: isReference,
           isNullable: Misc.parseBoolOrTrue(parsedJson['isNullable']),
+          writeOnClient: Misc.parseBoolOrTrue(parsedJson['writeOnClient']),
           useProgressDialog:
               Misc.parseBoolOrTrue(parsedJson['useProgressDialog']),
           retryCount: retryCount,
