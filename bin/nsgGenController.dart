@@ -513,6 +513,7 @@ class NsgGenController {
     codeList.add('using System.Linq;');
     codeList.add('using System.Net.Http;');
     codeList.add('using System.Threading.Tasks;');
+    codeList.add('using System.Web;');
     if (nsgGenerator.isDotNetCore) {
       codeList.add('using Microsoft.AspNetCore.Http;');
       codeList.add('using Microsoft.AspNetCore.Mvc;');
@@ -525,6 +526,32 @@ class NsgGenController {
     codeList.add('{');
     codeList.add('public class $implAuthControllerName : AuthImplInterface');
     codeList.add('{');
+    var methodSignatures = [
+      'public Task<INsgTokenExtension> CheckUserToken(string token, string firebaseToken)',
+      'public Task<int> CheckVersion(string appId, string version)',
+      'public Task<bool> EndUserSession(INsgTokenExtension user, Guid sessionId)',
+      'public Task<INsgTokenExtension> GetAnonymousToken(INsgTokenExtension tokenExtension)',
+      'public Task<FileStreamResult> GetCapture(string token)',
+      'public Task<INsgTokenExtension> GetUserByToken(HttpRequestMessage request)',
+      'public Task<IEnumerable<UserSession>> GetUserSessions(INsgTokenExtension user, NsgFindParams findParams)',
+      'public Task Logout(string accessToken)',
+      'public Task<LoginResponse> PhoneLogin(string token, PhoneLoginModel model)',
+      'public Task<LoginResponse> PhoneLoginRequestEmail(string accessToken, PhoneLoginModel model)',
+      'public Task<LoginResponse> PhoneLoginRequestGoogle(string accessToken, PhoneLoginModel model)',
+      'public Task<LoginResponse> PhoneLoginRequestSMS(string accessToken, PhoneLoginModel model)',
+      'public Task<LoginResponse> PhoneLoginRequestVK(string accessToken, PhoneLoginModel model)',
+      'public Task<LoginResponse> PhoneLoginVerifyGoogle(string accessToken, PhoneLoginModel model)',
+      'public Task<int> SetLocale(string token, string locale)',
+      'public Task<bool> Validate(HttpRequest request, string token)',
+    ];
+    methodSignatures.forEach((action) {
+      codeList.add(action);
+      codeList.add('{');
+      codeList.add('throw new NotImplementedException();');
+      codeList.add('}');
+      codeList.add('');
+    });
+    codeList.removeLast();
     codeList.add('}');
     codeList.add('}');
     Misc.indentCSharpCode(codeList);
