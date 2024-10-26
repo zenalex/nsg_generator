@@ -106,8 +106,7 @@ class NsgGenMethod {
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name([FromBody] NsgFindParams findParams)');
       codeList.add('{');
       if (controller.useAuthorization && authorize != 'none') {
-        codeList
-            .add('var user = await authController.GetUserByToken(Request);');
+        codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
             'return await controller.Get<${genDataItem.typeName}>(user, findParams);');
       } else {
@@ -132,8 +131,7 @@ class NsgGenMethod {
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}Create([FromBody] NsgFindParams findParams)');
       codeList.add('{');
       if (controller.useAuthorization && authorize != 'none') {
-        codeList
-            .add('var user = await authController.GetUserByToken(Request);');
+        codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
             'return await controller.Create<${genDataItem.typeName}>(user, findParams);');
       } else {
@@ -157,8 +155,7 @@ class NsgGenMethod {
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}Post([FromBody] IEnumerable<${genDataItem.typeName}> items)');
       codeList.add('{');
       if (controller.useAuthorization && authorize != 'none') {
-        codeList
-            .add('var user = await authController.GetUserByToken(Request);');
+        codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
             'return await controller.Post<${genDataItem.typeName}>(user, NsgFindParams.From(Request.GetQueryNameValuePairs()), items);');
       } else {
@@ -183,8 +180,7 @@ class NsgGenMethod {
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}Delete([FromBody] IEnumerable<${genDataItem.typeName}> items)');
       codeList.add('{');
       if (controller.useAuthorization && authorize != 'none') {
-        codeList
-            .add('var user = await authController.GetUserByToken(Request);');
+        codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
             'return await controller.Delete<${genDataItem.typeName}>(user, items);');
       } else {
@@ -211,7 +207,7 @@ class NsgGenMethod {
     //   codeList.add('{');
     //   if (authorize != 'none') {
     //     codeList
-    //         .add('var user = await authController.GetUserByToken(Request);');
+    //         .add('var user = ${controller.callGetUserByToken};');
     //     codeList.add(
     //         'return await controller.${name}${element.apiPrefix}(user, file);');
     //   } else {

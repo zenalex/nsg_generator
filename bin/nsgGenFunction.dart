@@ -254,7 +254,7 @@ class NsgGenFunction {
     }
     codeList.add('{');
     if (controller.useAuthorization && authorize != 'none') {
-      codeList.add('var user = await authController.GetUserByToken(Request);');
+      codeList.add('var user = ${controller.callGetUserByToken};');
     }
     if (params.isNotEmpty && !(['Image', 'Binary'].contains(type))) {
       params.forEach((p) {

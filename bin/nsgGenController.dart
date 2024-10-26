@@ -20,9 +20,13 @@ class NsgGenController {
   final bool loginRequired;
   final bool writeOnClient;
   final bool enableServerSwitch;
+  final bool useGetUserByTokenSync;
   final List<NsgGenMethod> methods;
   final List<NsgGenFunction> functions;
   bool hasGetStreamFunction;
+  String get callGetUserByToken => useGetUserByTokenSync
+      ? "authController.GetUserByTokenSync(Request)"
+      : "await authController.GetUserByToken(Request)";
 
   NsgGenController(
       {required this.apiPrefix,
@@ -37,6 +41,7 @@ class NsgGenController {
       this.loginRequired = true,
       this.writeOnClient = true,
       this.enableServerSwitch = false,
+      this.useGetUserByTokenSync = false,
       this.methods = const [],
       this.functions = const [],
       this.hasGetStreamFunction = false});
@@ -74,6 +79,8 @@ class NsgGenController {
         loginRequired: Misc.parseBoolOrTrue(parsedJson['loginRequired']),
         writeOnClient: Misc.parseBoolOrTrue(parsedJson['writeOnClient']),
         enableServerSwitch: Misc.parseBool(parsedJson['enableServerSwitch']),
+        useGetUserByTokenSync:
+            Misc.parseBool(parsedJson['useGetUserByTokenSync']),
         methods: parsedJson.containsKey('method')
             ? (parsedJson['method'] as List)
                 .map((i) => NsgGenMethod.fromJson(i))
@@ -533,6 +540,7 @@ class NsgGenController {
       'public Task<INsgTokenExtension> GetAnonymousToken(INsgTokenExtension tokenExtension)',
       'public Task<FileStreamResult> GetCapture(string token)',
       'public Task<INsgTokenExtension> GetUserByToken(HttpRequestMessage request)',
+      'public INsgTokenExtension GetUserByTokenSync(HttpRequestMessage request)',
       'public Task<IEnumerable<UserSession>> GetUserSessions(INsgTokenExtension user, NsgFindParams findParams)',
       'public Task Logout(string accessToken)',
       'public Task<LoginResponse> PhoneLogin(string token, PhoneLoginModel model)',
