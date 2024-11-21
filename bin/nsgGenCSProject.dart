@@ -166,7 +166,8 @@ class NsgGenCSProject {
       codeList.add(
           'public static ILoggerFactory LoggerFactory { get; } = Microsoft.Extensions.Logging.LoggerFactory.Create((builder) =>');
       codeList.add('{');
-      // codeList.add('builder.AddEventLog();');
+      codeList.add(
+          'builder.AddProvider(new NsgServerClasses.NsgLoggerProvider());');
       codeList.add('#if DEBUG');
       codeList.add('builder.AddFilter((level) =>');
       codeList.add('{');

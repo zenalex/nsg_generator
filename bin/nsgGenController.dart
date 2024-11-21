@@ -580,8 +580,8 @@ class NsgGenController {
     codeList.add('// TODO: уточнить тип');
     codeList
         .add('public /*ПользователиСервисов*/NsgDataDictionary Пользователь;');
-    codeList.add(
-        '//public override NsgDataDictionary DbUser => Пользователь.Пользователь;');
+    codeList
+        .add('//public override string DbUser => Пользователь?.ToString();');
     codeList.add('}');
     codeList.add('}');
     Misc.indentCSharpCode(codeList);
