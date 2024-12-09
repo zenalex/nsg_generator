@@ -266,21 +266,20 @@ class NsgGenDataItem {
     if (baseObject != null) {
       pkField = baseObject.fields.firstWhere(
           (f) =>
-              f.writeOnServer &&
-              (f.name.toLowerCase().contains('id') || f.isPrimary), orElse: () {
+              f.writeOnServer && (f.name.toLowerCase() == 'id' || f.isPrimary),
+          orElse: () {
         return fields.firstWhere(
             (f) =>
                 f.writeOnServer &&
-                (f.name.toLowerCase().contains('id') || f.isPrimary),
-            orElse: () {
+                (f.name.toLowerCase() == 'id' || f.isPrimary), orElse: () {
           throw Exception('There is no Primary key in $typeName');
         });
       });
     } else {
       pkField = fields.firstWhere(
           (f) =>
-              f.writeOnServer &&
-              (f.name.toLowerCase().contains('id') || f.isPrimary), orElse: () {
+              f.writeOnServer && (f.name.toLowerCase() == 'id' || f.isPrimary),
+          orElse: () {
         throw Exception('There is no Primary key in $typeName');
       });
     }

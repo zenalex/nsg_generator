@@ -32,7 +32,7 @@ class NsgGenLocalization {
       en.values?.forEach((ev) {
         var key =
             '${Misc.getDartName(en.className)}_${Misc.getDartName(ev.codeName)}';
-        if (localizationDict.containsKey(key)) localizationDict.remove(key);
+        // if (localizationDict.containsKey(key)) localizationDict.remove(key);
         localizationDict[key] = ev.name;
       });
     });
