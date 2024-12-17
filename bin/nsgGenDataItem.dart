@@ -322,7 +322,7 @@ class NsgGenDataItem {
     codeList.add('};');
     codeList.add('');
 
-    if (csTypes.isNotEmpty) {
+    if (databaseType.isNotEmpty && csTypes.isNotEmpty) {
       codeList.add(
           'public override Dictionary<string, string> GetClientServerTypes() => ClientServerTypes;');
       if (baseObject != null) {
