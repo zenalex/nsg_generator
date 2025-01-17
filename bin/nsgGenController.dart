@@ -657,11 +657,11 @@ class NsgGenController {
       codeList.add('    NsgMetrica.activate();');
     }
     codeList.add('    NsgMetrica.reportAppStart();');
+    codeList.add('    provider ??= NsgDataProvider(');
     codeList.add(
-        '    provider ??= NsgDataProvider(applicationName: \'${nsgGenerator.applicationName}\', applicationVersion: info.version, firebaseToken: \'\');');
+        '        applicationName: \'${nsgGenerator.applicationName}\', applicationVersion: info.version, firebaseToken: \'\', availableServers: NsgServerOptions.availableServers);');
     if (enableServerSwitch) {
-      codeList.add(
-          '    provider?.loadServerAddress(NsgServerOptions.availableServers);');
+      codeList.add('    provider?.loadServerAddress();');
     } else {
       codeList.add(
           '    provider!.serverUri = NsgServerOptions.serverUri$className;');
