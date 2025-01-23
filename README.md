@@ -254,11 +254,6 @@ Uri сервера
 "writeOnClient": "true",
 ```
 
-Функция переключения между серверами на клиенте. По умолчанию false  
-```json
-"enableServerSwitch": "true",
-```
-
 Нужно ли заменить на сервере вызов await GetUserByToken синхронным методом GetUserByTokenSync. По умолчанию false  
 ```json
 "useGetUserByTokenSync": "true",

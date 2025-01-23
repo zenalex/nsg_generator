@@ -19,7 +19,6 @@ class NsgGenController {
   final bool uploadEnabled;
   final bool loginRequired;
   final bool writeOnClient;
-  final bool enableServerSwitch;
   final bool useGetUserByTokenSync;
   final List<NsgGenMethod> methods;
   final List<NsgGenFunction> functions;
@@ -40,7 +39,6 @@ class NsgGenController {
       this.uploadEnabled = false,
       this.loginRequired = true,
       this.writeOnClient = true,
-      this.enableServerSwitch = false,
       this.useGetUserByTokenSync = false,
       this.methods = const [],
       this.functions = const [],
@@ -78,7 +76,6 @@ class NsgGenController {
         uploadEnabled: Misc.parseBool(parsedJson['uploadEnabled']),
         loginRequired: Misc.parseBoolOrTrue(parsedJson['loginRequired']),
         writeOnClient: Misc.parseBoolOrTrue(parsedJson['writeOnClient']),
-        enableServerSwitch: Misc.parseBool(parsedJson['enableServerSwitch']),
         useGetUserByTokenSync:
             Misc.parseBool(parsedJson['useGetUserByTokenSync']),
         methods: parsedJson.containsKey('method')
@@ -660,12 +657,7 @@ class NsgGenController {
     codeList.add('    provider ??= NsgDataProvider(');
     codeList.add(
         '        applicationName: \'${nsgGenerator.applicationName}\', applicationVersion: info.version, firebaseToken: \'\', availableServers: NsgServerOptions.availableServers);');
-    if (enableServerSwitch) {
-      codeList.add('    provider?.loadServerAddress();');
-    } else {
-      codeList.add(
-          '    provider!.serverUri = NsgServerOptions.serverUri$className;');
-    }
+    codeList.add('    provider?.loadServerAddress();');
     if (!loginRequired) {
       codeList.add('    provider!.loginRequired = false;');
     }
