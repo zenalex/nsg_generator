@@ -83,8 +83,11 @@ class Misc {
         print('getDartToString: $s');
       });
       print('getDartToString: ${allMatches.length}');
+      return Misc.getDartName('\'' + presentation + '\'');
     }
-    return Misc.getDartName('\'' + presentation + '\'');
+    if (presentation.contains(' '))
+      return Misc.getDartName('\'' + presentation + '\'');
+    return Misc.getDartName(presentation);
   }
 
   static void writeDescription(List<String> codeList, String text, bool xmlWrap,
