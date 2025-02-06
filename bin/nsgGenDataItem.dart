@@ -834,8 +834,18 @@ class NsgGenDataItem {
       }
       fieldsOnClient.forEach((_) {
         if (_.isPrimary) {
-          codeList.add(
-              '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+          if (_.type == 'DateTime' && _.useDate != _.useTime) {
+            if (!_.useDate) {
+              codeList.add(
+                  '    addField(${_.nsgDataType}(${_.fieldNameVar}, useDate: false), primaryKey: ${_.isPrimary});');
+            } else {
+              codeList.add(
+                  '    addField(${_.nsgDataType}(${_.fieldNameVar}, useTime: false), primaryKey: ${_.isPrimary});');
+            }
+          } else {
+            codeList.add(
+                '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+          }
         } else {
           if (_.isString &&
               _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {

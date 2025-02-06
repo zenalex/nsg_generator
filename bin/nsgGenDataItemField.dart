@@ -7,6 +7,8 @@ class NsgGenDataItemField {
   final String type;
   final String databaseName;
   final int maxLength;
+  final bool useDate;
+  final bool useTime;
   final String description;
   final String apiPrefix;
   final bool isPrimary;
@@ -26,6 +28,8 @@ class NsgGenDataItemField {
       required this.type,
       this.databaseName = '',
       this.maxLength = 0,
+      this.useDate = true,
+      this.useTime = true,
       this.description = '',
       this.apiPrefix = '',
       this.isPrimary = false,
@@ -115,6 +119,8 @@ class NsgGenDataItemField {
           databaseName: parsedJson['databaseName'] ?? '',
           maxLength: ml ??
               (defaultMaxLength.containsKey(type) ? defaultMaxLength[type] : 0),
+          useDate: Misc.parseBoolOrTrue(parsedJson['useDate']),
+          useTime: Misc.parseBoolOrTrue(parsedJson['useTime']),
           description: parsedJson.containsKey('description')
               ? parsedJson['description'] ?? ''
               : parsedJson['databaseName'] ?? '',
