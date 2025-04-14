@@ -786,21 +786,29 @@ class NsgGenDataItem {
           "  static const ${_.fieldNameVar} = '${Misc.getDartName(_.name)}';");
     });
     codeList.add('');
-    codeList.add('  static final Map<String, String> fieldNameDict = {');
+    var codeListFields = <String>[];
     if (baseObject != null) {
       baseObject.fields.forEach((_) {
         if (!_.writeOnClient) return;
         if (_.userVisibility) {
-          codeList.add("    ${_.fieldNameVar}: '${_.userName}',");
+          codeListFields.add("    ${_.fieldNameVar}: '${_.userName}',");
         }
       });
     }
     fieldsOnClient.forEach((_) {
       if (_.userVisibility) {
-        codeList.add("    ${_.fieldNameVar}: '${_.userName}',");
+        codeListFields.add("    ${_.fieldNameVar}: '${_.userName}',");
       }
     });
-    codeList.add('  };');
+    if (codeListFields.isNotEmpty) {
+      codeList.add('  static final Map<String, String> fieldNameDict = {');
+      codeListFields.forEach((i) {
+        codeList.add(i);
+      });
+      codeList.add('  };');
+    } else {
+      codeList.add('  static final Map<String, String> fieldNameDict = {};');
+    }
     codeList.add('');
     codeList.add('  @override');
     codeList.add('  String get typeName => \'$typeName\';');

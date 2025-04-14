@@ -249,7 +249,7 @@ class NsgGenDataItemField {
       codeList.add(
           '  Future<$referenceType> ${Misc.getDartName(referenceName)}Async() async {');
       codeList.add(
-          '   return await getReferentAsync<$referenceType>($fieldNameVar);');
+          '    return await getReferentAsync<$referenceType>($fieldNameVar);');
       codeList.add('  }');
     } else if (type.startsWith('Enum')) {
       codeList.add(
@@ -261,8 +261,8 @@ class NsgGenDataItemField {
           '  NsgDataItem get ${Misc.getDartName(referenceName)} => getReferent<NsgDataItem>($fieldNameVar);');
       codeList.add(
           '  Future<NsgDataItem> ${Misc.getDartName(referenceName)}Async() async {');
-      codeList
-          .add('   return await getReferentAsync<NsgDataItem>($fieldNameVar);');
+      codeList.add(
+          '    return await getReferentAsync<NsgDataItem>($fieldNameVar);');
       codeList.add('  }');
     } else {
       var message = "write getter for field type $type couldn't be found";

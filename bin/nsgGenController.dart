@@ -688,7 +688,7 @@ class NsgGenController {
     codeList.add('  }');
 
     await Future.forEach<NsgGenFunction>(functions, (_) async {
-      if (!_.writeOnClient || ['Image', 'Binary'].contains(_.type)) return;
+      if (!_.writeOnClient) return;
       codeList.add('');
       await _.generateCodeDart(codeList, nsgGenerator, this);
     });

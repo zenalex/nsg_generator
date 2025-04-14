@@ -438,6 +438,13 @@ class NsgGenFunction {
     if (description.isNotEmpty) {
       Misc.writeDescription(codeList, description, false, indent: 2);
     }
+
+    if (['Image', 'Binary'].contains(type)) {
+      codeList.add(
+          '  String get url$name => \'/${controller.apiPrefix}/$apiPrefix\';');
+      return;
+    }
+
     var paramTNString = ''; //NsgDataRequestParams? filter';
     if (params.isNotEmpty) {
       params.forEach((p) {
