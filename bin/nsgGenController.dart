@@ -533,6 +533,7 @@ class NsgGenController {
     var methodSignatures = [
       'public Task<INsgTokenExtension> CheckUserToken(string token, string firebaseToken)',
       'public Task<int> CheckVersion(string appId, string version)',
+      'public Task<int> CheckVersion(string accessToken, string appId, string version, string model, string manufacturer, string versionOS, string platform)',
       'public Task<bool> EndUserSession(INsgTokenExtension user, Guid sessionId)',
       'public Task<INsgTokenExtension> GetAnonymousToken(INsgTokenExtension tokenExtension)',
       'public Task<FileStreamResult> GetCapture(string token)',
@@ -545,7 +546,8 @@ class NsgGenController {
       'public Task<LoginResponse> PhoneLoginRequestGoogle(string accessToken, PhoneLoginModel model)',
       'public Task<LoginResponse> PhoneLoginRequestSMS(string accessToken, PhoneLoginModel model)',
       'public Task<LoginResponse> PhoneLoginRequestVK(string accessToken, PhoneLoginModel model)',
-      'public Task<LoginResponse> PhoneLoginVerifyGoogle(string accessToken, PhoneLoginModel model)',
+      'public Task<LoginResponse> PhoneLoginVerifyGoogle(string accessToken, SocialMediaLoginModel model)',
+      'public Task<LoginResponse> PhoneLoginVerifyVK(string accessToken, SocialMediaLoginModel model)',
       'public Task<int> SetLocale(string token, string locale)',
       'public Task<bool> Validate(HttpRequest request, string token)',
     ];
