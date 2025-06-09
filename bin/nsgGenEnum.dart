@@ -148,12 +148,11 @@ class NsgGenEnum {
 
   Future generateEnumDart(NsgGenerator nsgGenerator) async {
     var codeList = <String>[];
-    codeList.add('import \'package:nsg_data/nsg_data.dart\';');
     if (useLocalization || nsgGenerator.useLocalization) {
-      codeList.add(
-          'import \'package:flutter_gen/gen_l10n/app_localizations.dart\';');
       codeList.add('import \'package:get/get.dart\';');
+      codeList.add('import \'../../l10n/app_localizations.dart\';');
     }
+    codeList.add('import \'package:nsg_data/nsg_data.dart\';');
     codeList.add('');
     if (description.isNotEmpty) {
       Misc.writeDescription(codeList, description, false);
