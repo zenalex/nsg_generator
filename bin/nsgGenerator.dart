@@ -17,6 +17,7 @@ class NsgGenerator {
   final bool useStaticDatabaseNames;
   final bool useLocalization;
   final String defaultLocale;
+  final bool newTableLogic;
   final List<NsgGenController> controllers;
   final List<NsgGenEnum> enums;
   final Map<String, NsgGenDataItem> dataItems = Map();
@@ -38,6 +39,7 @@ class NsgGenerator {
       required this.applicationName,
       required this.useLocalization,
       required this.defaultLocale,
+      required this.newTableLogic,
       this.doCSharp = true,
       this.doDart = true,
       this.useStaticDatabaseNames = false,
@@ -86,6 +88,7 @@ class NsgGenerator {
           applicationName: parsedJson['applicationName'] ?? 'application',
           useLocalization: Misc.parseBool(parsedJson['useLocalization']),
           defaultLocale: parsedJson['defaultLocale'] ?? 'ru',
+          newTableLogic: Misc.parseBool(parsedJson['newTableLogic']),
           useStaticDatabaseNames:
               Misc.parseBool(parsedJson['useStaticDatabaseNames']),
           controllers: controllers,

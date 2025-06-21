@@ -774,6 +774,13 @@ class NsgGenDataItem {
           'NsgDataItem${NsgGenDataItemEntityType.inheritanceDart[entityType]}';
     }
     codeList.add('class ${typeName}Generated extends $extend {');
+    if (nsgGenerator.newTableLogic &&
+        nsgGenerator.dataItems.entries.any((i) => i.value.fields.any(
+            (f) => f.type.startsWith("List") && f.referenceType == typeName))) {
+      codeList.add('  ${typeName}Generated() {');
+      codeList.add('    newTableLogic = true;');
+      codeList.add('  }');
+    }
     if (baseObject != null) {
       baseObject.fields.forEach((_) {
         if (!_.writeOnClient) return;
