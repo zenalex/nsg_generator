@@ -156,6 +156,9 @@ class NsgGenController {
         } else {
           codeList.add('authController = AuthController.CurrentController;');
         }
+        if (nsgGenerator.newTableLogic) {
+          codeList.add('NsgServerDataItem.NewTableLogic = true;');
+        }
         // codeList.add('#else');
         // codeList.add('controller = new ${implControllerName}Mock();');
         // if (useAuthorization) {
@@ -660,6 +663,9 @@ class NsgGenController {
     codeList.add(
         '        applicationName: \'${nsgGenerator.applicationName}\', applicationVersion: info.version, firebaseToken: \'\', availableServers: NsgServerOptions.availableServers);');
     codeList.add('    provider?.loadServerAddress();');
+    if (nsgGenerator.newTableLogic) {
+      codeList.add('    newTableLogic = true;');
+    }
     if (!loginRequired) {
       codeList.add('    provider!.loginRequired = false;');
     }
