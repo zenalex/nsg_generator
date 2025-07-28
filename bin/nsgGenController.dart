@@ -660,12 +660,17 @@ class NsgGenController {
     }
     codeList.add('    NsgMetrica.reportAppStart();');
     codeList.add('    provider ??= NsgDataProvider(');
-    codeList.add(
-        '        applicationName: \'${nsgGenerator.applicationName}\', applicationVersion: info.version, firebaseToken: \'\', availableServers: NsgServerOptions.availableServers);');
-    codeList.add('    provider?.loadServerAddress();');
+    codeList
+        .add('        applicationName: \'${nsgGenerator.applicationName}\',');
+    codeList.add('        applicationVersion: info.version,');
+    codeList.add('        firebaseToken: \'\',');
+    codeList
+        .add('        availableServers: NsgServerOptions.availableServers,');
     if (nsgGenerator.newTableLogic) {
-      codeList.add('    newTableLogic = true;');
+      codeList.add('        newTableLogic: true,');
     }
+    codeList.add('    );');
+    codeList.add('    provider?.loadServerAddress();');
     if (!loginRequired) {
       codeList.add('    provider!.loginRequired = false;');
     }
