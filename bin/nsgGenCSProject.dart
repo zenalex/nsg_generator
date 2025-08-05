@@ -65,12 +65,6 @@ class NsgGenCSProject {
       codeList.add(
           '    <PackageReference Include="Microsoft.Owin.Host.SystemWeb" Version="4.2.2" />');
       codeList.add(
-          '    <PackageReference Include="Microsoft.AspNet.Cors" Version="5.3.0" />');
-      codeList.add(
-          '    <PackageReference Include="Microsoft.AspNet.WebApi.Cors" Version="5.3.0" />');
-      codeList.add(
-          '    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.3.0" />');
-      codeList.add(
           '    <PackageReference Include="Microsoft.Owin.Cors" Version="4.2.2" />');
       codeList.add(
           '    <PackageReference Include="Microsoft.Owin.Security.Jwt" Version="4.2.2" />');
@@ -81,12 +75,6 @@ class NsgGenCSProject {
         '    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />');
     codeList.add(
         '    <PackageReference Include="Microsoft.AspNet.WebApi.OwinSelfHost" Version="5.3.0" />');
-    codeList.add(
-        '    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="' +
-            (nsgGenerator.isDotNetCore ? '5.0.7' : '3.1.32') +
-            '" />');
-    codeList.add(
-        '    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.35.0" />');
     codeList.add('  </ItemGroup>');
     codeList.add('');
     codeList.add('');
