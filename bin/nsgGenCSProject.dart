@@ -61,20 +61,18 @@ class NsgGenCSProject {
     codeList.add('  <ItemGroup>');
     if (!nsgGenerator.isDotNetCore) {
       codeList.add(
-          '    <PackageReference Include="Microsoft.Owin.Diagnostics" Version="4.2.2" />');
+          '    <PackageReference Include="Microsoft.Owin.Diagnostics" Version="4.2.3" />');
       codeList.add(
-          '    <PackageReference Include="Microsoft.Owin.Host.SystemWeb" Version="4.2.2" />');
+          '    <PackageReference Include="Microsoft.Owin.Host.SystemWeb" Version="4.2.3" />');
       codeList.add(
-          '    <PackageReference Include="Microsoft.Owin.Cors" Version="4.2.2" />');
+          '    <PackageReference Include="Microsoft.Owin.Cors" Version="4.2.3" />');
       codeList.add(
-          '    <PackageReference Include="Microsoft.Owin.Security.Jwt" Version="4.2.2" />');
+          '    <PackageReference Include="Microsoft.Owin.Security.Jwt" Version="4.2.3 />');
       codeList.add(
-          '    <PackageReference Include="Microsoft.Owin.Security.OAuth" Version="4.2.2" />');
+          '    <PackageReference Include="Microsoft.Owin.Security.OAuth" Version="4.2.3" />');
     }
     codeList.add(
-        '    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />');
-    codeList.add(
-        '    <PackageReference Include="Microsoft.AspNet.WebApi.OwinSelfHost" Version="5.3.0" />');
+        '    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.8" />');
     codeList.add('  </ItemGroup>');
     codeList.add('');
     codeList.add('');
