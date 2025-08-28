@@ -735,6 +735,8 @@ class NsgGenController {
   static Future generateControllerOptions(
       NsgGenerator nsgGenerator, List<NsgGenController> controllers) async {
     var codeList = <String>[];
+    codeList.add('import \'package:nsg_data/nsg_data.dart\';');
+    codeList.add('');
     codeList.add('class NsgServerOptions {');
     controllers.forEach((c) {
       codeList.add(
