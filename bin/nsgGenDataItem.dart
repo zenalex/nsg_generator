@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'misc.dart';
 import 'nsgGenDataItemField.dart';
+import 'nsgGenDataItemPredefinedObject.dart';
 import 'nsgGenMethod.dart';
 import 'nsgGenController.dart';
 import 'nsgGenerator.dart';
@@ -22,6 +23,7 @@ class NsgGenDataItem {
   final String lastEditedFieldName;
   final bool useStaticDatabaseNames;
   final bool isDistributed;
+  final List<NsgGenDataItemPredefinedObject> predefinedObjects;
   final List<NsgGenDataItemField> fields;
   bool allowCreate = false;
   bool isTableRow = false;
@@ -44,6 +46,7 @@ class NsgGenDataItem {
       this.useStaticDatabaseNames = false,
       this.isDistributed = false,
       this.isTableRow = false,
+      this.predefinedObjects = const [],
       this.fields = const []}) {
     this.isTableRow |= this.databaseType.endsWith('.Строка');
     this.databaseTypeTable = this.databaseType;
@@ -53,6 +56,7 @@ class NsgGenDataItem {
 
   factory NsgGenDataItem.fromJson(Map<String, dynamic> parsedJson) {
     var tn = parsedJson['typeName'] ?? '';
+    var predefinedObjects = parsedJson['predefinedObjects'];
     var fields = parsedJson['fields'];
     try {
       return NsgGenDataItem(
@@ -76,6 +80,11 @@ class NsgGenDataItem {
           isTableRow: Misc.parseBool(parsedJson['isTableRow']),
           entityType: NsgGenDataItemEntityType.parse(
               parsedJson['entityType'] ?? '', tn),
+          predefinedObjects: (predefinedObjects is List)
+              ? predefinedObjects
+                  .map((i) => NsgGenDataItemPredefinedObject.fromJson(i))
+                  .toList()
+              : <NsgGenDataItemPredefinedObject>[],
           fields: (fields is List)
               ? fields.map((i) => NsgGenDataItemField.fromJson(i)).toList()
               : <NsgGenDataItemField>[]);
@@ -885,6 +894,9 @@ class NsgGenDataItem {
           }
         }
       });
+      predefinedObjects.forEach((_) {
+        codeList.add("    addPredefined(${Misc.getDartName(_.name)});");
+      });
       fieldsOnClient.forEach((_) {
         if (_.userVisibility) {
           codeList.add(
@@ -917,6 +929,13 @@ class NsgGenDataItem {
     codeList.add('  @override');
     codeList.add('  NsgDataItem getNewObject() => $typeName();');
     codeList.add('');
+
+    predefinedObjects.forEach((_) {
+      if (_.description.isNotEmpty) {
+        Misc.writeDescription(codeList, _.description, false, indent: 2);
+      }
+      _.writeGetter(nsgGenController, this, codeList);
+    });
 
     fieldsOnClient.forEach((_) {
       if (_.description.isNotEmpty) {
