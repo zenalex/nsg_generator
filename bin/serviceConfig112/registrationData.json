@@ -61,7 +61,7 @@
       {
         "name": "PhotoUri",
         "type": "Image",
-        "api_prefix": "Image",
+        "apiPrefix": "Image",
         "uploadEnabled": "true"
       }
    ]

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'misc.dart';
 import 'nsgGenDataItemField.dart';
+import 'nsgGenDataItemPredefinedObject.dart';
 import 'nsgGenMethod.dart';
 import 'nsgGenController.dart';
 import 'nsgGenerator.dart';
@@ -9,15 +10,21 @@ import 'nsgGenerator.dart';
 class NsgGenDataItem {
   final String typeName;
   final NsgGenDataItemEntityType entityType;
+  final bool allowExtend;
+  final String additionalDataField;
+  final String extensionTypeField;
+  final String extend;
   final String description;
   final String databaseType;
   final String databaseTypeNamespace;
   final String presentation;
   final int maxHttpGetItems;
   final String periodFieldName;
+  final String lastEditedFieldName;
   final bool useStaticDatabaseNames;
+  final bool isDistributed;
+  final List<NsgGenDataItemPredefinedObject> predefinedObjects;
   final List<NsgGenDataItemField> fields;
-  bool checkLastModifiedDate = false;
   bool allowCreate = false;
   bool isTableRow = false;
   String databaseTypeTable = '';
@@ -25,14 +32,21 @@ class NsgGenDataItem {
   NsgGenDataItem(
       {required this.typeName,
       this.entityType = NsgGenDataItemEntityType.dataItem,
+      this.allowExtend = false,
+      this.additionalDataField = '',
+      this.extensionTypeField = '',
+      this.extend = '',
       this.description = '',
       this.databaseType = '',
       this.databaseTypeNamespace = '',
       this.presentation = '',
       this.maxHttpGetItems = 100,
       this.periodFieldName = '',
+      this.lastEditedFieldName = '',
       this.useStaticDatabaseNames = false,
+      this.isDistributed = false,
       this.isTableRow = false,
+      this.predefinedObjects = const [],
       this.fields = const []}) {
     this.isTableRow |= this.databaseType.endsWith('.Строка');
     this.databaseTypeTable = this.databaseType;
@@ -41,25 +55,43 @@ class NsgGenDataItem {
   }
 
   factory NsgGenDataItem.fromJson(Map<String, dynamic> parsedJson) {
-    var methods = (parsedJson['methods'] ?? []) as List;
     var tn = parsedJson['typeName'] ?? '';
-    return NsgGenDataItem(
-        typeName: tn,
-        description: parsedJson.containsKey('description')
-            ? parsedJson['description'] ?? ''
-            : parsedJson['databaseType'] ?? '',
-        databaseType: parsedJson['databaseType'] ?? '',
-        databaseTypeNamespace: parsedJson['databaseTypeNamespace'] ?? '',
-        presentation: parsedJson['presentation'] ?? '',
-        maxHttpGetItems: parsedJson['maxHttpGetItems'] ?? 100,
-        periodFieldName: parsedJson['periodFieldName'] ?? '',
-        useStaticDatabaseNames: parsedJson['useStaticDatabaseNames'] == 'true',
-        isTableRow: parsedJson['isTableRow'] == 'true',
-        entityType:
-            NsgGenDataItemEntityType.parse(parsedJson['entityType'] ?? '', tn),
-        fields: (parsedJson['fields'] as List)
-            .map((i) => NsgGenDataItemField.fromJson(i))
-            .toList());
+    var predefinedObjects = parsedJson['predefinedObjects'];
+    var fields = parsedJson['fields'];
+    try {
+      return NsgGenDataItem(
+          typeName: tn,
+          allowExtend: Misc.parseBool(parsedJson['allowExtend']),
+          additionalDataField: parsedJson['additionalDataField'] ?? '',
+          extensionTypeField: parsedJson['extensionTypeField'] ?? '',
+          extend: parsedJson['extends'] ?? '',
+          description: parsedJson.containsKey('description')
+              ? parsedJson['description'] ?? ''
+              : parsedJson['databaseType'] ?? '',
+          databaseType: parsedJson['databaseType'] ?? '',
+          databaseTypeNamespace: parsedJson['databaseTypeNamespace'] ?? '',
+          presentation: parsedJson['presentation'] ?? '',
+          maxHttpGetItems: parsedJson['maxHttpGetItems'] ?? 100,
+          periodFieldName: parsedJson['periodFieldName'] ?? '',
+          lastEditedFieldName: parsedJson['lastEditedFieldName'] ?? '',
+          useStaticDatabaseNames:
+              Misc.parseBool(parsedJson['useStaticDatabaseNames']),
+          isDistributed: Misc.parseBool(parsedJson['isDistributed']),
+          isTableRow: Misc.parseBool(parsedJson['isTableRow']),
+          entityType: NsgGenDataItemEntityType.parse(
+              parsedJson['entityType'] ?? '', tn),
+          predefinedObjects: (predefinedObjects is List)
+              ? predefinedObjects
+                  .map((i) => NsgGenDataItemPredefinedObject.fromJson(i))
+                  .toList()
+              : <NsgGenDataItemPredefinedObject>[],
+          fields: (fields is List)
+              ? fields.map((i) => NsgGenDataItemField.fromJson(i)).toList()
+              : <NsgGenDataItemField>[]);
+    } catch (e) {
+      print('--- ERROR parsing type \'$tn\' ---');
+      rethrow;
+    }
   }
 
   void writeCode(NsgGenerator nsgGenerator, NsgGenMethod nsgMethod) async {
@@ -73,6 +105,23 @@ class NsgGenDataItem {
     codeList.add('using NsgServerClasses;');
     var namespaces = <String>[];
 
+    var extend = this.extend;
+    var databaseType = this.databaseType;
+    var databaseTypeNamespace = this.databaseTypeNamespace;
+    NsgGenDataItem? baseObject;
+    if (extend.isNotEmpty && nsgGenerator.dataItems.containsKey(extend)) {
+      baseObject = nsgGenerator.dataItems[extend]!;
+      if (!baseObject.allowExtend) {
+        throw Exception('Extension of ${baseObject.typeName} is not allowed');
+      }
+      databaseType = baseObject.databaseType;
+      databaseTypeNamespace = baseObject.databaseTypeNamespace;
+    } else if (databaseType.isNotEmpty) {
+      extend = NsgGenDataItemEntityType.inheritanceCS[entityType]!;
+    } else {
+      extend = 'NsgServerDataItem';
+    }
+
     if (databaseType.isNotEmpty) {
       if (databaseTypeNamespace.isNotEmpty) {
         namespaces.add(databaseTypeNamespace);
@@ -85,19 +134,24 @@ class NsgGenDataItem {
     //     csTypes[i.referenceType] = i.dbType;
     //   }
     // }
-    var untypedFields = fields.where(
-        (field) => field.writeOnServer && field.type == 'UntypedReference');
+    var untypedFields = fields.where((field) =>
+        field.writeOnServer && field.type.startsWith('UntypedReference'));
     for (var i in untypedFields) {
       assert(i.referenceTypes != null);
-      for (var j in i.referenceTypes!) {
-        if (j.containsKey('namespace')) {
-          var ns = j['namespace'].toString();
+      for (var alias in i.referenceTypes!) {
+        NsgGenDataItem? type;
+        if (nsgGenerator.dataItems.containsKey(alias)) {
+          type = nsgGenerator.dataItems[alias]!;
+        }
+        if (type == null) continue;
+
+        if (type.databaseTypeNamespace.isNotEmpty) {
+          var ns = type.databaseTypeNamespace;
           if (ns.isNotEmpty && !namespaces.contains(ns)) {
             namespaces.add(ns);
           }
         }
-        var alias = j['alias'].toString();
-        var databaseType = j['databaseType'].toString();
+        var databaseType = type.databaseType;
         if (!csTypes.containsKey(alias)) {
           csTypes[alias] = Misc.cutTableRowTypeNameEnding(databaseType);
         }
@@ -111,25 +165,20 @@ class NsgGenDataItem {
     }
     codeList.add('');
 
+    codeList.add(
+        '// --------------------------------------------------------------');
+    codeList.add(
+        '// This file is autogenerated. Manual changes will be overwritten');
+    codeList.add(
+        '// --------------------------------------------------------------');
+    codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
+    codeList.add('{');
+    if (description.isNotEmpty) {
+      Misc.writeDescription(codeList, description, true);
+    }
+    codeList.add('public partial class $typeName : $extend');
+    codeList.add('{');
     if (databaseType.isNotEmpty) {
-      codeList.add(
-          '// --------------------------------------------------------------');
-      codeList.add(
-          '// This file is autogenerated. Manual changes will be overwritten');
-      codeList.add(
-          '// --------------------------------------------------------------');
-      codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
-      codeList.add('{');
-      if (description.isNotEmpty) {
-        Misc.writeDescription(codeList, description, true);
-      }
-      if (entityType == NsgGenDataItemEntityType.userSettings) {
-        codeList.add('public partial class $typeName : NsgServerUserSettings');
-      } else {
-        codeList.add('public partial class $typeName : NsgServerMetadataItem');
-      }
-      codeList.add('{');
-
       codeList.add('public $typeName() : this(null, null) { }');
       codeList.add('');
 
@@ -184,61 +233,118 @@ class NsgGenDataItem {
       codeList.add('}');
       codeList.add('}');
       codeList.add('');
-    } else {
-      codeList.add(
-          '// --------------------------------------------------------------');
-      codeList.add(
-          '// This file is autogenerated. Manual changes will be overwritten');
-      codeList.add(
-          '// --------------------------------------------------------------');
-      codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
-      codeList.add('{');
-      codeList.add('public partial class $typeName : NsgServerDataItem');
-      codeList.add('{');
+      if (baseObject != null &&
+          baseObject.additionalDataField.isNotEmpty &&
+          fields.isNotEmpty) {
+        codeList.add(
+            'protected override void NsgToServerObject(NsgMultipleObject obj)');
+        codeList.add('{');
+        codeList.add('base.NsgToServerObject(obj);');
+        codeList.add('FromJson(this.${baseObject.additionalDataField}, new[]');
+        codeList.add('{');
+        fields.forEach((field) {
+          codeList.add('Names.${field.name},');
+        });
+        codeList.add('});');
+        codeList.add('}');
+        codeList.add('');
+        codeList.add(
+            'public override void ServerToNsgObject(INsgTokenExtension user, NsgMultipleObject nsgObject)');
+        codeList.add('{');
+        codeList.add('this.${baseObject.additionalDataField} = ToJson(new[]');
+        codeList.add('{');
+        fields.forEach((field) {
+          codeList.add('Names.${field.name},');
+        });
+        codeList.add('});');
+        codeList.add(
+            'this.ChangedProperties.Add(${baseObject.typeName}.Names.AdditionalProperties);');
+        codeList.add('base.ServerToNsgObject(user, nsgObject);');
+        codeList.add('}');
+        codeList.add('');
+      }
+      if (allowExtend && extensionTypeField.isNotEmpty) {
+        codeList.add('public override bool AllowExtend => true;');
+        codeList.add(
+            'public override string ExtensionTypeField => Names.$extensionTypeField;');
+        codeList.add('');
+      }
     }
     //print(typeName);
-    var pkField = fields.firstWhere(
-        (f) =>
-            f.writeOnServer &&
-            (f.name.toLowerCase().contains('id') || f.isPrimary), orElse: () {
-      throw Exception('There is no Primary key in $typeName');
-    });
+    NsgGenDataItemField pkField;
+    if (baseObject != null) {
+      pkField = baseObject.fields.firstWhere(
+          (f) =>
+              f.writeOnServer && (f.name.toLowerCase() == 'id' || f.isPrimary),
+          orElse: () {
+        return fields.firstWhere(
+            (f) =>
+                f.writeOnServer &&
+                (f.name.toLowerCase() == 'id' || f.isPrimary), orElse: () {
+          throw Exception('There is no Primary key in $typeName');
+        });
+      });
+    } else {
+      pkField = fields.firstWhere(
+          (f) =>
+              f.writeOnServer && (f.name.toLowerCase() == 'id' || f.isPrimary),
+          orElse: () {
+        throw Exception('There is no Primary key in $typeName');
+      });
+    }
 
-    if (entityType != NsgGenDataItemEntityType.userSettings) {
+    if (entityType == NsgGenDataItemEntityType.dataItem) {
       codeList.add(
           'public override Guid GetId() => NsgSoft.Common.NsgService.StringToGuid(${pkField.name});');
       codeList.add(
           'public override void SetId(object value) => ${pkField.name} = value.ToString();');
       codeList.add('');
     }
+    if (lastEditedFieldName.isNotEmpty) {
+      codeList.add(
+          'public override string LastEditedFieldName => Names.${lastEditedFieldName};');
+      codeList.add('');
+    }
+
     codeList.add(
         'public override Dictionary<string, string> GetClientServerNames() => ClientServerNames;');
-    codeList.add(
-        'public static Dictionary<string, string> ClientServerNames = new Dictionary<string, string>');
+    if (baseObject != null) {
+      codeList.add(
+          'public static new Dictionary<string, string> ClientServerNames = new Dictionary<string, string>($extend.ClientServerNames)');
+    } else {
+      codeList.add(
+          'public static Dictionary<string, string> ClientServerNames = new Dictionary<string, string>');
+    }
     codeList.add('{');
     fields.forEach((field) {
-      if (field.writeOnServer && field.dbName.isNotEmpty) {
+      if (field.writeOnServer && field.databaseName.isNotEmpty) {
         if (databaseType.isEmpty ||
-            field.dbName.contains('.') ||
-            !useStaticDatabaseNames) {
-          codeList.add('[Names.${field.name}] = "${field.dbName}",');
+            field.databaseName.contains('.') ||
+            !nsgGenerator.useStaticDatabaseNames && !useStaticDatabaseNames) {
+          codeList.add('[Names.${field.name}] = "${field.databaseName}",');
         } else {
           codeList.add(
-              '[Names.${field.name}] = ${databaseType}.Names.${field.dbName},');
+              '[Names.${field.name}] = ${databaseType}.Names.${field.databaseName},');
         }
       }
     });
     codeList.add('};');
     codeList.add('');
 
-    if (csTypes.isNotEmpty) {
+    if (databaseType.isNotEmpty && csTypes.isNotEmpty) {
       codeList.add(
           'public override Dictionary<string, string> GetClientServerTypes() => ClientServerTypes;');
-      codeList.add(
-          'public static Dictionary<string, string> ClientServerTypes = new Dictionary<string, string>');
+      if (baseObject != null) {
+        codeList.add(
+            'public static new Dictionary<string, string> ClientServerTypes = new Dictionary<string, string>($extend.ClientServerTypes)');
+      } else {
+        codeList.add(
+            'public static Dictionary<string, string> ClientServerTypes = new Dictionary<string, string>');
+      }
       codeList.add('{');
       for (var i in csTypes.entries) {
-        codeList.add('["${i.key}"] = ${i.value}.Новый().TableName,');
+        codeList.add(
+            '["${Misc.getDartName(i.key)}"] = ${i.value}.Новый().TableName,');
       }
       codeList.add('};');
       codeList.add('');
@@ -251,8 +357,13 @@ class NsgGenDataItem {
     if (refs.isNotEmpty) {
       codeList.add(
           'public override Dictionary<string, string> GetReferenceNames() => ReferenceNames;');
-      codeList.add(
-          'public static Dictionary<string, string> ReferenceNames = new Dictionary<string, string>');
+      if (baseObject != null) {
+        codeList.add(
+            'public static new Dictionary<string, string> ReferenceNames = new Dictionary<string, string>($extend.ReferenceNames)');
+      } else {
+        codeList.add(
+            'public static Dictionary<string, string> ReferenceNames = new Dictionary<string, string>');
+      }
       codeList.add('{');
       refs.forEach((field) {
         codeList.add('[Names.${field.name}] = "${field.referenceName}",');
@@ -272,14 +383,31 @@ class NsgGenDataItem {
       codeList.add('};');
       codeList.add('');
     }
+    var fieldsNotToReturn =
+        fields.where((f) => f.writeOnServer && !f.writeOnClient);
+    if (fieldsNotToReturn.isNotEmpty) {
+      codeList.add(
+          'public override IEnumerable<string> GetFieldsNotToReturn() => FieldsNotToReturn;');
+      codeList
+          .add('public static IEnumerable<string> FieldsNotToReturn = new[]');
+      codeList.add('{');
+      fieldsNotToReturn.forEach((field) {
+        codeList.add('Names.${field.name},');
+      });
+      codeList.add('};');
+      codeList.add('');
+    }
     codeList.add('public override void SetDefaultValues()');
     codeList.add('{');
-    if (entityType == NsgGenDataItemEntityType.userSettings)
+    if (entityType != NsgGenDataItemEntityType.dataItem || baseObject != null)
       codeList.add('base.SetDefaultValues();');
     fields.forEach((field) {
       if (!field.writeOnServer) return;
-      if (entityType == NsgGenDataItemEntityType.userSettings &&
-          [pkField.name, 'Settings', 'UserId'].contains(field.name)) return;
+      if (entityType != NsgGenDataItemEntityType.dataItem &&
+          (field.name == pkField.name ||
+              NsgGenDataItemEntityType.typeFields[entityType]!
+                      .contains(field.name) &&
+                  !field.nsgDataType.contains('Reference'))) return;
       if (field.type == 'int') {
         codeList.add('ValueDictionary[Names.${field.name}] = 0;');
       } else if (field.type == 'double') {
@@ -291,9 +419,11 @@ class NsgGenDataItem {
         } else {
           codeList.add('ValueDictionary[Names.${field.name}] = string.Empty;');
         }
+      } else if (field.isString) {
+        codeList.add('ValueDictionary[Names.${field.name}] = string.Empty;');
       } else if (field.type == 'Guid') {
         codeList.add('ValueDictionary[Names.${field.name}] = Guid.Empty;');
-      } else if (field.type == 'UntypedReference') {
+      } else if (field.type.startsWith('UntypedReference')) {
         codeList.add(
             'ValueDictionary[Names.${field.name}] = "00000000-0000-0000-0000-000000000000.NO";');
       } else if (field.type.startsWith('List')) {
@@ -316,33 +446,32 @@ class NsgGenDataItem {
     codeList.add('');
 
     codeList.add('#region Names');
-    if (entityType == NsgGenDataItemEntityType.userSettings) {
+    if (isDistributed) {
+      codeList.add('public override bool IsDistributed => true;');
+    }
+    if (entityType != NsgGenDataItemEntityType.dataItem) {
       codeList.add('public override string Names_Id => Names.${pkField.name};');
       codeList.add('');
-      var usField = fields.firstWhere((f) => f.name == 'Settings',
-          orElse: () => NsgGenDataItemField(name: 'null', type: 'null'));
-      if (usField.name == 'null') {
-        var errorMessage =
-            'UserSettings - the required field "Settings" couldn\'t be found';
-        print(errorMessage);
-        throw Exception(errorMessage);
-      }
-      codeList.add(
-          'public override string Names_Settings => Names.${usField.name};');
-      codeList.add('');
-      usField = fields.firstWhere((f) => f.name == 'UserId',
-          orElse: () => NsgGenDataItemField(name: 'null', type: 'null'));
-      if (usField.name == 'null') {
-        var errorMessage =
-            'UserSettings - the required field "UserId" couldn\'t be found';
-        print(errorMessage);
-        throw Exception(errorMessage);
-      }
-      codeList
-          .add('public override string Names_UserId => Names.${usField.name};');
-      codeList.add('');
+      NsgGenDataItemEntityType.typeFields[entityType]!.forEach((element) {
+        var usField = fields.firstWhere((f) => f.name == element,
+            orElse: () => NsgGenDataItemField(name: 'null', type: 'null'));
+        if (usField.name == 'null') {
+          var errorMessage =
+              '${entityType} - the required field "${element}" couldn\'t be found';
+          print(errorMessage);
+          throw Exception(errorMessage);
+        }
+        codeList.add(
+            'public override string Names_${element} => Names.${usField.name};');
+        codeList.add('');
+      });
     }
-    codeList.add('public static class Names');
+
+    if (baseObject != null) {
+      codeList.add('public static new class Names');
+    } else {
+      codeList.add('public static class Names');
+    }
     codeList.add('{');
     fields.forEach((field) {
       if (!field.writeOnServer) return;
@@ -369,8 +498,10 @@ class NsgGenDataItem {
     codeList.add('#region Properties');
     fields.forEach((field) {
       if (!field.writeOnServer) return;
-      if (entityType == NsgGenDataItemEntityType.userSettings &&
-          [pkField.name, 'Settings', 'UserId'].contains(field.name)) return;
+      if (entityType != NsgGenDataItemEntityType.dataItem &&
+          (field.name == pkField.name ||
+              NsgGenDataItemEntityType.typeFields[entityType]!
+                  .contains(field.name))) return;
       if (field.description.isNotEmpty) {
         Misc.writeDescription(codeList, field.description, true);
       }
@@ -447,10 +578,10 @@ class NsgGenDataItem {
         codeList.add('get => (int)this[Names.${field.name}];');
         codeList.add('set => this[Names.${field.name}] = value;');
         codeList.add('}');
-      } else if (field.type == 'UntypedReference') {
+      } else if (field.type.startsWith('UntypedReference')) {
         codeList.add('/// <remarks> ');
         codeList.add(
-            '/// Untyped reference (${field.referenceTypes!.map((e) => e['databaseType'].toString()).join(', ')})');
+            '/// Untyped reference (${field.referenceTypes!.map((e) => nsgGenerator.dataItems[e]?.databaseType).join(', ')})');
         codeList.add('/// </remarks> ');
         codeList.add(
             '[System.ComponentModel.DefaultValue("00000000-0000-0000-0000-000000000000.NO")]');
@@ -484,10 +615,6 @@ class NsgGenDataItem {
       //if (element.type == 'Image') nsgMethod.addImageMethod(element);
       codeList.add('');
     });
-    if (checkLastModifiedDate) {
-      codeList.add('public DateTime LastModified { get; set; }');
-      codeList.add('');
-    }
     codeList.add('#endregion Properties');
 
     codeList.add('}');
@@ -506,6 +633,9 @@ class NsgGenDataItem {
     codeList.add('using System.Linq;');
     codeList.add('using System.Threading.Tasks;');
     codeList.add('using NsgServerClasses;');
+    if (nsgMethod.allowCreate && databaseTypeNamespace.isNotEmpty) {
+      codeList.add('using $databaseTypeNamespace;');
+    }
     codeList.add('');
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
     codeList.add('{');
@@ -518,7 +648,7 @@ class NsgGenDataItem {
       codeList.add(
           'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Get(INsgTokenExtension user, NsgFindParams findParams)');
       codeList.add('{');
-      if (nsgMethod.genDataItem.databaseType.isNotEmpty) {
+      if (databaseType.isNotEmpty) {
         NsgGenController.generateImplMetadataGetMethodBody(
             nsgGenerator, codeList, nsgMethod);
       } else {
@@ -531,16 +661,14 @@ class NsgGenDataItem {
       codeList.add(
           'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Create(INsgTokenExtension user, NsgFindParams findParams)');
       codeList.add('{');
-      if (nsgMethod.genDataItem.databaseType.isNotEmpty) {
+      if (databaseType.isNotEmpty) {
         if (isTableRow)
-          codeList.add(
-              'var obj = ${nsgMethod.genDataItem.databaseTypeTable}.Новый().NewRow();');
+          codeList.add('var obj = $databaseTypeTable.Новый().NewRow();');
         else
-          codeList
-              .add('var obj = ${nsgMethod.genDataItem.databaseType}.Новый();');
+          codeList.add('var obj = $databaseType.Новый();');
         codeList.add('obj.New();');
         codeList.add(
-            'var res = new ${nsgMethod.genDataItem.typeName}(GetSerializeFields(findParams?.ReadNestedField), obj);');
+            'var res = new $typeName(GetSerializeFields(findParams?.ReadNestedField), obj);');
         codeList
             .add('return GetDictWithNestedFields(new[] { res }, findParams);');
       } else {
@@ -553,15 +681,15 @@ class NsgGenDataItem {
       codeList.add(
           'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post(INsgTokenExtension user, NsgFindParams findParams, IEnumerable<NsgServerDataItem> items)');
       codeList.add('{');
-      if (nsgMethod.genDataItem.databaseType.isNotEmpty) {
-        if (nsgMethod.name == 'UserSettings') {
-          codeList.add(
-              'return await Post<${nsgMethod.genDataItem.typeName}>(user, findParams, items);');
+      if (databaseType.isNotEmpty) {
+        if (entityType != NsgGenDataItemEntityType.dataItem) {
+          codeList
+              .add('return await Post<$typeName>(user, findParams, items);');
         } else {
           codeList.add(
               'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
           codeList.add(
-              'RES[RESULTS] = NsgServerMetadataItem.PostAll<${nsgMethod.genDataItem.typeName}>(user, findParams, items);');
+              'RES[RESULTS] = NsgServerMetadataItem.PostAll<$typeName>(user, findParams, items);');
           codeList.add('return RES;');
         }
       } else {
@@ -574,13 +702,13 @@ class NsgGenDataItem {
       codeList.add(
           'public override async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Delete(INsgTokenExtension user, IEnumerable<NsgServerDataItem> items)');
       codeList.add('{');
-      if (nsgMethod.genDataItem.databaseType.isNotEmpty) {
-        if (nsgMethod.name == 'UserSettings') {
+      if (databaseType.isNotEmpty) {
+        if (entityType != NsgGenDataItemEntityType.dataItem) {
           codeList.add(
-              'return await Delete<${nsgMethod.genDataItem.typeName}>(user, items.Cast<${nsgMethod.genDataItem.typeName}>());');
+              'return await Delete<$typeName>(user, items.Cast<$typeName>());');
         } else {
           codeList.add(
-              'NsgServerMetadataItem.SetDeleteMarkAll<${nsgMethod.genDataItem.typeName}>(items);');
+              'NsgServerMetadataItem.SetDeleteMarkAll<$typeName>(user, items);');
           codeList.add(
               'Dictionary<string, IEnumerable<NsgServerDataItem>> RES = new Dictionary<string, IEnumerable<NsgServerDataItem>>();');
           codeList.add('RES[RESULTS] = items;');
@@ -589,6 +717,14 @@ class NsgGenDataItem {
       } else {
         codeList.add('throw new NotImplementedException();');
       }
+      codeList.add('}');
+      codeList.add('');
+    }
+    if (nsgMethod.allowPost) {
+      codeList.add(
+          'public override CheckRightsResult CheckRightsPost(INsgTokenExtension user, IEnumerable<NsgServerDataItem> nsgObjects)');
+      codeList.add('{');
+      codeList.add('return new CheckRightsResult() { AccessGranted = true };');
       codeList.add('}');
       codeList.add('');
     }
@@ -626,102 +762,162 @@ class NsgGenDataItem {
     codeList.add("import 'dart:typed_data';");
     codeList.add(
         "import '../${Misc.getDartUnderscoreName(nsgGenController.className)}_model.dart';");
-    for (var field in fields) {
-      if (!field.writeOnClient) continue;
-      if (field.type.startsWith('Enum')) {
-        if (nsgGenerator.enums.isNotEmpty) {
-          codeList.add("import '../enums.dart';");
-        }
-        break;
-      }
+    var fieldsOnClient = fields.where((field) => field.writeOnClient);
+    if (nsgGenerator.enums.isNotEmpty &&
+        fieldsOnClient.any((field) => field.type.startsWith('Enum'))) {
+      codeList.add("import '../enums.dart';");
+    }
+    if (fieldsOnClient.any((field) => field.type == 'String<FilePath>')) {
+      codeList.add("import '../options/server_options.dart';");
     }
     if (description.isNotEmpty) {
       codeList.add('');
       Misc.writeDescription(codeList, description, false);
     }
-    if (entityType == NsgGenDataItemEntityType.userSettings) {
-      codeList.add(
-          'class ${typeName}Generated extends NsgDataItem with NsgUserSettings {');
+    var extend = this.extend;
+    NsgGenDataItem? baseObject;
+    if (extend.isNotEmpty && nsgGenerator.dataItems.containsKey(extend)) {
+      baseObject = nsgGenerator.dataItems[extend]!;
     } else {
-      codeList.add('class ${typeName}Generated extends NsgDataItem {');
+      extend =
+          'NsgDataItem${NsgGenDataItemEntityType.inheritanceDart[entityType]}';
     }
-    fields.forEach((_) {
-      if (!_.writeOnClient) return;
+    codeList.add('class ${typeName}Generated extends $extend {');
+    if (baseObject != null) {
+      baseObject.fields.forEach((_) {
+        if (!_.writeOnClient) return;
+        codeList.add(
+            "  static const ${_.fieldNameVar} = '${Misc.getDartName(_.name)}';");
+      });
+    }
+    fieldsOnClient.forEach((_) {
       codeList.add(
           "  static const ${_.fieldNameVar} = '${Misc.getDartName(_.name)}';");
     });
     codeList.add('');
-    codeList.add('  static final Map<String, String> fieldNameDict = {');
-    fields.forEach((_) {
-      if (!_.writeOnClient) return;
+    var codeListFields = <String>[];
+    if (baseObject != null) {
+      baseObject.fields.forEach((_) {
+        if (!_.writeOnClient) return;
+        if (_.userVisibility) {
+          codeListFields.add("    ${_.fieldNameVar}: '${_.userName}',");
+        }
+      });
+    }
+    fieldsOnClient.forEach((_) {
       if (_.userVisibility) {
-        codeList.add("    ${_.fieldNameVar}: '${_.userName}',");
+        codeListFields.add("    ${_.fieldNameVar}: '${_.userName}',");
       }
     });
-    codeList.add('  };');
+    if (codeListFields.isNotEmpty) {
+      codeList.add('  static final Map<String, String> fieldNameDict = {');
+      codeListFields.forEach((i) {
+        codeList.add(i);
+      });
+      codeList.add('  };');
+    } else {
+      codeList.add('  static final Map<String, String> fieldNameDict = {};');
+    }
     codeList.add('');
     codeList.add('  @override');
     codeList.add('  String get typeName => \'$typeName\';');
     codeList.add('');
-    codeList.add('  @override');
-    codeList.add('  void initialize() {');
-    fields.forEach((_) {
-      if (!_.writeOnClient) return;
-      if (_.isPrimary) {
-        codeList.add(
-            '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
-      } else {
-        if (_.type == 'String' &&
-            _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
-          codeList.add(
-              '    addField(${_.nsgDataType}(${_.fieldNameVar}, maxLength: ${_.maxLength}), primaryKey: ${_.isPrimary});');
-        } else if (_.type == 'double' &&
-            _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
-          codeList.add(
-              '    addField(${_.nsgDataType}(${_.fieldNameVar}, maxDecimalPlaces: ${_.maxLength}), primaryKey: ${_.isPrimary});');
-        } else if (_.type == 'UntypedReference') {
-          var defaultReferenceType = _.referenceType;
-          if ((defaultReferenceType.isEmpty) &&
-              _.referenceTypes != null &&
-              _.referenceTypes!.isNotEmpty) {
-            defaultReferenceType = _.referenceTypes!.first['alias'].toString();
-            defaultReferenceType = defaultReferenceType[0].toUpperCase() +
-                defaultReferenceType.substring(1);
-          }
-          if (defaultReferenceType.isNotEmpty) {
-            codeList.add(
-                '    addField(${_.nsgDataType}(${_.fieldNameVar}, defaultReferentType: $defaultReferenceType), primaryKey: ${_.isPrimary});');
+    if (nsgGenMethod.genDataItem.isDistributed) {
+      codeList.add('  @override');
+      codeList.add('  bool get isDistributed => true;');
+      codeList.add('');
+    }
+    if (additionalDataField.isNotEmpty) {
+      codeList.add('  @override');
+      codeList
+          .add('  String get additionalDataField => name$additionalDataField;');
+      codeList.add('');
+    }
+    bool isBaseObject = allowExtend && extensionTypeField.isNotEmpty;
+    if (isBaseObject) {
+      codeList.add('  @override');
+      codeList.add('  bool get allowExtend => true;');
+      codeList.add('');
+      codeList.add('  @override');
+      codeList
+          .add('  String get extensionTypeField => name$extensionTypeField;');
+      codeList.add('');
+    }
+    if (fieldsOnClient.isNotEmpty) {
+      codeList.add('  @override');
+      codeList.add('  void initialize() {');
+      if (baseObject != null) {
+        codeList.add('    super.initialize();');
+      }
+      fieldsOnClient.forEach((_) {
+        if (_.isPrimary) {
+          if (_.type == 'DateTime' && _.useDate != _.useTime) {
+            if (!_.useDate) {
+              codeList.add(
+                  '    addField(${_.nsgDataType}(${_.fieldNameVar}, useDate: false), primaryKey: ${_.isPrimary});');
+            } else {
+              codeList.add(
+                  '    addField(${_.nsgDataType}(${_.fieldNameVar}, useTime: false), primaryKey: ${_.isPrimary});');
+            }
           } else {
             codeList.add(
                 '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
           }
         } else {
-          codeList.add(
-              '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+          if (_.isString &&
+              _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
+            codeList.add(
+                '    addField(${_.nsgDataType}(${_.fieldNameVar}, maxLength: ${_.maxLength}), primaryKey: ${_.isPrimary});');
+          } else if (_.type == 'double' &&
+              _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
+            codeList.add(
+                '    addField(${_.nsgDataType}(${_.fieldNameVar}, maxDecimalPlaces: ${_.maxLength}), primaryKey: ${_.isPrimary});');
+          } else if (_.type.startsWith('UntypedReference')) {
+            var defaultReferenceType = _.referenceType;
+            if ((defaultReferenceType.isEmpty) &&
+                _.referenceTypes != null &&
+                _.referenceTypes!.isNotEmpty) {
+              defaultReferenceType = _.referenceTypes!.first.toString();
+              defaultReferenceType = defaultReferenceType[0].toUpperCase() +
+                  defaultReferenceType.substring(1);
+            }
+            if (defaultReferenceType.isNotEmpty) {
+              codeList.add(
+                  '    addField(${_.nsgDataType}(${_.fieldNameVar}, defaultReferentType: $defaultReferenceType), primaryKey: ${_.isPrimary});');
+            } else {
+              codeList.add(
+                  '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+            }
+          } else {
+            codeList.add(
+                '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+          }
         }
-      }
-    });
-    fields.forEach((_) {
-      if (!_.writeOnClient) return;
-      if (_.userVisibility) {
-        codeList.add(
-            "    fieldList.fields[${_.fieldNameVar}]?.presentation = '${_.userName}';");
-      }
-    });
-    codeList.add('  }');
-    codeList.add('');
+      });
+      predefinedObjects.forEach((_) {
+        codeList.add("    addPredefined(${Misc.getDartName(_.name)});");
+      });
+      fieldsOnClient.forEach((_) {
+        if (_.userVisibility) {
+          codeList.add(
+              "    fieldList.fields[${_.fieldNameVar}]?.presentation = '${_.userName}';");
+        }
+      });
+      codeList.add('  }');
+      codeList.add('');
+    }
     if (presentation.isNotEmpty) {
       codeList.add('  @override');
       codeList
           .add('  String toString() => ${Misc.getDartToString(presentation)};');
       codeList.add('');
-    } else if (fields.isNotEmpty) {
-      var nameField = fields.firstWhere((f) => f.name.toLowerCase() == 'name',
+    } else if (fieldsOnClient.isNotEmpty) {
+      var nameField = fieldsOnClient.firstWhere(
+          (f) => f.name.toLowerCase() == 'name',
           orElse: () => NsgGenDataItemField(name: '', type: ''));
       if (nameField.name.isNotEmpty) {
         codeList.add('  @override');
-        codeList
-            .add('  String toString() => ${Misc.getDartName(nameField.name)};');
+        codeList.add('  String toString() => ${nameField.dartName};');
         codeList.add('');
       }
     }
@@ -734,20 +930,20 @@ class NsgGenDataItem {
     codeList.add('  NsgDataItem getNewObject() => $typeName();');
     codeList.add('');
 
-    fields.forEach((_) {
-      if (!_.writeOnClient) return;
+    predefinedObjects.forEach((_) {
+      if (_.description.isNotEmpty) {
+        Misc.writeDescription(codeList, _.description, false, indent: 2);
+      }
+      _.writeGetter(nsgGenController, this, codeList);
+    });
+
+    fieldsOnClient.forEach((_) {
       if (_.description.isNotEmpty) {
         Misc.writeDescription(codeList, _.description, false, indent: 2);
       }
       _.writeGetter(nsgGenController, this, codeList);
       _.writeSetter(nsgGenController, this, codeList);
     });
-    if (checkLastModifiedDate) {
-      var lm = NsgGenDataItemField(name: 'LastModified', type: 'DateTime');
-      lm.writeGetter(nsgGenController, this, codeList);
-      lm.writeSetter(nsgGenController, this, codeList);
-      codeList.add('');
-    }
     if (periodFieldName.isNotEmpty) {
       codeList.add('  @override');
       codeList.add('  String get periodFieldName => name$periodFieldName;');
@@ -784,18 +980,63 @@ class NsgGenDataItem {
 
 enum NsgGenDataItemEntityType {
   dataItem,
-  userSettings;
+  userSettings,
+  exchangeRules,
+  exchangeRulesMergingTable;
 
   static NsgGenDataItemEntityType parse(String v, String typeName) {
-    if (typeName == 'UserSettings')
-      return NsgGenDataItemEntityType.userSettings;
+    switch (typeName) {
+      case 'UserSettings':
+        return NsgGenDataItemEntityType.userSettings;
+      case 'ExchangeRules':
+        return NsgGenDataItemEntityType.exchangeRules;
+      case 'ExchangeRulesMergingTable':
+        return NsgGenDataItemEntityType.exchangeRulesMergingTable;
+      default:
+        break;
+    }
     switch (v) {
       case 'dataItem':
         return NsgGenDataItemEntityType.dataItem;
       case 'userSettings':
         return NsgGenDataItemEntityType.userSettings;
+      case 'exchangeRules':
+        return NsgGenDataItemEntityType.exchangeRules;
+      case 'exchangeRulesMergingTable':
+        return NsgGenDataItemEntityType.exchangeRulesMergingTable;
       default:
         return NsgGenDataItemEntityType.dataItem;
     }
   }
+
+  static Map<NsgGenDataItemEntityType, List<String>> typeFields = {
+    NsgGenDataItemEntityType.userSettings: ['Name', 'Settings', 'UserId'],
+    NsgGenDataItemEntityType.exchangeRules: [
+      'ObjectType',
+      'LastExchangeDate',
+      'Periodicity',
+      'PriorityForClient',
+      'MergingRules'
+    ],
+    NsgGenDataItemEntityType.exchangeRulesMergingTable: [
+      'FieldName',
+      'PriorityForClient'
+    ]
+  };
+
+  static Map<NsgGenDataItemEntityType, String> inheritanceCS = {
+    NsgGenDataItemEntityType.dataItem: 'NsgServerMetadataItem',
+    NsgGenDataItemEntityType.userSettings: 'NsgServerUserSettings',
+    NsgGenDataItemEntityType.exchangeRules: 'NsgServerExchangeRules',
+    NsgGenDataItemEntityType.exchangeRulesMergingTable:
+        'NsgServerExchangeRulesMergingTable'
+  };
+
+  static Map<NsgGenDataItemEntityType, String> inheritanceDart = {
+    NsgGenDataItemEntityType.dataItem: '',
+    NsgGenDataItemEntityType.userSettings: ' with NsgUserSettings',
+    NsgGenDataItemEntityType.exchangeRules: ' with NsgExchangeRules',
+    NsgGenDataItemEntityType.exchangeRulesMergingTable:
+        ' with NsgExchangeRulesMergingTable'
+  };
 }

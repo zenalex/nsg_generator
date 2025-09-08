@@ -61,32 +61,18 @@ class NsgGenCSProject {
     codeList.add('  <ItemGroup>');
     if (!nsgGenerator.isDotNetCore) {
       codeList.add(
-          '    <PackageReference Include="Microsoft.Owin.Diagnostics" Version="4.2.2" />');
+          '    <PackageReference Include="Microsoft.Owin.Diagnostics" Version="4.2.3" />');
       codeList.add(
-          '    <PackageReference Include="Microsoft.Owin.Host.SystemWeb" Version="4.2.2" />');
+          '    <PackageReference Include="Microsoft.Owin.Host.SystemWeb" Version="4.2.3" />');
       codeList.add(
-          '    <PackageReference Include="Microsoft.AspNet.Cors" Version="5.2.9" />');
+          '    <PackageReference Include="Microsoft.Owin.Cors" Version="4.2.3" />');
       codeList.add(
-          '    <PackageReference Include="Microsoft.AspNet.WebApi.Cors" Version="5.2.9" />');
+          '    <PackageReference Include="Microsoft.Owin.Security.Jwt" Version="4.2.3 />');
       codeList.add(
-          '    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.9" />');
-      codeList.add(
-          '    <PackageReference Include="Microsoft.Owin.Cors" Version="4.2.2" />');
-      codeList.add(
-          '    <PackageReference Include="Microsoft.Owin.Security.Jwt" Version="4.2.2" />');
-      codeList.add(
-          '    <PackageReference Include="Microsoft.Owin.Security.OAuth" Version="4.2.2" />');
+          '    <PackageReference Include="Microsoft.Owin.Security.OAuth" Version="4.2.3" />');
     }
     codeList.add(
-        '    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />');
-    codeList.add(
-        '    <PackageReference Include="Microsoft.AspNet.WebApi.OwinSelfHost" Version="5.2.9" />');
-    codeList.add(
-        '    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="' +
-            (nsgGenerator.isDotNetCore ? '5.0.7' : '3.1.21') +
-            '" />');
-    codeList.add(
-        '    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.29.0" />');
+        '    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.8" />');
     codeList.add('  </ItemGroup>');
     codeList.add('');
     codeList.add('');
@@ -148,6 +134,7 @@ class NsgGenCSProject {
       codeList.add('{');
       codeList.add(
           'string baseAddress = System.Configuration.ConfigurationManager.AppSettings["URL"] ?? "http://127.0.0.1:5000/";');
+      codeList.add('NsgServerClasses.AuthSmsDataController.ForceReal = true;');
       codeList.add('try');
       codeList.add('{');
       codeList.add('using (WebApp.Start<Startup>(url: baseAddress))');
@@ -165,7 +152,8 @@ class NsgGenCSProject {
       codeList.add(
           'public static ILoggerFactory LoggerFactory { get; } = Microsoft.Extensions.Logging.LoggerFactory.Create((builder) =>');
       codeList.add('{');
-      // codeList.add('builder.AddEventLog();');
+      codeList.add(
+          'builder.AddProvider(new NsgServerClasses.NsgLoggerProvider());');
       codeList.add('#if DEBUG');
       codeList.add('builder.AddFilter((level) =>');
       codeList.add('{');
@@ -346,6 +334,8 @@ class NsgGenCSProject {
           'config.Formatters.JsonFormatter.SerializerSettings.DefaultValueHandling =');
       codeList
           .add('    Newtonsoft.Json.DefaultValueHandling.IgnoreAndPopulate;');
+      codeList.add(
+          'config.Formatters.JsonFormatter.SerializerSettings.Converters.Add(new UtcDateTimeConverter());');
       codeList.add('app.UseWebApi(config);');
       codeList.add('');
       nsgGenerator.controllers.forEach((controller) {

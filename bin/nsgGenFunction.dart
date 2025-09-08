@@ -11,10 +11,14 @@ class NsgGenFunction {
   final String apiPrefix;
   final String authorize;
   final String type;
-  final String referenceName;
   final String referenceType;
   final bool isReference;
+  final bool isNullable;
+  final bool writeOnClient;
+  final bool useProgressDialog;
+  final int retryCount;
   final String dialogText;
+  final List<String> readReferences;
   final List<NsgGenMethodParam> params;
 
   NsgGenFunction(
@@ -26,74 +30,104 @@ class NsgGenFunction {
       this.apiPrefix = '',
       required this.authorize,
       required this.type,
-      this.referenceName = '',
       this.referenceType = '',
       this.isReference = false,
+      this.isNullable = true,
+      this.writeOnClient = true,
+      this.useProgressDialog = false,
+      this.retryCount = 3,
       this.dialogText = '',
+      this.readReferences = const [],
       this.params = const []});
 
+  static Map<String, String> obsoleteKeys = {
+    'api_prefix': 'apiPrefix',
+    'referenceName': '',
+    'httpGet': 'apiType = \'get, post\'',
+    'httpPost': 'apiType = \'get, post\'',
+  };
+
   factory NsgGenFunction.fromJson(Map<String, dynamic> parsedJson) {
-    var httpGet =
-        parsedJson.containsKey('httpGet') && parsedJson['httpGet'] == 'true';
-    var httpPost =
-        parsedJson.containsKey('httpPost') && parsedJson['httpPost'] == 'true';
-    var apiType = parsedJson['apiType'];
-    if (apiType != null) {
-      apiType = apiType.toString().toLowerCase();
-      httpGet |= apiType.toString().contains('get');
-      httpPost |= apiType.toString().contains('post');
-    }
-    if (!httpGet && !httpPost) {
-      httpPost = true;
-      apiType = 'post';
-    }
-    if (apiType == null || apiType == '') {
-      if (httpGet && httpPost)
-        apiType = 'get, post';
-      else if (httpGet)
-        apiType = 'get';
-      else if (httpPost) apiType = 'post';
-    }
-    var type = (parsedJson['type'] ?? '').toString();
-    bool isReference = Misc.needToSpecifyType(type);
-    var referenceType = (parsedJson['referenceType'] ?? '').toString();
-    if (referenceType.isEmpty &&
-        type != 'List<Reference>' &&
-        type != 'List<Enum>' &&
-        (type.startsWith('List<') ||
-            type.startsWith('Enum<') ||
-            type.startsWith('Reference<')) &&
-        type.endsWith('>')) {
-      referenceType =
-          type.substring(type.indexOf('<') + 1, type.lastIndexOf('>'));
-      if (referenceType.contains('<') && referenceType.endsWith('>')) {
-        referenceType = referenceType.substring(
-            referenceType.indexOf('<') + 1, referenceType.lastIndexOf('>'));
+    Misc.checkObsoleteKeysInJSON('function', parsedJson, obsoleteKeys,
+        throwIfAny: true);
+    var name = parsedJson['name'] ?? '';
+    try {
+      var httpGet = Misc.parseBool(parsedJson['httpGet']);
+      var httpPost = Misc.parseBool(parsedJson['httpPost']);
+      var apiType = parsedJson['apiType'];
+      if (apiType != null) {
+        apiType = apiType.toString().toLowerCase();
+        httpGet |= apiType.toString().contains('get');
+        httpPost |= apiType.toString().contains('post');
       }
+      if (!httpGet && !httpPost) {
+        httpPost = true;
+        apiType = 'post';
+      }
+      if (apiType == null || apiType == '') {
+        if (httpGet && httpPost)
+          apiType = 'get, post';
+        else if (httpGet)
+          apiType = 'get';
+        else if (httpPost) apiType = 'post';
+      }
+      var type = (parsedJson['type'] ?? '').toString();
+      if (type.startsWith('String<')) {
+        type = 'String';
+      }
+      bool isReference = Misc.needToSpecifyType(type);
+      var referenceType = (parsedJson['referenceType'] ?? '').toString();
+      if (referenceType.isEmpty &&
+          type != 'List<Reference>' &&
+          type != 'List<Enum>' &&
+          (type.startsWith('List<') ||
+              type.startsWith('Enum<') ||
+              type.startsWith('Reference<')) &&
+          type.endsWith('>')) {
+        referenceType =
+            type.substring(type.indexOf('<') + 1, type.lastIndexOf('>'));
+        if (referenceType.contains('<') && referenceType.endsWith('>')) {
+          referenceType = referenceType.substring(
+              referenceType.indexOf('<') + 1, referenceType.lastIndexOf('>'));
+        }
+      }
+      isReference = !Misc.isPrimitiveType(type);
+
+      var retryCount = parsedJson['retryCount'] ?? 3;
+      if (retryCount is String) retryCount = int.parse(retryCount);
+      return NsgGenFunction(
+          name: name,
+          apiType: apiType,
+          httpGet: httpGet,
+          httpPost: httpPost,
+          description: parsedJson['description'] ?? '',
+          apiPrefix: parsedJson.containsKey('apiPrefix')
+              ? parsedJson['apiPrefix']
+              : parsedJson['name'],
+          authorize: parsedJson['authorize'] ?? 'none',
+          type: parsedJson['type'] ?? '',
+          referenceType: referenceType,
+          isReference: isReference,
+          isNullable: Misc.parseBoolOrTrue(parsedJson['isNullable']),
+          writeOnClient: Misc.parseBoolOrTrue(parsedJson['writeOnClient']),
+          useProgressDialog:
+              Misc.parseBoolOrTrue(parsedJson['useProgressDialog']),
+          retryCount: retryCount,
+          dialogText: parsedJson['dialogText'] ?? '',
+          readReferences: parsedJson.containsKey('readReferences')
+              ? (parsedJson['readReferences'] as List)
+                  .map((i) => i.toString())
+                  .toList()
+              : const [],
+          params: parsedJson.containsKey('params')
+              ? (parsedJson['params'] as List)
+                  .map((i) => NsgGenMethodParam.fromJson(i))
+                  .toList()
+              : const []);
+    } catch (e) {
+      print('--- ERROR parsing function \'$name\' ---');
+      rethrow;
     }
-    isReference = !Misc.isPrimitiveType(type);
-    return NsgGenFunction(
-        name: parsedJson['name'] ?? '',
-        apiType: apiType,
-        httpGet: httpGet,
-        httpPost: httpPost,
-        description: parsedJson['description'] ?? '',
-        apiPrefix: parsedJson.containsKey('apiPrefix')
-            ? parsedJson['apiPrefix']
-            : parsedJson.containsKey('api_prefix')
-                ? parsedJson['api_prefix']
-                : parsedJson['name'],
-        authorize: parsedJson['authorize'] ?? 'none',
-        type: parsedJson['type'] ?? '',
-        referenceName: parsedJson['referenceName'] ?? '',
-        referenceType: referenceType,
-        isReference: isReference,
-        dialogText: parsedJson['dialogText'] ?? '',
-        params: parsedJson.containsKey('params')
-            ? (parsedJson['params'] as List)
-                .map((i) => NsgGenMethodParam.fromJson(i))
-                .toList()
-            : []);
   }
 
   String get dartName => Misc.getDartName(name);
@@ -108,6 +142,14 @@ class NsgGenFunction {
   String get dartType {
     if (type == 'Guid') return 'String';
     return returnType;
+  }
+
+  String get primType {
+    var primType = type;
+    if (primType.startsWith('Enum') || primType.contains('Enum<')) {
+      return 'int';
+    }
+    return primType;
   }
 
   void writeMethod(NsgGenController nsgGenController, List<String> codeList) {
@@ -190,8 +232,8 @@ class NsgGenFunction {
       var uriParamNString = '';
       if (params.isNotEmpty) {
         for (var p in params) {
-          uriParamTNString += '[FromUri] ' + p.returnType + ' ' + p.name;
-          uriParamNString += p.name;
+          uriParamTNString += ', [FromUri] ${p.returnType} ${p.name}';
+          uriParamNString += ', ${p.name}';
         }
       }
       if (uriParamTNString.isEmpty) {
@@ -199,21 +241,20 @@ class NsgGenFunction {
         uriParamNString = controller.useAuthorization && authorize != 'none'
             ? 'user, requestMessage'
             : 'null, requestMessage';
+      } else {
+        uriParamTNString = uriParamTNString.substring(2);
+        uriParamNString = uriParamNString.substring(2);
       }
       paramNString = uriParamNString;
       codeList.add(
           'public async Task<HttpResponseMessage> $name($uriParamTNString)');
     } else {
-      var primType = type;
-      if (type.startsWith('Enum')) {
-        primType = 'int';
-      }
       codeList.add(
           'public async Task<Dictionary<string, IEnumerable<$primType>>> $name([FromBody] NsgFindParams findParams)');
     }
     codeList.add('{');
     if (controller.useAuthorization && authorize != 'none') {
-      codeList.add('var user = await authController.GetUserByToken(Request);');
+      codeList.add('var user = ${controller.callGetUserByToken};');
     }
     if (params.isNotEmpty && !(['Image', 'Binary'].contains(type))) {
       params.forEach((p) {
@@ -274,20 +315,18 @@ class NsgGenFunction {
       var uriParamTNString = '';
       if (params.isNotEmpty) {
         for (var p in params) {
-          uriParamTNString += '[FromUri] ' + p.returnType + ' ' + p.name;
+          uriParamTNString += ', [FromUri] ${p.returnType} ${p.name}';
         }
       }
       if (uriParamTNString.isEmpty) {
         uriParamTNString =
             'INsgTokenExtension user, System.Net.Http.HttpRequestMessage requestMessage';
+      } else {
+        uriParamTNString = uriParamTNString.substring(2);
       }
       codeList.add(
           'Task<System.Net.Http.HttpResponseMessage> $name($uriParamTNString);');
     } else {
-      var primType = type;
-      if (type.startsWith('Enum')) {
-        primType = 'int';
-      }
       codeList.add(
           'Task<Dictionary<string, IEnumerable<$primType>>> $name($paramTNString);');
     }
@@ -315,23 +354,22 @@ class NsgGenFunction {
       var uriParamNString = '';
       if (params.isNotEmpty) {
         for (var p in params) {
-          uriParamTNString += p.returnType + ' ' + p.name;
-          uriParamNString += p.name;
+          uriParamTNString += ', ${p.returnType} ${p.name}';
+          uriParamNString += ', ${p.name}';
         }
       }
       if (uriParamTNString.isEmpty) {
         uriParamTNString =
             'INsgTokenExtension user, System.Net.Http.HttpRequestMessage requestMessage';
         uriParamNString = 'user, requestMessage';
+      } else {
+        uriParamTNString = uriParamTNString.substring(2);
+        uriParamNString = uriParamNString.substring(2);
       }
       codeList.add(
           'public async Task<System.Net.Http.HttpResponseMessage> $name($uriParamTNString)');
       codeList.add('    => await On$name($uriParamNString);');
     } else {
-      var primType = type;
-      if (type.startsWith('Enum')) {
-        primType = 'int';
-      }
       codeList.add(
           'public async Task<Dictionary<string, IEnumerable<$primType>>> $name($paramTNString)');
       codeList.add('    => await On$name($paramNString);');
@@ -347,8 +385,8 @@ class NsgGenFunction {
       });
     }
     if (isReference) {
-      codeList
-          .add('public Task<IEnumerable<$returnType>> On$name($paramTNString)');
+      codeList.add(
+          'public async Task<IEnumerable<$returnType>> On$name($paramTNString)');
       codeList.add('{');
       codeList.add('throw new NotImplementedException();');
       codeList.add('}');
@@ -356,15 +394,17 @@ class NsgGenFunction {
       var uriParamTNString = '';
       if (params.isNotEmpty) {
         for (var p in params) {
-          uriParamTNString += p.returnType + ' ' + p.name;
+          uriParamTNString += ', ${p.returnType} ${p.name}';
         }
       }
       if (uriParamTNString.isEmpty) {
         uriParamTNString =
             'INsgTokenExtension user, HttpRequestMessage requestMessage';
+      } else {
+        uriParamTNString = uriParamTNString.substring(2);
       }
-      codeList
-          .add('public Task<HttpResponseMessage> On$name($uriParamTNString)');
+      codeList.add(
+          'public async Task<HttpResponseMessage> On$name($uriParamTNString)');
       codeList.add('{');
       codeList.add(
           'HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);');
@@ -380,10 +420,6 @@ class NsgGenFunction {
       codeList.add('return response;');
       codeList.add('}');
     } else {
-      var primType = type;
-      if (type.startsWith('Enum')) {
-        primType = 'int';
-      }
       codeList.add(
           'public async Task<Dictionary<string, IEnumerable<$primType>>> On$name($paramTNString)');
       codeList.add('{');
@@ -402,81 +438,116 @@ class NsgGenFunction {
     if (description.isNotEmpty) {
       Misc.writeDescription(codeList, description, false, indent: 2);
     }
+
+    if (['Image', 'Binary'].contains(type)) {
+      codeList.add(
+          '  String get url$name => \'/${controller.apiPrefix}/$apiPrefix\';');
+      return;
+    }
+
     var paramTNString = ''; //NsgDataRequestParams? filter';
     if (params.isNotEmpty) {
       params.forEach((p) {
         paramTNString += p.returnType + ' ' + p.name + ', ';
       });
     }
-    var dlg = dialogText.isEmpty ? '' : ' = \'$dialogText\'';
-    paramTNString +=
-        '{NsgDataRequestParams? filter, bool showProgress = false, bool isStoppable = false, String? textDialog$dlg}';
+    if (useProgressDialog) {
+      var dlg = dialogText.isEmpty ? '' : ' = \'$dialogText\'';
+      paramTNString +=
+          '{NsgDataRequestParams? filter, bool showProgress = false, bool isStoppable = false, String? textDialog$dlg}';
+    } else {
+      paramTNString += '{NsgDataRequestParams? filter}';
+    }
 
     // if (type.startsWith('List') && isReference) {
     //   codeList.add(
-    //       '  Future<List<$dartType>> ${nsgGenerator.getDartName(name)}($paramTNString) async {');
+    //       '  Future<List<$dartType>> $dartName($paramTNString) async {');
     // } else
     if (isReference && !type.startsWith('List')) {
-      codeList.add(
-          '  Future<$dartType?> ${Misc.getDartName(name)}($paramTNString) async {');
+      String functionType = dartType;
+      if (isNullable) functionType += '?';
+      codeList.add('  Future<$functionType> $dartName($paramTNString) async {');
     } else {
-      codeList.add(
-          '  Future<List<$dartType>> ${Misc.getDartName(name)}($paramTNString) async {');
+      codeList
+          .add('  Future<List<$dartType>> $dartName($paramTNString) async {');
     }
-    codeList.add(
-        '    var progress = NsgProgressDialogHelper(showProgress: showProgress, isStoppable: isStoppable, textDialog: textDialog);');
-    codeList.add('    try {');
-    codeList.add('      var params = <String, dynamic>{};');
+    var _ = '';
+    if (useProgressDialog) {
+      codeList.add(
+          '    var progress = NsgProgressDialogHelper(showProgress: showProgress, isStoppable: isStoppable, textDialog: textDialog);');
+      codeList.add('    try {');
+      _ = '  ';
+    }
+    codeList.add('$_    var params = <String, dynamic>{};');
     if (params.isNotEmpty) {
       params.forEach((p) {
         if (p.type == 'String') {
-          codeList.add('      params[\'${p.name}\'] = ${p.name};');
+          codeList.add('$_    params[\'${p.name}\'] = ${p.name};');
         } else if (p.type == 'DateTime') {
           codeList.add(
-              '      params[\'${p.name}\'] = ${p.name}.toIso8601String();');
+              '$_    params[\'${p.name}\'] = ${p.name}.toIso8601String();');
         } else if (p.type.startsWith('List')) {
           if (p.isReference) {
             codeList.add(
-                '      params[\'${p.name}\'] = ${p.name}.map((obj) => obj.toJson()).toList();');
+                '$_    params[\'${p.name}\'] = ${p.name}.map((obj) => obj.toJson()).toList();');
           } else {
-            codeList.add('      params[\'${p.name}\'] = ${p.name};');
+            codeList.add('$_    params[\'${p.name}\'] = ${p.name};');
           }
         } else if (p.isReference) {
-          codeList.add('      params[\'${p.name}\'] = ${p.name}.toJson();');
+          codeList.add('$_    params[\'${p.name}\'] = ${p.name}.toJson();');
         } else if (p.type.startsWith('Enum')) {
-          codeList.add('      params[\'${p.name}\'] = ${p.name}.value;');
+          codeList.add('$_    params[\'${p.name}\'] = ${p.name}.value;');
         } else {
-          codeList.add('      params[\'${p.name}\'] = ${p.name}.toString();');
+          codeList.add('$_    params[\'${p.name}\'] = ${p.name}.toString();');
         }
       });
     }
-    codeList.add('      filter ??= NsgDataRequestParams();');
-    codeList.add('      filter.params?.addAll(params);');
-    codeList.add('      filter.params ??= params;');
+    codeList.add('$_    filter ??= NsgDataRequestParams();');
+    codeList.add('$_    filter.params?.addAll(params);');
+    codeList.add('$_    filter.params ??= params;');
+    if (readReferences.isNotEmpty) {
+      codeList.add('$_    var loadReference = [');
+      readReferences.forEach((s) {
+        if (s.contains('\$')) {
+          codeList.add('$_      \'${s}\',');
+        } else {
+          codeList.add('$_      ${s},');
+        }
+      });
+      codeList.add('$_    ];');
+    }
     if (isReference) {
       if (type.startsWith('List')) {
         codeList.add(
-            '      var res = await NsgDataRequest<$dartType>().requestItems(');
+            '$_    var res = await NsgDataRequest<$dartType>().requestItems(');
       } else {
         codeList.add(
-            '      var res = await NsgDataRequest<$dartType>().requestItem(');
+            '$_    var res = await NsgDataRequest<$dartType>().requestItem(');
       }
     } else /*if (type.startsWith('List'))*/ {
       codeList.add(
-          '      var res = await NsgSimpleRequest<$dartType>().requestItems(');
-      codeList.add('          provider: provider!,');
+          '$_    var res = await NsgSimpleRequest<$dartType>().requestItems(');
+      codeList.add('$_        provider: provider!,');
       // } else {
       //   codeList.add(
       //       '      var res = await NsgSimpleRequest<$dartType>().requestItem(');
     }
     codeList
-        .add('          function: \'/${controller.apiPrefix}/$apiPrefix\',');
-    codeList.add('          method: \'${apiType.toUpperCase()}\',');
-    codeList.add('          filter: filter,');
-    codeList.add('          autoRepeate: true,');
-    codeList.add('          autoRepeateCount: 3,');
-    codeList.add('          cancelToken: progress.cancelToken);');
-    codeList.add('      return res;');
+        .add('$_        function: \'/${controller.apiPrefix}/$apiPrefix\',');
+    codeList.add('$_        method: \'${apiType.toUpperCase()}\',');
+    codeList.add('$_        filter: filter,');
+    codeList.add('$_        autoRepeate: ${retryCount > 0},');
+    var endParam = '$_        autoRepeateCount: $retryCount';
+    if (useProgressDialog) {
+      codeList.add('$endParam,');
+      endParam = '$_        cancelToken: progress.cancelToken';
+    }
+    if (readReferences.isNotEmpty) {
+      codeList.add('$endParam,');
+      endParam = '$_        loadReference: loadReference';
+    }
+    codeList.add('$endParam);');
+    codeList.add('$_    return res;');
     // codeList.add('    } catch (e) {');
     // if (type == 'List<Reference>') {
     //   codeList.add('      return [];');
@@ -485,9 +556,11 @@ class NsgGenFunction {
     // } else {
     //   codeList.add('      return <$dartType>[];');
     // }
-    codeList.add('    } finally {');
-    codeList.add('      progress.hide();');
-    codeList.add('    }');
+    if (useProgressDialog) {
+      codeList.add('    } finally {');
+      codeList.add('      progress.hide();');
+      codeList.add('    }');
+    }
     codeList.add('  }');
   }
 }
@@ -505,30 +578,39 @@ class NsgGenMethodParam {
       this.isReference = false});
 
   factory NsgGenMethodParam.fromJson(Map<String, dynamic> parsedJson) {
-    var type = (parsedJson['type'] ?? '').toString();
-    bool isReference = Misc.needToSpecifyType(type);
-    var referenceType = (parsedJson['referenceType'] ?? '').toString();
-    if (type == 'Date') type = 'DateTime';
-    if (referenceType.isEmpty &&
-        type != 'List<Reference>' &&
-        type != 'List<Enum>' &&
-        (type.startsWith('List<') ||
-            type.startsWith('Enum<') ||
-            type.startsWith('Reference<')) &&
-        type.endsWith('>')) {
-      referenceType =
-          type.substring(type.indexOf('<') + 1, type.lastIndexOf('>'));
-      if (referenceType.contains('<') && referenceType.endsWith('>')) {
-        referenceType = referenceType.substring(
-            referenceType.indexOf('<') + 1, referenceType.lastIndexOf('>'));
+    var name = parsedJson['name'];
+    try {
+      var type = (parsedJson['type'] ?? '').toString();
+      if (type.startsWith('String<')) {
+        type = 'String';
       }
+      bool isReference = Misc.needToSpecifyType(type);
+      var referenceType = (parsedJson['referenceType'] ?? '').toString();
+      if (type == 'Date') type = 'DateTime';
+      if (referenceType.isEmpty &&
+          type != 'List<Reference>' &&
+          type != 'List<Enum>' &&
+          (type.startsWith('List<') ||
+              type.startsWith('Enum<') ||
+              type.startsWith('Reference<')) &&
+          type.endsWith('>')) {
+        referenceType =
+            type.substring(type.indexOf('<') + 1, type.lastIndexOf('>'));
+        if (referenceType.contains('<') && referenceType.endsWith('>')) {
+          referenceType = referenceType.substring(
+              referenceType.indexOf('<') + 1, referenceType.lastIndexOf('>'));
+        }
+      }
+      isReference = !Misc.isPrimitiveType(type);
+      return NsgGenMethodParam(
+          name: parsedJson['name'],
+          type: type,
+          referenceType: referenceType,
+          isReference: isReference);
+    } catch (e) {
+      print('--- ERROR parsing function param \'$name\' ---');
+      rethrow;
     }
-    isReference = !Misc.isPrimitiveType(type);
-    return NsgGenMethodParam(
-        name: parsedJson['name'],
-        type: type,
-        referenceType: referenceType,
-        isReference: isReference);
   }
 
   String get returnType {

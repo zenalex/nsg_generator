@@ -21,7 +21,7 @@
       {
         "name": "ImageUri",
         "type": "Image",
-        "api_prefix": "/Api/Data/Image/"
+        "apiPrefix": "/Api/Data/Image/"
       },
       {
         "name": "Link",

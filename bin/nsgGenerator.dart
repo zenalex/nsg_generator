@@ -1,8 +1,11 @@
 import 'dart:io';
 
+import 'misc.dart';
 import 'nsgGenCSProject.dart';
 import 'nsgGenController.dart';
+import 'nsgGenDataItem.dart';
 import 'nsgGenEnum.dart';
+import 'nsgGenLocalization.dart';
 
 class NsgGenerator {
   final String targetFramework;
@@ -11,8 +14,13 @@ class NsgGenerator {
   final String cSharpNamespace;
   String dartPath;
   final String applicationName;
+  final bool useStaticDatabaseNames;
+  final bool useLocalization;
+  final String defaultLocale;
+  final bool newTableLogic;
   final List<NsgGenController> controllers;
   final List<NsgGenEnum> enums;
+  final Map<String, NsgGenDataItem> dataItems = Map();
   bool doCSharp = true;
   bool doDart = true;
   bool forceOverwrite = false;
@@ -29,41 +37,67 @@ class NsgGenerator {
       required this.cSharpNamespace,
       required this.dartPath,
       required this.applicationName,
+      required this.useLocalization,
+      required this.defaultLocale,
+      required this.newTableLogic,
+      this.doCSharp = true,
+      this.doDart = true,
+      this.useStaticDatabaseNames = false,
       this.controllers = const [],
       this.enums = const []});
 
   factory NsgGenerator.fromJson(Map<String, dynamic> parsedJson) {
-    var targetFramework = parsedJson['targetFramework'] ?? 'net5.0';
-    if (targetFramework.isEmpty) targetFramework = 'net5.0';
-    var isDotNetCore = [
-      'netcoreapp1.0',
-      'netcoreapp1.1',
-      'netcoreapp2.0',
-      'netcoreapp2.1',
-      'netcoreapp2.2',
-      'netcoreapp3.0',
-      'netcoreapp3.1',
-      'net5.0',
-      'net6.0',
-      'net7.0'
-    ].contains(targetFramework);
-    var enums = <NsgGenEnum>[];
-    if (parsedJson.containsKey('enums')) {
-      enums = (parsedJson['enums'] as List)
-          .map((i) => NsgGenEnum.fromJson(i))
+    String currentProperty = 'targetFramework';
+    try {
+      var targetFramework = parsedJson['targetFramework'] ?? 'net5.0';
+      if (targetFramework.isEmpty) targetFramework = 'net5.0';
+      var isDotNetCore = [
+        'netcoreapp1.0',
+        'netcoreapp1.1',
+        'netcoreapp2.0',
+        'netcoreapp2.1',
+        'netcoreapp2.2',
+        'netcoreapp3.0',
+        'netcoreapp3.1',
+        'net5.0',
+        'net6.0',
+        'net7.0',
+        'net8.0',
+        'net9.0'
+      ].contains(targetFramework);
+      var enums = <NsgGenEnum>[];
+      if (parsedJson.containsKey('enums')) {
+        currentProperty = 'enums';
+        enums = (parsedJson['enums'] as List)
+            .map((i) => NsgGenEnum.fromJson(i))
+            .toList();
+      }
+      currentProperty = 'controller';
+      var controllers = (parsedJson['controller'] as List)
+          .map((i) => NsgGenController.fromJson(i))
           .toList();
+      currentProperty = '';
+      return NsgGenerator(
+          targetFramework: targetFramework,
+          isDotNetCore: isDotNetCore,
+          cSharpPath: parsedJson['cSharpPath'] ?? '',
+          cSharpNamespace: parsedJson['cSharpNamespace'] ?? '',
+          dartPath: parsedJson['dartPath'] ?? '',
+          doCSharp: Misc.parseBoolOrTrue(parsedJson['doCSharp']),
+          doDart: Misc.parseBoolOrTrue(parsedJson['doDart']),
+          applicationName: parsedJson['applicationName'] ?? 'application',
+          useLocalization: Misc.parseBool(parsedJson['useLocalization']),
+          defaultLocale: parsedJson['defaultLocale'] ?? 'ru',
+          newTableLogic: Misc.parseBool(parsedJson['newTableLogic']),
+          useStaticDatabaseNames:
+              Misc.parseBool(parsedJson['useStaticDatabaseNames']),
+          controllers: controllers,
+          enums: enums);
+    } catch (e) {
+      print(
+          '--- ERROR parsing${currentProperty.isEmpty ? '' : ' property \'$currentProperty\' from'} generation_config.json ---');
+      rethrow;
     }
-    return NsgGenerator(
-        targetFramework: targetFramework,
-        isDotNetCore: isDotNetCore,
-        cSharpPath: parsedJson['cSharpPath'] ?? '',
-        cSharpNamespace: parsedJson['cSharpNamespace'] ?? '',
-        dartPath: parsedJson['dartPath'] ?? '',
-        applicationName: parsedJson['applicationName'] ?? 'application',
-        controllers: (parsedJson['controller'] as List)
-            .map((i) => NsgGenController.fromJson(i))
-            .toList(),
-        enums: enums);
   }
 
   String get genPathName => 'generated';
@@ -114,5 +148,6 @@ class NsgGenerator {
       await NsgGenController.generateControllerOptions(this, controllers);
     }
     await NsgGenEnum.generateEnums(this, enums);
+    await NsgGenLocalization.writeLocalization(this);
   }
 }

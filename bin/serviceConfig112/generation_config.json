@@ -4,8 +4,8 @@
   "dartPath": "X:/Projects2/flutter2/titan112/lib",
   "controller":[
   {
-    "api_prefix": "Api",
-    "class_name": "DataController",
+    "apiPrefix": "Api",
+    "className": "DataController",
     "useAuthorization": "true",
     "dataType": "NsgDataItem",
     "serverUri": "http://alex.nsgsoft.ru:5074",
@@ -13,7 +13,7 @@
       {
         "name": "UserData",
         "description" : "Get user data",
-        "api_prefix": "UserData",
+        "apiPrefix": "UserData",
         "authorize": "user",
         "type": "get",
         "dataTypeFile": "userItem.json",
@@ -22,7 +22,7 @@
       {
         "name": "Tarif",
         "description" : "Get Tarif",
-        "api_prefix": "Tarif",
+        "apiPrefix": "Tarif",
         "authorize": "user",
         "type": "get",
         "dataTypeFile": "tarifItem.json"
@@ -30,7 +30,7 @@
       {
         "name": "Coordinate",
         "description" : "Coordinates",
-        "api_prefix": "Coordinate",
+        "apiPrefix": "Coordinate",
         "authorize": "user",
         "type": "get",
         "dataTypeFile": "coordinateItem.json"
@@ -38,7 +38,7 @@
       {
         "name": "Car",
         "description" : "Get Car",
-        "api_prefix": "Car",
+        "apiPrefix": "Car",
         "authorize": "user",
         "type": "get",
         "dataTypeFile": "carItem.json"
@@ -46,7 +46,7 @@
       {
         "name": "Guardian",
         "description" : "Get Guardian",
-        "api_prefix": "Guardian",
+        "apiPrefix": "Guardian",
         "authorize": "user",
         "type": "get",
         "dataTypeFile": "guardianItem.json"
@@ -54,7 +54,7 @@
       {
         "name": "Alarm",
         "description" : "Get Alarm",
-        "api_prefix": "Alarm",
+        "apiPrefix": "Alarm",
         "authorize": "user",
         "type": "get",
         "dataTypeFile": "alarmItem.json"
@@ -62,7 +62,7 @@
       {
         "name": "AlarmMark",
         "description" : "Set Alarm Mark",
-        "api_prefix": "AlarmMark",
+        "apiPrefix": "AlarmMark",
         "authorize": "user",
         "type": "get",
         "dataTypeFile": "alarmMark.json",
@@ -71,7 +71,7 @@
       {
         "name": "AlarmCancelReason",
         "description" : "Alarm cancel reason",
-        "api_prefix": "AlarmCancelReason",
+        "apiPrefix": "AlarmCancelReason",
         "authorize": "user",
         "type": "get",
         "dataTypeFile": "alarmCancelReason.json",
@@ -80,7 +80,7 @@
       {
         "name": "RegistrationData",
         "description" : "Send registration data",
-        "api_prefix": "RegistrationData",
+        "apiPrefix": "RegistrationData",
         "authorize": "user",
         "type": "get",
         "dataTypeFile": "registrationData.json",
@@ -89,7 +89,7 @@
       {
         "name": "VerificationResult",
         "description" : "Result of verification",
-        "api_prefix": "VerificationResult",
+        "apiPrefix": "VerificationResult",
         "authorize": "user",
         "type": "get",
         "dataTypeFile": "VerificationResult.json",
@@ -98,7 +98,7 @@
       {
         "name": "InformationItem",
         "description" : "Information from server",
-        "api_prefix": "InformationItem",
+        "apiPrefix": "InformationItem",
         "authorize": "user",
         "type": "get",
         "dataTypeFile": "informationItem.json",
@@ -107,7 +107,7 @@
       {
         "name": "SystemItem",
         "description" : "System Information",
-        "api_prefix": "SystemItem",
+        "apiPrefix": "SystemItem",
         "authorize": "none",
         "type": "get",
         "dataTypeFile": "systemItem.json",
@@ -116,7 +116,7 @@
       {
         "name": "BalanceItem",
         "description" : "Balance Information",
-        "api_prefix": "BalanceItem",
+        "apiPrefix": "BalanceItem",
         "authorize": "user",
         "type": "get",
         "dataTypeFile": "balanceItem.json",
@@ -125,7 +125,7 @@
       {
         "name": "ChatMessage",
         "description" : "Chat with call center",
-        "api_prefix": "Chat",
+        "apiPrefix": "Chat",
         "authorize": "user",
         "type": "get",
         "dataTypeFile": "chatMessage.json",
@@ -134,7 +134,7 @@
       {
         "name": "TarifPack",
         "description" : "Tarif packs",
-        "api_prefix": "TarifPack",
+        "apiPrefix": "TarifPack",
         "authorize": "user",
         "type": "get",
         "dataTypeFile": "tarifPack.json",

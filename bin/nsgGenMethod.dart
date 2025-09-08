@@ -16,7 +16,6 @@ class NsgGenMethod {
   final bool allowGetter;
   final bool allowCreate;
   final bool allowPost;
-  final bool checkLastModifiedDate;
   final bool allowDelete;
 
   late NsgGenDataItem genDataItem;
@@ -31,53 +30,66 @@ class NsgGenMethod {
       this.allowGetter = true,
       this.allowCreate = false,
       this.allowPost = false,
-      this.checkLastModifiedDate = false,
       this.allowDelete = false});
 
+  static Map<String, String> obsoleteKeys = {
+    'api_prefix': 'apiPrefix',
+  };
+
   factory NsgGenMethod.fromJson(Map<String, dynamic> parsedJson) {
+    Misc.checkObsoleteKeysInJSON('method', parsedJson, obsoleteKeys,
+        throwIfAny: true);
     var name = (parsedJson['name'] ?? '').toString();
-    var isUserSettings = name == 'UserSettings';
-    return NsgGenMethod(
-        name: name,
-        description: parsedJson['description'] ?? '',
-        apiPrefix: parsedJson.containsKey('apiPrefix')
-            ? parsedJson['apiPrefix']
-            : parsedJson.containsKey('api_prefix')
-                ? parsedJson['api_prefix']
-                : name,
-        authorize: parsedJson['authorize'] ?? 'none',
-        getterType: (parsedJson.containsKey('getterType')
-                ? parsedJson['getterType']
-                : parsedJson['type'] ?? 'POST')
-            .toString()
-            .toUpperCase(),
-        dataTypeFlie: parsedJson['dataTypeFile'] ?? '',
-        allowGetter: (parsedJson.containsKey('allowGetter')
-                ? parsedJson['allowGetter'] != 'false'
-                : true) ||
-            isUserSettings,
-        allowCreate: parsedJson['allowCreate'] == 'true',
-        allowPost: parsedJson['allowPost'] == 'true' || isUserSettings,
-        checkLastModifiedDate: parsedJson['checkLastModifiedDate'] == 'true',
-        allowDelete: parsedJson['allowDelete'] == 'true' || isUserSettings);
+    try {
+      var needsAllCRUD = name == 'UserSettings' || name == 'ExchangeRules';
+      return NsgGenMethod(
+          name: name,
+          description: parsedJson['description'] ?? '',
+          apiPrefix: parsedJson.containsKey('apiPrefix')
+              ? parsedJson['apiPrefix']
+              : name,
+          authorize: parsedJson['authorize'] ?? 'none',
+          getterType: (parsedJson.containsKey('getterType')
+                  ? parsedJson['getterType']
+                  : parsedJson['type'] ?? 'POST')
+              .toString()
+              .toUpperCase(),
+          dataTypeFlie: parsedJson['dataTypeFile'] ?? '',
+          allowGetter:
+              Misc.parseBoolOrTrue(parsedJson['allowGetter']) || needsAllCRUD,
+          allowCreate: Misc.parseBool(parsedJson['allowCreate']),
+          allowPost: Misc.parseBool(parsedJson['allowPost']) || needsAllCRUD,
+          allowDelete:
+              Misc.parseBool(parsedJson['allowDelete']) || needsAllCRUD);
+    } catch (e) {
+      print('--- ERROR parsing method \'$name\' ---');
+      rethrow;
+    }
   }
 
   Future generateCode(List<String> codeList, NsgGenerator nsgGenerator,
       NsgGenController controller) async {
+    String authorizeAttr = '';
     if (allowGetter || allowPost || allowDelete) {
       Misc.writeDescription(codeList, description, true);
-    }
-    if (allowGetter) {
-      codeList.add('[Route("$apiPrefix")]');
 
       //Authorization
       if (!controller.useAuthorization) {
       } else if (authorize == 'anonymous') {
-        codeList.add('[Authorize]');
+        authorizeAttr = '[Authorize]';
       } else if (authorize == 'user') {
-        codeList.add('[Authorize(Roles = UserRoles.User)]');
+        authorizeAttr = '[Authorize(Roles = UserRoles.User)]';
+      } else if (authorize == 'admin') {
+        authorizeAttr = '[Authorize(Roles = UserRoles.Admin)]';
       } else if (authorize != 'none') {
         throw Exception('Wrong authorization type in method $name');
+      }
+    }
+    if (allowGetter) {
+      codeList.add('[Route("$apiPrefix")]');
+      //Authorization
+      if (authorizeAttr.isNotEmpty) {
+        codeList.add(authorizeAttr);
       }
       //POST or GET
       var apiType = 'HttpGet';
@@ -94,8 +106,7 @@ class NsgGenMethod {
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name([FromBody] NsgFindParams findParams)');
       codeList.add('{');
       if (controller.useAuthorization && authorize != 'none') {
-        codeList
-            .add('var user = await authController.GetUserByToken(Request);');
+        codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
             'return await controller.Get<${genDataItem.typeName}>(user, findParams);');
       } else {
@@ -110,13 +121,8 @@ class NsgGenMethod {
       genDataItem.allowCreate = allowCreate;
       codeList.add('[Route("$apiPrefix/Create")]');
       //Authorization
-      if (!controller.useAuthorization) {
-      } else if (authorize == 'anonymous') {
-        codeList.add('[Authorize]');
-      } else if (authorize == 'user') {
-        codeList.add('[Authorize(Roles = UserRoles.User)]');
-      } else if (authorize != 'none') {
-        throw Exception('Wrong authorization type in method ${name}Create');
+      if (authorizeAttr.isNotEmpty) {
+        codeList.add(authorizeAttr);
       }
       codeList.add('[HttpPost]');
       // codeList.add(
@@ -125,8 +131,7 @@ class NsgGenMethod {
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}Create([FromBody] NsgFindParams findParams)');
       codeList.add('{');
       if (controller.useAuthorization && authorize != 'none') {
-        codeList
-            .add('var user = await authController.GetUserByToken(Request);');
+        codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
             'return await controller.Create<${genDataItem.typeName}>(user, findParams);');
       } else {
@@ -138,16 +143,10 @@ class NsgGenMethod {
     }
     //Generate post data method
     if (allowPost) {
-      genDataItem.checkLastModifiedDate = checkLastModifiedDate;
       codeList.add('[Route("$apiPrefix/Post")]');
       //Authorization
-      if (!controller.useAuthorization) {
-      } else if (authorize == 'anonymous') {
-        codeList.add('[Authorize]');
-      } else if (authorize == 'user') {
-        codeList.add('[Authorize(Roles = UserRoles.User)]');
-      } else if (authorize != 'none') {
-        throw Exception('Wrong authorization type in method ${name}Post');
+      if (authorizeAttr.isNotEmpty) {
+        codeList.add(authorizeAttr);
       }
       codeList.add('[HttpPost]');
       // codeList.add(
@@ -156,8 +155,7 @@ class NsgGenMethod {
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}Post([FromBody] IEnumerable<${genDataItem.typeName}> items)');
       codeList.add('{');
       if (controller.useAuthorization && authorize != 'none') {
-        codeList
-            .add('var user = await authController.GetUserByToken(Request);');
+        codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
             'return await controller.Post<${genDataItem.typeName}>(user, NsgFindParams.From(Request.GetQueryNameValuePairs()), items);');
       } else {
@@ -172,13 +170,8 @@ class NsgGenMethod {
     if (allowDelete) {
       codeList.add('[Route("$apiPrefix/Delete")]');
       //Authorization
-      if (!controller.useAuthorization) {
-      } else if (authorize == 'anonymous') {
-        codeList.add('[Authorize]');
-      } else if (authorize == 'user') {
-        codeList.add('[Authorize(Roles = UserRoles.User)]');
-      } else if (authorize != 'none') {
-        throw Exception('Wrong authorization type in method ${name}Delete');
+      if (authorizeAttr.isNotEmpty) {
+        codeList.add(authorizeAttr);
       }
       codeList.add('[HttpPost]');
       // codeList.add(
@@ -187,8 +180,7 @@ class NsgGenMethod {
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}Delete([FromBody] IEnumerable<${genDataItem.typeName}> items)');
       codeList.add('{');
       if (controller.useAuthorization && authorize != 'none') {
-        codeList
-            .add('var user = await authController.GetUserByToken(Request);');
+        codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
             'return await controller.Delete<${genDataItem.typeName}>(user, items);');
       } else {
@@ -215,7 +207,7 @@ class NsgGenMethod {
     //   codeList.add('{');
     //   if (authorize != 'none') {
     //     codeList
-    //         .add('var user = await authController.GetUserByToken(Request);');
+    //         .add('var user = ${controller.callGetUserByToken};');
     //     codeList.add(
     //         'return await controller.${name}${element.apiPrefix}(user, file);');
     //   } else {

@@ -5,34 +5,38 @@ import 'nsgGenDataItem.dart';
 class NsgGenDataItemField {
   final String name;
   final String type;
-  final String dbName;
-  final String dbType;
+  final String databaseName;
   final int maxLength;
+  final bool useDate;
+  final bool useTime;
   final String description;
   final String apiPrefix;
   final bool isPrimary;
   final String referenceName;
   final String referenceType;
   final bool isReference;
+  final bool isString;
   final bool userVisibility;
   final String userName;
   final bool writeOnClient;
   final bool writeOnServer;
   final bool allowPost;
-  final List<Map<String, dynamic>>? referenceTypes;
+  final List<String>? referenceTypes;
 
   NsgGenDataItemField(
       {required this.name,
       required this.type,
-      this.dbName = '',
-      this.dbType = '',
+      this.databaseName = '',
       this.maxLength = 0,
+      this.useDate = true,
+      this.useTime = true,
       this.description = '',
       this.apiPrefix = '',
       this.isPrimary = false,
       this.referenceName = '',
       this.referenceType = '',
       this.isReference = false,
+      this.isString = false,
       this.userVisibility = false,
       this.userName = '',
       this.writeOnClient = true,
@@ -41,88 +45,109 @@ class NsgGenDataItemField {
       this.referenceTypes});
 
   factory NsgGenDataItemField.fromJson(Map<String, dynamic> parsedJson) {
-    var ml = parsedJson['maxLength'];
-    if (ml is String) ml = int.parse(ml); // as int ??
-    // (defaultMaxLength.containsValue(parsedJson['type'])
-    //     ? defaultMaxLength[parsedJson['type']]
-    //     : 0);
-    var userName = parsedJson['userName'] ??
-        Misc.CamelCaseToNormal(parsedJson['databaseName'] ??
-            parsedJson['description'] ??
-            parsedJson['name']);
+    Misc.checkObsoleteKeysInJSON('field', parsedJson, {'api_prefix': ''},
+        throwIfAny: true);
+    String name = '';
+    String currentProperty = 'name';
+    try {
+      name = parsedJson['name'].toString();
 
-    var name = parsedJson['name'].toString();
-    var referenceName = (parsedJson['referenceName'] ?? '').toString();
-    var referenceType = parsedJson.containsKey('defaultReferenceType')
-        ? parsedJson['defaultReferenceType'] ?? ''
-        : parsedJson['referenceType'] ?? '';
-    var type = (parsedJson['type'] ?? '').toString();
-    bool isReference = Misc.needToSpecifyType(type);
-    if (type == 'Date') type = 'DateTime';
-    if (type.startsWith('Reference') || type == 'UntypedReference') {
-      if (referenceName.isEmpty) {
-        if (name.endsWith('Id')) {
-          referenceName = name.substring(0, name.length - 2);
-        } else {
-          referenceName = name;
-          name += 'Id';
+      var ml = parsedJson['maxLength'];
+      if (ml is String) ml = int.parse(ml); // as int ??
+      // (defaultMaxLength.containsValue(parsedJson['type'])
+      //     ? defaultMaxLength[parsedJson['type']]
+      //     : 0);
+      var userName = parsedJson['userName'] ??
+          Misc.CamelCaseToNormal(parsedJson['databaseName'] ??
+              parsedJson['description'] ??
+              parsedJson['name']);
+
+      currentProperty = 'type, referenceType';
+      var referenceName = (parsedJson['referenceName'] ?? '').toString();
+      String referenceType = parsedJson.containsKey('defaultReferenceType')
+          ? parsedJson['defaultReferenceType'] ?? ''
+          : parsedJson['referenceType'] ?? '';
+      var type = (parsedJson['type'] ?? '').toString();
+      bool isReference = Misc.needToSpecifyType(type);
+      bool isString = false;
+      if (type == 'String' || type.startsWith('String<')) {
+        isString = true;
+      } else if (type == 'Date') type = 'DateTime';
+      if (type.startsWith('Reference') || type.startsWith('UntypedReference')) {
+        if (referenceName.isEmpty) {
+          if (name.endsWith('Id')) {
+            referenceName = name.substring(0, name.length - 2);
+          } else {
+            referenceName = name;
+            name += 'Id';
+          }
         }
       }
-    }
-    if (referenceType.isEmpty &&
-        type != 'List<Reference>' &&
-        type != 'List<Enum>' &&
-        (type.startsWith('List<') ||
-            type.startsWith('Enum<') ||
-            type.startsWith('Reference<')) &&
-        type.endsWith('>')) {
-      referenceType =
-          type.substring(type.indexOf('<') + 1, type.lastIndexOf('>'));
-      if (referenceType.contains('<') && referenceType.endsWith('>')) {
-        referenceType = referenceType.substring(
-            referenceType.indexOf('<') + 1, referenceType.lastIndexOf('>'));
+      currentProperty = 'referenceTypes';
+      var untTypes = (parsedJson.containsKey('referenceTypes')
+              ? parsedJson['referenceTypes'] as List
+              : List.empty())
+          .cast<String>()
+          .toList();
+      currentProperty = 'type, referenceType';
+      // if (type.startsWith('UntypedReference') && type != 'UntypedReference') {
+      // } else
+      if (referenceType.isEmpty &&
+          type != 'List<Reference>' &&
+          type != 'List<Enum>' &&
+          (type.startsWith('List<') ||
+              type.startsWith('Enum<') ||
+              type.startsWith('Reference<') ||
+              type.startsWith('UntypedReference<')) &&
+          type.endsWith('>')) {
+        referenceType =
+            type.substring(type.indexOf('<') + 1, type.lastIndexOf('>'));
+        if (referenceType.contains('<') && referenceType.endsWith('>')) {
+          referenceType = referenceType.substring(
+              referenceType.indexOf('<') + 1, referenceType.lastIndexOf('>'));
+        }
+        var split = referenceType.split(',');
+        referenceType = split[0].trim();
+        var referenceTypes = split.map((e) => e.trim()).toList();
+        untTypes.addAll(referenceTypes);
       }
+      currentProperty = '';
+      isReference = !Misc.isPrimitiveType(type);
+      return NsgGenDataItemField(
+          name: name,
+          type: type,
+          databaseName: parsedJson['databaseName'] ?? '',
+          maxLength: ml ??
+              (defaultMaxLength.containsKey(type) ? defaultMaxLength[type] : 0),
+          useDate: Misc.parseBoolOrTrue(parsedJson['useDate']),
+          useTime: Misc.parseBoolOrTrue(parsedJson['useTime']),
+          description: parsedJson.containsKey('description')
+              ? parsedJson['description'] ?? ''
+              : parsedJson['databaseName'] ?? '',
+          apiPrefix: parsedJson.containsKey('apiPrefix')
+              ? parsedJson['apiPrefix']
+              : name,
+          isPrimary: Misc.parseBool(parsedJson['isPrimary']),
+          referenceName: referenceName,
+          referenceType: referenceType,
+          isReference: isReference,
+          isString: isString,
+          userVisibility: Misc.parseBool(parsedJson['userVisibility']),
+          userName: userName,
+          writeOnClient: Misc.parseBoolOrTrue(parsedJson['writeOnClient']),
+          writeOnServer: Misc.parseBoolOrTrue(parsedJson['writeOnServer']),
+          allowPost: Misc.parseBoolOrTrue(parsedJson['allowPost']),
+          referenceTypes: untTypes);
+    } catch (e) {
+      print(
+          '--- ERROR parsing${currentProperty.isEmpty ? '' : ' property \'$currentProperty\' of'} field \'$name\' ---');
+      rethrow;
     }
-    isReference = !Misc.isPrimitiveType(type);
-    return NsgGenDataItemField(
-        name: name,
-        type: type,
-        dbName: parsedJson['databaseName'] ?? '',
-        dbType: parsedJson['databaseType'] ?? '',
-        maxLength: ml ??
-            (defaultMaxLength.containsKey(type) ? defaultMaxLength[type] : 0),
-        description: parsedJson.containsKey('description')
-            ? parsedJson['description'] ?? ''
-            : parsedJson['databaseName'] ?? '',
-        apiPrefix: parsedJson.containsKey('apiPrefix')
-            ? parsedJson['apiPrefix']
-            : parsedJson.containsKey('api_prefix')
-                ? parsedJson['api_prefix']
-                : name,
-        isPrimary: parsedJson['isPrimary'] == 'true',
-        referenceName: referenceName,
-        referenceType: referenceType,
-        isReference: isReference,
-        userVisibility: parsedJson['userVisibility'] == 'true',
-        userName: userName,
-        writeOnClient: parsedJson.containsKey('writeOnClient')
-            ? parsedJson['writeOnClient'] != 'false'
-            : true,
-        writeOnServer: parsedJson.containsKey('writeOnServer')
-            ? parsedJson['writeOnServer'] != 'false'
-            : true,
-        allowPost: parsedJson.containsKey('allowPost')
-            ? parsedJson['allowPost'] != 'false'
-            : true,
-        referenceTypes: (parsedJson.containsKey('referenceTypes')
-                ? parsedJson['referenceTypes'] as List
-                : List.empty())
-            .map((e) => e as Map<String, dynamic>)
-            .toList());
   }
 
   static Map<String, int> defaultMaxLength = <String, int>{
     'String': 10000,
+    'String<FilePath>': 10000,
     'double': 2
   };
 
@@ -132,12 +157,12 @@ class NsgGenDataItemField {
       Misc.getDartName('name' + name[0].toUpperCase() + name.substring(1));
 
   String get dartType {
-    if (type == 'Guid') return 'String';
+    if (isString || type == 'Guid') return 'String';
     return type;
   }
 
   String get nsgDataType {
-    if (type == 'String' || type == 'Guid') {
+    if (isString || type == 'Guid') {
       return 'NsgDataStringField';
     } else if (type == 'DateTime') {
       return 'NsgDataDateField';
@@ -161,7 +186,7 @@ class NsgGenDataItemField {
       }
     } else if (isReference) {
       return 'NsgDataReferenceField<$referenceType>';
-    } else if (type == 'UntypedReference') {
+    } else if (type.startsWith('UntypedReference')) {
       return 'NsgDataUntypedReferenceField';
     } else {
       var message = "get nsgDataType for field type $type couldn't be found";
@@ -175,12 +200,21 @@ class NsgGenDataItemField {
     if (['id', 'ownerid'].contains(name.toLowerCase())) {
       codeList.add('  @override');
     }
-    if (dataItem.entityType == NsgGenDataItemEntityType.userSettings) {
-      if (['name', 'settings', 'userid'].contains(name.toLowerCase())) {
-        codeList.add('  @override');
-      }
+    if (dataItem.entityType != NsgGenDataItemEntityType.dataItem &&
+        NsgGenDataItemEntityType.typeFields[dataItem.entityType]!
+            .contains(name)) {
+      codeList.add('  @override');
     }
-    if (type == 'String' || type == 'Guid') {
+    if (type == 'String<FilePath>') {
+      if (nsgGenController.hasGetStreamFunction) {
+        codeList.add('  $dartType get $dartName => '
+            '\'\${NsgServerOptions.serverUri${nsgGenController.className}}/${nsgGenController.apiPrefix}'
+            '/GetStream?path=\${getFieldValue($fieldNameVar)}\';');
+      } else {
+        codeList.add(
+            '  $dartType get $dartName => getFieldValue($fieldNameVar).toString();');
+      }
+    } else if (type == 'String' || type == 'Guid') {
       codeList.add(
           '  $dartType get $dartName => getFieldValue($fieldNameVar).toString();');
     } else if (type == 'DateTime') {
@@ -215,20 +249,20 @@ class NsgGenDataItemField {
       codeList.add(
           '  Future<$referenceType> ${Misc.getDartName(referenceName)}Async() async {');
       codeList.add(
-          '   return await getReferentAsync<$referenceType>($fieldNameVar);');
+          '    return await getReferentAsync<$referenceType>($fieldNameVar);');
       codeList.add('  }');
     } else if (type.startsWith('Enum')) {
       codeList.add(
           '  $referenceType get $dartName => NsgEnum.fromValue($referenceType, getFieldValue($fieldNameVar)) as $referenceType;');
-    } else if (type == 'UntypedReference') {
+    } else if (type.startsWith('UntypedReference')) {
       codeList.add(
           '  String get $dartName => getFieldValue($fieldNameVar).toString();');
       codeList.add(
           '  NsgDataItem get ${Misc.getDartName(referenceName)} => getReferent<NsgDataItem>($fieldNameVar);');
       codeList.add(
           '  Future<NsgDataItem> ${Misc.getDartName(referenceName)}Async() async {');
-      codeList
-          .add('   return await getReferentAsync<NsgDataItem>($fieldNameVar);');
+      codeList.add(
+          '    return await getReferentAsync<NsgDataItem>($fieldNameVar);');
       codeList.add('  }');
     } else {
       var message = "write getter for field type $type couldn't be found";
@@ -243,10 +277,12 @@ class NsgGenDataItemField {
     if (['id', 'ownerid'].contains(name.toLowerCase())) {
       codeList.add('  @override');
     }
-    if (dataItem.entityType == NsgGenDataItemEntityType.userSettings) {
-      if (['name', 'settings', 'userId'].contains(name.toLowerCase())) {
-        codeList.add('  @override');
-      }
+    if (dataItem.entityType != NsgGenDataItemEntityType.dataItem &&
+        !type.startsWith('List') &&
+        allowPost &&
+        NsgGenDataItemEntityType.typeFields[dataItem.entityType]!
+            .contains(name)) {
+      codeList.add('  @override');
     }
     if (type == 'Image') {
       codeList.add(
@@ -254,7 +290,7 @@ class NsgGenDataItemField {
     } else if (type == 'Binary') {
       codeList.add(
           '  set $dartName(List<int> value) => setFieldValue($fieldNameVar, value);');
-    } else if (type == 'UntypedReference') {
+    } else if (type.startsWith('UntypedReference')) {
       codeList.add(
           '  set $dartName(String value) => setFieldValue($fieldNameVar, value);');
       codeList.add(
@@ -262,6 +298,7 @@ class NsgGenDataItemField {
       codeList.add('    setFieldValue($fieldNameVar, value);');
     } else if (type.startsWith('List')) {
       if (isReference) {
+        return; // не вводить лишний перенос строки
         //Отменил запись setter из-за смены возвращаемого типа на NsgDataTable
         // codeList.add(
         //     '  set $dartName(List<$referenceType> value) => setFieldValue($fieldNameVar, value);');

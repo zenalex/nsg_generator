@@ -16,6 +16,27 @@ class Misc {
     }
   }
 
+  static RegExp upperCaseRE = RegExp(r'[A-ZА-Я]');
+  static String getCamelCaseName(String dn, {bool startWithAcronym = false}) {
+    if (dn.isEmpty) return dn;
+    var firstUpperCaseIndex = dn.indexOf(upperCaseRE);
+    if (firstUpperCaseIndex == -1) {
+      if (startWithAcronym) return dn.toUpperCase();
+      firstUpperCaseIndex = 1;
+    }
+    if (firstUpperCaseIndex == 0) {
+      return dn;
+    }
+    if (firstUpperCaseIndex > 1) {
+      if (!startWithAcronym) firstUpperCaseIndex = 1;
+    }
+    var fc = dn.substring(0, firstUpperCaseIndex);
+    if (fc.length != dn.length) {
+      dn = fc.toUpperCase() + dn.substring(firstUpperCaseIndex);
+    }
+    return dn;
+  }
+
   static RegExp nonUpperCaseRE = RegExp(r'[^A-ZА-Я]');
   static String getDartName(String dn) {
     if (dn.isEmpty) return dn;
@@ -59,11 +80,14 @@ class Misc {
           presentation = presentation.replaceFirst(
               s, '\$' + Misc.getDartName(s.substring(1, s.length - 1)));
         }
-        print(s);
+        print('getDartToString: $s');
       });
-      print(allMatches.length);
+      print('getDartToString: ${allMatches.length}');
+      return Misc.getDartName('\'' + presentation + '\'');
     }
-    return Misc.getDartName('\'' + presentation + '\'');
+    if (presentation.contains(' '))
+      return Misc.getDartName('\'' + presentation + '\'');
+    return Misc.getDartName(presentation);
   }
 
   static void writeDescription(List<String> codeList, String text, bool xmlWrap,
@@ -103,15 +127,44 @@ class Misc {
   }
 
   static List<String> primitiveTypes = [
+    'Object',
     'UntypedReference',
     'Enum',
     'int',
     'double',
     'String',
+    'String<FilePath>',
     'Guid',
     'bool',
     'DateTime',
     'Image',
     'Binary'
   ];
+
+  static List<String> warnings = [];
+  static void checkObsoleteKeysInJSON(String objectType,
+      Map<String, dynamic> parsedJson, Map<String, String> obsoleteKeys,
+      {bool throwIfAny = false}) {
+    var errors = <String>[];
+    obsoleteKeys.forEach((key, value) {
+      if (parsedJson.containsKey(key)) {
+        var message = value.isEmpty
+            ? '--- Key $key is no longer used in $objectType declaration ---'
+            : '--- Obsolete key \'$key\' in $objectType declaration. Use \'$value\' instead ---';
+        if (!warnings.contains(message)) warnings.add(message);
+        if (value.isNotEmpty) errors.add(message);
+      }
+    });
+    if (throwIfAny && errors.length > 0) {
+      throw Exception(errors.join('\n'));
+    }
+  }
+
+  static bool parseBool(Object? field) {
+    return field == true || field == 'true';
+  }
+
+  static bool parseBoolOrTrue(Object? field) {
+    return field != false && field != 'false';
+  }
 }
