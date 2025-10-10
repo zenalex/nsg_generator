@@ -117,9 +117,9 @@ class Misc {
       typeName.replaceAll(RegExp(r"[.]Строка"), '');
 
   static bool needToSpecifyType(String typeName) =>
-      typesNeedingReferenceType.any((el) => typeName.startsWith(el));
+      genericOnlyTypes.any((el) => typeName.startsWith(el));
 
-  static List<String> typesNeedingReferenceType = ['Reference', 'List', 'Enum'];
+  static List<String> genericOnlyTypes = ['Reference', 'List', 'Enum'];
 
   static bool isPrimitiveType(String typeName) {
     var split = typeName.split(RegExp(r'\W'));

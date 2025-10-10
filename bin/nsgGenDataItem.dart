@@ -667,8 +667,8 @@ class NsgGenDataItem {
         else
           codeList.add('var obj = $databaseType.Новый();');
         codeList.add('obj.New();');
-        codeList.add(
-            'var res = new $typeName(GetSerializeFields(findParams?.ReadNestedField), obj);');
+        codeList
+            .add('var res = new $typeName(findParams?.ReadReferences, obj);');
         codeList
             .add('return GetDictWithNestedFields(new[] { res }, findParams);');
       } else {

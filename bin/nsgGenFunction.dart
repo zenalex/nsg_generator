@@ -149,6 +149,9 @@ class NsgGenFunction {
     if (primType.startsWith('Enum') || primType.contains('Enum<')) {
       return 'int';
     }
+    if (primType.startsWith('List')) {
+      return referenceType;
+    }
     return primType;
   }
 
