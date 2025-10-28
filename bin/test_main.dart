@@ -4,7 +4,7 @@ import 'nsgGeneratorArgs.dart';
 void main(List<String> args) async {
   var nsgArgs = NsgGeneratorArgs();
 
-  var project = Project.Tech2Server;
+  var project = Project.Football;
 
   nsgArgs.serviceConfigPath = project.configPath;
   nsgArgs.cSharpPath = project.csPath;
@@ -29,15 +29,29 @@ class Project {
       'C:/Users/pro5/source/repos/scif_storekeeper_server',
       'C:/Users/pro5/source/repos/scif_storekeeper_app/lib/model');
   static Project TechControl = Project(
-      'C:/Users/pro5/source/repos/TechControl/Server/GeneratorConfig',
-      'C:/Users/pro5/source/repos/TechControl/Server',
-      'C:/Users/pro5/source/repos/TechControl/tech_control_app/lib/model');
+      'C:/Users/pro5/source/repos/TechControlServer/GeneratorConfig',
+      'C:/Users/pro5/source/repos/TechControlServer',
+      'C:/Users/pro5/source/repos/tech_control_data/lib/model');
   static Project Football = Project(
       'C:/Users/pro5/source/repos/FootballersDiary_Server/FootballersDiary/GeneratorConfig',
       'C:/Users/pro5/source/repos/FootballersDiary_Server/FootballersDiary',
       'C:/Users/pro5/source/repos/footballers_diary_app/lib/model');
+  static Project FootballMatchHandleService = Project(
+      'C:/Users/pro5/source/repos/FootballersDiary_Server/FootballersDiary.MatchHandleService/GeneratorConfig',
+      'C:/Users/pro5/source/repos/FootballersDiary_Server/FootballersDiary.MatchHandleService',
+      '',
+      doDart: false);
+  static Project FootballWebSocketService = Project(
+      'C:/Users/pro5/source/repos/FootballersDiary_Server/FootballersDiary.WebSocketService/GeneratorConfig',
+      'C:/Users/pro5/source/repos/FootballersDiary_Server/FootballersDiary.WebSocketService',
+      '',
+      doDart: false);
   static Project Tech2Server = Project('D:/NSG/GIT/Tech2Server/json',
       'D:/NSG/GIT/Tech2Server/', 'D:/NSG/GIT/tech2_app/lib/model');
+  static Project Tech2Server_ = Project(
+      'C:/Users/pro5/source/repos/Tech2Server/json',
+      'C:/Users/pro5/source/repos/Tech2Server/',
+      'C:/Users/pro5/source/repos/tech2_app/lib/model');
   static Project Storekeeper = Project(
       'C:/Users/pro5/source/repos/StorekeeperServer/model_config',
       'C:/Users/pro5/source/repos/StorekeeperServer',
@@ -54,6 +68,14 @@ class Project {
       'C:/Users/pro5/source/repos/task_manager_server/json',
       'C:/Users/pro5/source/repos/task_manager_server',
       'C:/Users/pro5/source/repos/task_manager_app/lib/model');
+  static Project Titan112 = Project(
+      'C:/Users/pro5/source/repos/titan112_server/json',
+      'C:/Users/pro5/source/repos/titan112_server/',
+      'C:/Users/pro5/source/repos/titan112-1_app/lib/model');
+  static Project Titan112AlarmButton = Project(
+      'C:/Users/pro5/source/repos/titan112_server_isolate/json',
+      'C:/Users/pro5/source/repos/titan112_server_isolate/',
+      'C:/Users/pro5/source/repos/titan112-1_app/lib/model');
   static Project Titan112Button = Project(
       'C:/Users/pro5/source/repos/titan112button/serviceConfig',
       'C:/Users/pro5/source/repos/titan112button_server/',
@@ -62,6 +84,11 @@ class Project {
       'C:/Users/pro5/source/repos/titan_lk_server/json',
       'C:/Users/pro5/source/repos/titan_lk_server',
       'C:/Users/pro5/source/repos/titan_lk_app/lib/model');
+  static Project TitanGBRApiServer = Project(
+      'C:/Users/pro5/source/svn/Customers/Titan/MiscProjects/TitanGBRApiServer/json',
+      'C:/Users/pro5/source/svn/Customers/Titan/MiscProjects/TitanGBRApiServer',
+      '',
+      doDart: false);
   static Project Answerzz = Project(
       'C:/Users/pro5/source/repos/answerzz_server/model_config',
       'C:/Users/pro5/source/repos/answerzz_server',
@@ -96,10 +123,23 @@ class Project {
       'C:/Users/pro5/source/repos/ChatGPTServer',
       '',
       doDart: false);
+  static Project CultNav = Project(
+      'C:/Users/pro5/source/repos/cultural_navigation_server/json',
+      'C:/Users/pro5/source/repos/cultural_navigation_server',
+      'C:/Users/pro5/source/repos/cultural_navigation_app/lib/model');
+  static Project GBRControl = Project(
+      'C:/Users/pro5/source/repos/titan_gbr_control_server/json',
+      'C:/Users/pro5/source/repos/titan_gbr_control_server',
+      'C:/Users/pro5/source/repos/titan_gbr_control_app/lib/model');
+  static Project TitanQuarryControl = Project(
+      'C:/Users/pro5/source/repos/titan_quarry_control/config',
+      'C:/Users/pro5/source/repos/titan_quarry_control_server',
+      'C:/Users/pro5/source/repos/titan_quarry_control/lib/model');
   String configPath;
   String csPath;
   String dartPath;
   bool doCSharp = true;
   bool doDart = true;
-  Project(this.configPath, this.csPath, this.dartPath, {doCSharp, doDart});
+  Project(this.configPath, this.csPath, this.dartPath,
+      {this.doCSharp = true, this.doDart = true});
 }

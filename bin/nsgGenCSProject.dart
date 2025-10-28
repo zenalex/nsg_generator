@@ -67,7 +67,7 @@ class NsgGenCSProject {
       codeList.add(
           '    <PackageReference Include="Microsoft.Owin.Cors" Version="4.2.3" />');
       codeList.add(
-          '    <PackageReference Include="Microsoft.Owin.Security.Jwt" Version="4.2.3 />');
+          '    <PackageReference Include="Microsoft.Owin.Security.Jwt" Version="4.2.3" />');
       codeList.add(
           '    <PackageReference Include="Microsoft.Owin.Security.OAuth" Version="4.2.3" />');
     }

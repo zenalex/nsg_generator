@@ -65,6 +65,13 @@ class NsgGenerator {
         'net8.0',
         'net9.0'
       ].contains(targetFramework);
+      currentProperty = 'cSharpNamespace';
+      var doCSharp = Misc.parseBoolOrTrue(parsedJson['doCSharp']);
+      var cSharpNamespace = parsedJson['cSharpNamespace'] ?? '';
+      if (doCSharp && cSharpNamespace.toString().isEmpty) {
+        throw Exception(
+            'Missing property $currentProperty while doCSharp == true');
+      }
       var enums = <NsgGenEnum>[];
       if (parsedJson.containsKey('enums')) {
         currentProperty = 'enums';
@@ -83,7 +90,7 @@ class NsgGenerator {
           cSharpPath: parsedJson['cSharpPath'] ?? '',
           cSharpNamespace: parsedJson['cSharpNamespace'] ?? '',
           dartPath: parsedJson['dartPath'] ?? '',
-          doCSharp: Misc.parseBoolOrTrue(parsedJson['doCSharp']),
+          doCSharp: doCSharp,
           doDart: Misc.parseBoolOrTrue(parsedJson['doDart']),
           applicationName: parsedJson['applicationName'] ?? 'application',
           useLocalization: Misc.parseBool(parsedJson['useLocalization']),
