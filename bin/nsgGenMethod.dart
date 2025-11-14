@@ -157,10 +157,10 @@ class NsgGenMethod {
       if (controller.useAuthorization && authorize != 'none') {
         codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
-            'return await controller.Post<${genDataItem.typeName}>(user, NsgFindParams.From(Request.GetQueryNameValuePairs()), items);');
+            'return await controller.Post<${genDataItem.typeName}>(user, NsgFindParams.From(Request.GetQueryNameValuePairs(), threadId), items);');
       } else {
         codeList.add(
-            'return await controller.Post<${genDataItem.typeName}>(null, NsgFindParams.From(Request.GetQueryNameValuePairs()), items);');
+            'return await controller.Post<${genDataItem.typeName}>(null, NsgFindParams.From(Request.GetQueryNameValuePairs(), threadId), items);');
       }
       codeList.add('}');
       codeList.add('');

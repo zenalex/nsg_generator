@@ -97,6 +97,7 @@ class NsgGenController {
         codeList.add('using System;');
         codeList.add('using System.Collections.Generic;');
         codeList.add('using System.Linq;');
+        codeList.add('using System.Net;');
         codeList.add('using System.Net.Http;');
         codeList.add('using System.Threading;');
         codeList.add('using System.Threading.Tasks;');
@@ -146,6 +147,7 @@ class NsgGenController {
         codeList.add('AuthImplInterface authController;');
 
         codeList.add('private readonly ILogger<$className> _logger;');
+        codeList.add('private int threadId;');
         codeList.add('public $className(ILogger<$className> logger)');
         codeList.add('{');
         codeList.add('_logger = logger;');
@@ -156,6 +158,7 @@ class NsgGenController {
         } else {
           codeList.add('authController = AuthController.CurrentController;');
         }
+        codeList.add('threadId = Thread.CurrentThread.ManagedThreadId;');
         if (nsgGenerator.newTableLogic) {
           codeList.add('NsgServerDataItem.NewTableLogic = true;');
         }
