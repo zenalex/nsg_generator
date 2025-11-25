@@ -49,8 +49,8 @@ class NsgGenerator {
   factory NsgGenerator.fromJson(Map<String, dynamic> parsedJson) {
     String currentProperty = 'targetFramework';
     try {
-      var targetFramework = parsedJson['targetFramework'] ?? 'net5.0';
-      if (targetFramework.isEmpty) targetFramework = 'net5.0';
+      var targetFramework = parsedJson['targetFramework'] ?? 'net10.0';
+      if (targetFramework.isEmpty) targetFramework = 'net10.0';
       var isDotNetCore = [
         'netcoreapp1.0',
         'netcoreapp1.1',
@@ -63,7 +63,8 @@ class NsgGenerator {
         'net6.0',
         'net7.0',
         'net8.0',
-        'net9.0'
+        'net9.0',
+        'net10.0'
       ].contains(targetFramework);
       currentProperty = 'cSharpNamespace';
       var doCSharp = Misc.parseBoolOrTrue(parsedJson['doCSharp']);
