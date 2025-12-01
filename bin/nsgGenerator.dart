@@ -21,6 +21,7 @@ class NsgGenerator {
   final List<NsgGenController> controllers;
   final List<NsgGenEnum> enums;
   final Map<String, NsgGenDataItem> dataItems = Map();
+  final Map<String, String> localizationDict = Map();
   bool doCSharp = true;
   bool doDart = true;
   bool forceOverwrite = false;

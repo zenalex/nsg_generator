@@ -162,8 +162,10 @@ class NsgGenEnum {
       var lowerCaseClassName = Misc.getDartName(className);
       values!.forEach((i) {
         var iCodeName = Misc.getDartName(i.codeName);
+        var localizationKey = '${lowerCaseClassName}_$iCodeName';
         codeList.add(
-            '  static $className get ${Misc.getDartName(i.codeName)} => $className(${i.value}, (AppLocalizations.of(Get.context!) as AppLocalizations).${lowerCaseClassName}_$iCodeName);');
+            '  static $className get ${Misc.getDartName(i.codeName)} => $className(${i.value}, (AppLocalizations.of(Get.context!) as AppLocalizations).$localizationKey);');
+        nsgGenerator.localizationDict[localizationKey] = i.name;
       });
     } else {
       values!.forEach((i) {

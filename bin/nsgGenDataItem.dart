@@ -18,6 +18,7 @@ class NsgGenDataItem {
   final String databaseType;
   final String databaseTypeNamespace;
   final String presentation;
+  final bool useLocalization;
   final int maxHttpGetItems;
   final String periodFieldName;
   final String lastEditedFieldName;
@@ -40,6 +41,7 @@ class NsgGenDataItem {
       this.databaseType = '',
       this.databaseTypeNamespace = '',
       this.presentation = '',
+      this.useLocalization = false,
       this.maxHttpGetItems = 100,
       this.periodFieldName = '',
       this.lastEditedFieldName = '',
@@ -71,6 +73,7 @@ class NsgGenDataItem {
           databaseType: parsedJson['databaseType'] ?? '',
           databaseTypeNamespace: parsedJson['databaseTypeNamespace'] ?? '',
           presentation: parsedJson['presentation'] ?? '',
+          useLocalization: Misc.parseBool(parsedJson['useLocalization']),
           maxHttpGetItems: parsedJson['maxHttpGetItems'] ?? 100,
           periodFieldName: parsedJson['periodFieldName'] ?? '',
           lastEditedFieldName: parsedJson['lastEditedFieldName'] ?? '',
@@ -767,6 +770,11 @@ class NsgGenDataItem {
         fieldsOnClient.any((field) => field.type.startsWith('Enum'))) {
       codeList.add("import '../enums.dart';");
     }
+    if ((useLocalization || nsgGenerator.useLocalization) &&
+        fields.any((field) => field.writeOnClient && field.userVisibility)) {
+      codeList.add('import \'package:get/get.dart\';');
+      codeList.add('import \'../../l10n/app_localizations.dart\';');
+    }
     if (fieldsOnClient.any((field) => field.type == 'String<FilePath>')) {
       codeList.add("import '../options/server_options.dart';");
     }
@@ -796,19 +804,45 @@ class NsgGenDataItem {
     });
     codeList.add('');
     var codeListFields = <String>[];
-    if (baseObject != null) {
-      baseObject.fields.forEach((_) {
-        if (!_.writeOnClient) return;
+    if (useLocalization || nsgGenerator.useLocalization) {
+      if (baseObject != null) {
+        var lowerCaseBaseClassName = Misc.getDartName(baseObject.typeName);
+        baseObject.fields.forEach((_) {
+          if (!_.writeOnClient) return;
+          if (_.userVisibility) {
+            var iCodeName = Misc.getDartName(_.name);
+            var localizationKey = '${lowerCaseBaseClassName}_$iCodeName';
+            codeListFields.add(
+                '    ${_.fieldNameVar}: (AppLocalizations.of(Get.context!) as AppLocalizations).$localizationKey,');
+            nsgGenerator.localizationDict[localizationKey] = _.userName;
+          }
+        });
+      }
+      var lowerCaseClassName = Misc.getDartName(typeName);
+      fieldsOnClient.forEach((_) {
+        if (_.userVisibility) {
+          var iCodeName = Misc.getDartName(_.name);
+          var localizationKey = '${lowerCaseClassName}_$iCodeName';
+          codeListFields.add(
+              '    ${_.fieldNameVar}: (AppLocalizations.of(Get.context!) as AppLocalizations).$localizationKey,');
+          nsgGenerator.localizationDict[localizationKey] = _.userName;
+        }
+      });
+    } else {
+      if (baseObject != null) {
+        baseObject.fields.forEach((_) {
+          if (!_.writeOnClient) return;
+          if (_.userVisibility) {
+            codeListFields.add("    ${_.fieldNameVar}: '${_.userName}',");
+          }
+        });
+      }
+      fieldsOnClient.forEach((_) {
         if (_.userVisibility) {
           codeListFields.add("    ${_.fieldNameVar}: '${_.userName}',");
         }
       });
     }
-    fieldsOnClient.forEach((_) {
-      if (_.userVisibility) {
-        codeListFields.add("    ${_.fieldNameVar}: '${_.userName}',");
-      }
-    });
     if (codeListFields.isNotEmpty) {
       codeList.add('  static final Map<String, String> fieldNameDict = {');
       codeListFields.forEach((i) {
@@ -897,12 +931,25 @@ class NsgGenDataItem {
       predefinedObjects.forEach((_) {
         codeList.add("    addPredefined(${Misc.getDartName(_.name)});");
       });
-      fieldsOnClient.forEach((_) {
-        if (_.userVisibility) {
-          codeList.add(
-              "    fieldList.fields[${_.fieldNameVar}]?.presentation = '${_.userName}';");
-        }
-      });
+      if (useLocalization || nsgGenerator.useLocalization) {
+        var lowerCaseClassName = Misc.getDartName(typeName);
+        fieldsOnClient.forEach((_) {
+          if (_.userVisibility) {
+            var iCodeName = Misc.getDartName(_.name);
+            var localizationKey = '${lowerCaseClassName}_$iCodeName';
+            codeList.add(
+                '    fieldList.fields[${_.fieldNameVar}]?.presentation = (AppLocalizations.of(Get.context!) as AppLocalizations).$localizationKey;');
+            nsgGenerator.localizationDict[localizationKey] = _.userName;
+          }
+        });
+      } else {
+        fieldsOnClient.forEach((_) {
+          if (_.userVisibility) {
+            codeList.add(
+                "    fieldList.fields[${_.fieldNameVar}]?.presentation = '${_.userName}';");
+          }
+        });
+      }
       codeList.add('  }');
       codeList.add('');
     }
