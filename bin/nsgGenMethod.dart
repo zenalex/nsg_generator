@@ -69,22 +69,29 @@ class NsgGenMethod {
 
   Future generateCode(List<String> codeList, NsgGenerator nsgGenerator,
       NsgGenController controller) async {
+    // Приоритет: authorize из data item (user_item.json), иначе из метода (generation_config).
+    final effectiveAuthorize = genDataItem.authorize != 'none'
+        ? genDataItem.authorize
+        : authorize;
     String authorizeAttr = '';
     if (allowGetter || allowPost || allowDelete) {
       Misc.writeDescription(codeList, description, true);
 
       //Authorization
       if (!controller.useAuthorization) {
-      } else if (authorize == 'anonymous') {
-        authorizeAttr = '[Authorize]';
-      } else if (authorize == 'user') {
+      } else if (effectiveAuthorize == 'anonymous') {
+        authorizeAttr = '[AllowAnonymous]';
+      } else if (effectiveAuthorize == 'user') {
         authorizeAttr = '[Authorize(Roles = UserRoles.User)]';
-      } else if (authorize == 'admin') {
+      } else if (effectiveAuthorize == 'admin') {
         authorizeAttr = '[Authorize(Roles = UserRoles.Admin)]';
-      } else if (authorize != 'none') {
+      } else if (effectiveAuthorize != 'none') {
         throw Exception('Wrong authorization type in method $name');
       }
     }
+    final needUser = controller.useAuthorization &&
+        effectiveAuthorize != 'none' &&
+        effectiveAuthorize != 'anonymous';
     if (allowGetter) {
       codeList.add('[Route("$apiPrefix")]');
       //Authorization
@@ -105,7 +112,7 @@ class NsgGenMethod {
       codeList.add(
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name([FromBody] NsgFindParams findParams)');
       codeList.add('{');
-      if (controller.useAuthorization && authorize != 'none') {
+      if (needUser) {
         codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
             'return await controller.Get<${genDataItem.typeName}>(user, findParams);');
@@ -130,7 +137,7 @@ class NsgGenMethod {
       codeList.add(
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}Create([FromBody] NsgFindParams findParams)');
       codeList.add('{');
-      if (controller.useAuthorization && authorize != 'none') {
+      if (needUser) {
         codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
             'return await controller.Create<${genDataItem.typeName}>(user, findParams);');
@@ -154,7 +161,7 @@ class NsgGenMethod {
       codeList.add(
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}Post([FromBody] IEnumerable<${genDataItem.typeName}> items)');
       codeList.add('{');
-      if (controller.useAuthorization && authorize != 'none') {
+      if (needUser) {
         codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
             'return await controller.Post<${genDataItem.typeName}>(user, NsgFindParams.From(Request.GetQueryNameValuePairs(), threadId), items);');
@@ -179,7 +186,7 @@ class NsgGenMethod {
       codeList.add(
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}Delete([FromBody] IEnumerable<${genDataItem.typeName}> items)');
       codeList.add('{');
-      if (controller.useAuthorization && authorize != 'none') {
+      if (needUser) {
         codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
             'return await controller.Delete<${genDataItem.typeName}>(user, items);');

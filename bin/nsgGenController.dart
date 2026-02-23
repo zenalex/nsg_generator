@@ -123,6 +123,8 @@ class NsgGenController {
           codeList.add(
               'using AuthorizeAttribute = System.Web.Http.AuthorizeAttribute;');
           codeList.add(
+              'using AllowAnonymousAttribute = System.Web.Http.AllowAnonymousAttribute;');
+          codeList.add(
               'using ActionNameAttribute = System.Web.Http.ActionNameAttribute;');
         }
         codeList.add('using ${nsgGenerator.cSharpNamespace};');
@@ -238,7 +240,7 @@ class NsgGenController {
 
         var fn = '${nsgGenerator.cSharpPath}/$className.cs';
         //if (!File(fn).existsSync()) {
-        await File(fn).writeAsString(codeList.join('\r\n'));
+        await Misc.writeFileIfChanged(fn, codeList.join('\r\n'));
         //}
         await generateInterfaceData(nsgGenerator);
         await generateImplController(nsgGenerator);
@@ -316,7 +318,7 @@ class NsgGenController {
     Misc.indentCSharpCode(codeList);
     var fn = '${nsgGenerator.cSharpPath}/${className}Interface.cs';
     //if (!File(fn).existsSync()) {
-    await File(fn).writeAsString(codeList.join('\r\n'));
+    await Misc.writeFileIfChanged(fn, codeList.join('\r\n'));
     //}
   }
 
@@ -418,7 +420,7 @@ class NsgGenController {
     Misc.indentCSharpCode(codeList);
     var fn =
         '${nsgGenerator.cSharpPath}/Controllers/$implControllerName.Designer.cs';
-    await File(fn).writeAsString(codeList.join('\r\n'));
+    await Misc.writeFileIfChanged(fn, codeList.join('\r\n'));
 
     // ${implControllerName}.cs
     codeList.clear();
@@ -498,7 +500,7 @@ class NsgGenController {
     Misc.indentCSharpCode(codeList);
     fn = '${nsgGenerator.cSharpPath}/Controllers/$implControllerName.cs';
     if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
-      await File(fn).writeAsString(codeList.join('\r\n'));
+      await Misc.writeFileIfChanged(fn, codeList.join('\r\n'));
     }
   }
 
@@ -571,7 +573,7 @@ class NsgGenController {
     var fn =
         '${nsgGenerator.cSharpPath}/Controllers/$implAuthControllerName.cs';
     if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
-      await File(fn).writeAsString(codeList.join('\r\n'));
+      await Misc.writeFileIfChanged(fn, codeList.join('\r\n'));
     }
 
     codeList.clear();
@@ -592,7 +594,7 @@ class NsgGenController {
     Misc.indentCSharpCode(codeList);
     fn = '${nsgGenerator.cSharpPath}/Controllers/ServerTokenItem.cs';
     if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
-      await File(fn).writeAsString(codeList.join('\r\n'));
+      await Misc.writeFileIfChanged(fn, codeList.join('\r\n'));
     }
   }
 
@@ -626,9 +628,9 @@ class NsgGenController {
           "export '${nsgGenerator.genPathName}/${Misc.getDartUnderscoreName(_.genDataItem.typeName)}.g.dart';");
     });
 
-    await File(
-            '${nsgGenerator.dartPath}/${Misc.getDartUnderscoreName(className)}_model.dart')
-        .writeAsString(codeList.join('\r\n'));
+    await Misc.writeFileIfChanged(
+        '${nsgGenerator.dartPath}/${Misc.getDartUnderscoreName(className)}_model.dart',
+        codeList.join('\r\n'));
   }
 
   Future generateInitController(NsgGenerator nsgGenerator) async {
@@ -712,9 +714,9 @@ class NsgGenController {
     codeList.add('}');
     codeList.add('');
 
-    await File(
-            '${nsgGenerator.dartPathGen}/${Misc.getDartUnderscoreName(className)}.g.dart')
-        .writeAsString(codeList.join('\r\n'));
+    await Misc.writeFileIfChanged(
+        '${nsgGenerator.dartPathGen}/${Misc.getDartUnderscoreName(className)}.g.dart',
+        codeList.join('\r\n'));
 
     //----------------------------------------------------------
     //generate main class ControllerName.dart
@@ -731,7 +733,7 @@ class NsgGenController {
     var fn =
         '${nsgGenerator.dartPath}/${Misc.getDartUnderscoreName(className)}.dart';
     if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
-      await File(fn).writeAsString(codeList.join('\r\n'));
+      await Misc.writeFileIfChanged(fn, codeList.join('\r\n'));
     }
   }
 
@@ -753,9 +755,10 @@ class NsgGenController {
     codeList.add('  static String yandexMetricaId = "";');
     codeList.add('}');
 
-    var file = File('${nsgGenerator.dartPath}/options/server_options.dart');
+    var path = '${nsgGenerator.dartPath}/options/server_options.dart';
+    var file = File(path);
     if (await file.exists() && !nsgGenerator.forceOverwrite) return;
-    await file.writeAsString(codeList.join('\r\n'));
+    await Misc.writeFileIfChanged(path, codeList.join('\r\n'));
   }
 
   void addRegisterDataItems(NsgGenerator nsgGenerator, List<String> codeList) {

@@ -1,4 +1,45 @@
+import 'dart:io';
+
 class Misc {
+  /// Полный путь к файлам, содержимое которых реально изменилось при генерации.
+  static List<String> changedFiles = [];
+
+  /// Записывает файл и при реальном изменении содержимого добавляет полный путь в [changedFiles].
+  static Future<void> writeFileIfChanged(String filePath, String content) async {
+    final file = File(filePath);
+    final absolutePath = file.absolute.path;
+    String existing = '';
+    if (await file.exists()) {
+      existing = await file.readAsString();
+    }
+    final normalizedNew = content.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    final normalizedExisting = existing.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    if (normalizedNew != normalizedExisting) {
+      await file.writeAsString(content);
+      if (!changedFiles.contains(absolutePath)) {
+        changedFiles.add(absolutePath);
+      }
+    }
+  }
+
+  /// Синхронный вариант для записи с отслеживанием изменений.
+  static void writeFileIfChangedSync(String filePath, String content) {
+    final file = File(filePath);
+    final absolutePath = file.absolute.path;
+    String existing = '';
+    if (file.existsSync()) {
+      existing = file.readAsStringSync();
+    }
+    final normalizedNew = content.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    final normalizedExisting = existing.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    if (normalizedNew != normalizedExisting) {
+      file.writeAsStringSync(content);
+      if (!changedFiles.contains(absolutePath)) {
+        changedFiles.add(absolutePath);
+      }
+    }
+  }
+
   static void indentCSharpCode(List<String> codeList) {
     var indentMultiplier = 0;
     for (var i = 0; i < codeList.length; i++) {

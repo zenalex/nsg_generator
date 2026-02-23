@@ -77,7 +77,7 @@ class NsgGenCSProject {
     codeList.add('');
     codeList.add('');
     codeList.add('</Project>');
-    file.writeAsString(codeList.join('\r\n'));
+    Misc.writeFileIfChangedSync(csprojPath, codeList.join('\r\n'));
   }
 
   static void _generateProgramCS(NsgGenerator nsgGenerator) {
@@ -174,7 +174,7 @@ class NsgGenCSProject {
       codeList.add('}');
     }
     Misc.indentCSharpCode(codeList);
-    file.writeAsString(codeList.join('\r\n'));
+    Misc.writeFileIfChangedSync('${nsgGenerator.cSharpPath}/Program.cs', codeList.join('\r\n'));
   }
 
   static void _generateStartupCS(NsgGenerator nsgGenerator) {
@@ -346,6 +346,6 @@ class NsgGenCSProject {
       codeList.add('}');
     }
     Misc.indentCSharpCode(codeList);
-    file.writeAsString(codeList.join('\r\n'));
+    Misc.writeFileIfChangedSync('${nsgGenerator.cSharpPath}/Startup.cs', codeList.join('\r\n'));
   }
 }

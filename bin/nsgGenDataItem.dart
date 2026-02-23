@@ -18,6 +18,8 @@ class NsgGenDataItem {
   final String databaseType;
   final String databaseTypeNamespace;
   final String presentation;
+  /// Авторизация для этого типа данных (anonymous, user, admin, none). Учитывается при генерации маршрутов контроллера.
+  final String authorize;
   final bool useLocalization;
   final int maxHttpGetItems;
   final String periodFieldName;
@@ -41,6 +43,7 @@ class NsgGenDataItem {
       this.databaseType = '',
       this.databaseTypeNamespace = '',
       this.presentation = '',
+      this.authorize = 'none',
       this.useLocalization = false,
       this.maxHttpGetItems = 100,
       this.periodFieldName = '',
@@ -73,6 +76,7 @@ class NsgGenDataItem {
           databaseType: parsedJson['databaseType'] ?? '',
           databaseTypeNamespace: parsedJson['databaseTypeNamespace'] ?? '',
           presentation: parsedJson['presentation'] ?? '',
+          authorize: (parsedJson['authorize'] ?? 'none').toString().toLowerCase(),
           useLocalization: Misc.parseBool(parsedJson['useLocalization']),
           maxHttpGetItems: parsedJson['maxHttpGetItems'] ?? 100,
           periodFieldName: parsedJson['periodFieldName'] ?? '',
@@ -626,7 +630,7 @@ class NsgGenDataItem {
     var fn = '${nsgGenerator.cSharpPath}/Models/$typeName.Designer.cs';
     //if (!File(fn).existsSync()) {
     Misc.indentCSharpCode(codeList);
-    await File(fn).writeAsString(codeList.join('\r\n'));
+    await Misc.writeFileIfChanged(fn, codeList.join('\r\n'));
     //}
 
     // ${typeName}.cs
@@ -744,7 +748,7 @@ class NsgGenDataItem {
     fn = '${nsgGenerator.cSharpPath}/Models/$typeName.cs';
     if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
       Misc.indentCSharpCode(codeList);
-      await File(fn).writeAsString(codeList.join('\r\n'));
+      await Misc.writeFileIfChanged(fn, codeList.join('\r\n'));
     }
   }
 
@@ -1004,9 +1008,9 @@ class NsgGenDataItem {
     codeList.add('}');
     codeList.add('');
 
-    await File(
-            '${nsgGenerator.dartPathGen}/${Misc.getDartUnderscoreName(typeName)}.g.dart')
-        .writeAsString(codeList.join('\r\n'));
+    await Misc.writeFileIfChanged(
+        '${nsgGenerator.dartPathGen}/${Misc.getDartUnderscoreName(typeName)}.g.dart',
+        codeList.join('\r\n'));
     //----------------------------------------------------------
     //generate main item class data_item.dart
     //----------------------------------------------------------
@@ -1020,7 +1024,7 @@ class NsgGenDataItem {
     var fn =
         '${nsgGenerator.dartPath}/${Misc.getDartUnderscoreName(typeName)}.dart';
     if (!File(fn).existsSync() || nsgGenerator.forceOverwrite) {
-      await File(fn).writeAsString(codeList.join('\r\n'));
+      await Misc.writeFileIfChanged(fn, codeList.join('\r\n'));
     }
   }
 }

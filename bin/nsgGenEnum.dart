@@ -101,7 +101,7 @@ class NsgGenEnum {
 
         var fn = '${nsgGenerator.cSharpPath}/Enums/$className.cs';
         //if (!File(fn).existsSync()) {
-        await File(fn).writeAsString(codeList.join('\r\n'));
+        await Misc.writeFileIfChanged(fn, codeList.join('\r\n'));
         //}
       }
       if (nsgGenerator.doDart) {
@@ -142,8 +142,8 @@ class NsgGenEnum {
           "export 'enums/${Misc.getDartUnderscoreName(_.className)}.dart';");
     });
 
-    await File('${nsgGenerator.dartPath}/enums.dart')
-        .writeAsString(codeList.join('\r\n'));
+    await Misc.writeFileIfChanged(
+        '${nsgGenerator.dartPath}/enums.dart', codeList.join('\r\n'));
   }
 
   Future generateEnumDart(NsgGenerator nsgGenerator) async {
@@ -187,9 +187,9 @@ class NsgGenEnum {
     codeList.add('  }');
     codeList.add('}');
     codeList.add('');
-    await File(
-            '${nsgGenerator.dartPath}/enums/${Misc.getDartUnderscoreName(className)}.dart')
-        .writeAsString(codeList.join('\r\n'));
+    await Misc.writeFileIfChanged(
+        '${nsgGenerator.dartPath}/enums/${Misc.getDartUnderscoreName(className)}.dart',
+        codeList.join('\r\n'));
   }
 }
 

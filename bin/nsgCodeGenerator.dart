@@ -84,10 +84,18 @@ Future startGenerator(NsgGeneratorArgs args) async {
   }
   print('STARTING ${DateTime.now()}');
   print('controllers: ${generator.controllers.length}');
+  Misc.changedFiles.clear();
   try {
     await generator.writeCode(workingDir);
   } finally {
     if (Misc.warnings.length > 0) print(Misc.warnings.join('\n'));
-    print('FINISHED ${DateTime.now()}\n');
+    print('FINISHED ${DateTime.now()}');
+    if (Misc.changedFiles.isNotEmpty) {
+      print('\n--- Изменённые файлы (${Misc.changedFiles.length}) ---');
+      for (final path in Misc.changedFiles) {
+        print(path);
+      }
+    }
+    print('');
   }
 }

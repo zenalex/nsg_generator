@@ -1,4 +1,6 @@
 import 'dart:io';
+
+import 'misc.dart';
 import 'nsgGenerator.dart';
 
 class NsgGenLocalization {
@@ -42,7 +44,7 @@ class NsgGenLocalization {
         l10n.createSync();
       }
 
-      await arbFile.writeAsString(codeList.join('\r\n'));
+      await Misc.writeFileIfChanged(arbFile.path, codeList.join('\r\n'));
     }
   }
 }
