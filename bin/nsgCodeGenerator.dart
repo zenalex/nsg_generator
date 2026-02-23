@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+
 import 'misc.dart';
 import 'nsgGeneratorArgs.dart';
 import 'nsgGenerator.dart';
@@ -47,10 +49,22 @@ void main(List<String> args) async {
 }
 
 Future startGenerator(NsgGeneratorArgs args) async {
-  Directory.current = args.serviceConfigPath;
+  print('args: ${args.serviceConfigPath}');
+  // Support both: path to config file or path to directory containing generation_config.json
+  final String workingDir;
+  final String configFilePath;
+  final normalized = args.serviceConfigPath.replaceAll(r'\', '/');
+  if (normalized.endsWith('generation_config.json')) {
+    workingDir = p.dirname(args.serviceConfigPath);
+    configFilePath = args.serviceConfigPath;
+  } else {
+    workingDir = args.serviceConfigPath;
+    configFilePath = p.join(args.serviceConfigPath, 'generation_config.json');
+  }
+  Directory.current = workingDir;
   NsgGenerator generator;
   try {
-    var text = await readFile(args.serviceConfigPath);
+    var text = await File(configFilePath).readAsString();
     generator = NsgGenerator.fromJson(json.decode(text));
   } catch (e) {
     print('--- ERROR parsing generator_config.json ---');
@@ -71,13 +85,9 @@ Future startGenerator(NsgGeneratorArgs args) async {
   print('STARTING ${DateTime.now()}');
   print('controllers: ${generator.controllers.length}');
   try {
-    await generator.writeCode(args.serviceConfigPath);
+    await generator.writeCode(workingDir);
   } finally {
     if (Misc.warnings.length > 0) print(Misc.warnings.join('\n'));
     print('FINISHED ${DateTime.now()}\n');
   }
-}
-
-Future<String> readFile(String path) async {
-  return await File('$path/generation_config.json').readAsString();
 }

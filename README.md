@@ -876,14 +876,14 @@ Uri сервера
 ## Запуск
 Генерацию можно запустить прямо из консоли PowerShell:
 ```
-dart bin\nsgCodeGenerator.dart C:\GeneratorConfig [-csharp] [-dart] [-force|-overwrite|-forceoverwrite] [csharp:] [dart:]
+dart bin\nsgCodeGenerator.dart <путь> [-csharp] [-dart] [-force|-overwrite|-forceoverwrite] [csharp:] [dart:]
 ```
 , где
 - ```bin\nsgCodeGenerator.dart``` - путь к точке входа программы,
-- ```C:\GeneratorConfig``` - путь к папке config
+- ```<путь>``` - путь к папке config **или** полный путь к файлу `generation_config.json` (например, `C:\GeneratorConfig` или `C:\GeneratorConfig\generation_config.json`)
 
 ### Аргументы командной строки:
-Путь к папке config всегда идет первым агрументом. Все остальные - в произвольном порядке.
+Путь к папке config или к файлу generation_config.json всегда идёт первым аргументом. Все остальные - в произвольном порядке.
 - Генерировать только C# (если не указано также `-dart`)
 ```
 -csharp
