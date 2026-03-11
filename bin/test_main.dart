@@ -135,6 +135,12 @@ class Project {
       'C:/Users/pro5/source/repos/titan_quarry_control/config',
       'C:/Users/pro5/source/repos/titan_quarry_control_server',
       'C:/Users/pro5/source/repos/titan_quarry_control/lib/model');
+  static Project NsgGatewayServer = Project(
+      'C:/Users/pro5/source/repos/NsgGatewayServer/json',
+      'C:/Users/pro5/source/repos/NsgGatewayServer',
+      '',
+      doDart: false);
+
   String configPath;
   String csPath;
   String dartPath;

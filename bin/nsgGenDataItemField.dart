@@ -195,12 +195,12 @@ class NsgGenDataItemField {
     }
   }
 
+  static List<String> _overriddenFields = ['id', 'ownerid', 'lastchangetimelocal'];
   void writeGetter(NsgGenController nsgGenController, NsgGenDataItem dataItem,
       List<String> codeList) {
-    if (['id', 'ownerid'].contains(name.toLowerCase())) {
+    if (_overriddenFields.contains(name.toLowerCase())) {
       codeList.add('  @override');
-    }
-    if (dataItem.entityType != NsgGenDataItemEntityType.dataItem &&
+    } else if (dataItem.entityType != NsgGenDataItemEntityType.dataItem &&
         NsgGenDataItemEntityType.typeFields[dataItem.entityType]!
             .contains(name)) {
       codeList.add('  @override');
@@ -274,12 +274,10 @@ class NsgGenDataItemField {
 
   void writeSetter(NsgGenController nsgGenController, NsgGenDataItem dataItem,
       List<String> codeList) {
-    if (['id', 'ownerid'].contains(name.toLowerCase())) {
+    if (_overriddenFields.contains(name.toLowerCase())) {
       codeList.add('  @override');
-    }
-    if (dataItem.entityType != NsgGenDataItemEntityType.dataItem &&
+    } else if (dataItem.entityType != NsgGenDataItemEntityType.dataItem &&
         !type.startsWith('List') &&
-        allowPost &&
         NsgGenDataItemEntityType.typeFields[dataItem.entityType]!
             .contains(name)) {
       codeList.add('  @override');

@@ -18,6 +18,7 @@ class NsgGenDataItem {
   final String databaseType;
   final String databaseTypeNamespace;
   final String presentation;
+
   /// Авторизация для этого типа данных (anonymous, user, admin, none). Учитывается при генерации маршрутов контроллера.
   final String authorize;
   final bool useLocalization;
@@ -76,7 +77,8 @@ class NsgGenDataItem {
           databaseType: parsedJson['databaseType'] ?? '',
           databaseTypeNamespace: parsedJson['databaseTypeNamespace'] ?? '',
           presentation: parsedJson['presentation'] ?? '',
-          authorize: (parsedJson['authorize'] ?? 'none').toString().toLowerCase(),
+          authorize:
+              (parsedJson['authorize'] ?? 'none').toString().toLowerCase(),
           useLocalization: Misc.parseBool(parsedJson['useLocalization']),
           maxHttpGetItems: parsedJson['maxHttpGetItems'] ?? 100,
           periodFieldName: parsedJson['periodFieldName'] ?? '',
@@ -889,18 +891,8 @@ class NsgGenDataItem {
       }
       fieldsOnClient.forEach((_) {
         if (_.isPrimary) {
-          if (_.type == 'DateTime' && _.useDate != _.useTime) {
-            if (!_.useDate) {
-              codeList.add(
-                  '    addField(${_.nsgDataType}(${_.fieldNameVar}, useDate: false), primaryKey: ${_.isPrimary});');
-            } else {
-              codeList.add(
-                  '    addField(${_.nsgDataType}(${_.fieldNameVar}, useTime: false), primaryKey: ${_.isPrimary});');
-            }
-          } else {
-            codeList.add(
-                '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
-          }
+          codeList.add(
+              '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
         } else {
           if (_.isString &&
               _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
@@ -925,6 +917,14 @@ class NsgGenDataItem {
             } else {
               codeList.add(
                   '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+            }
+          } else if (_.type == 'DateTime' && _.useDate != _.useTime) {
+            if (!_.useDate) {
+              codeList.add(
+                  '    addField(${_.nsgDataType}(${_.fieldNameVar}, useDate: false), primaryKey: ${_.isPrimary});');
+            } else {
+              codeList.add(
+                  '    addField(${_.nsgDataType}(${_.fieldNameVar}, useTime: false), primaryKey: ${_.isPrimary});');
             }
           } else {
             codeList.add(
