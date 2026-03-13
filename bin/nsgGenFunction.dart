@@ -221,6 +221,8 @@ class NsgGenFunction {
       codeList.add('[Authorize]');
     } else if (authorize == 'user') {
       codeList.add('[Authorize(Roles = UserRoles.User)]');
+    } else if (authorize == 'admin') {
+      codeList.add('[Authorize(Roles = UserRoles.Admin)]');
     } else if (authorize != 'none') {
       throw Exception('Wrong authorization type in method $name()');
     }
