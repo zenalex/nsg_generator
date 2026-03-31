@@ -11,6 +11,10 @@ class NsgGenMethod {
   final String description;
   final String apiPrefix;
   final String authorize;
+  final String authorizeGet;
+  final String authorizeCreate;
+  final String authorizePost;
+  final String authorizeDelete;
   final String getterType;
   final String dataTypeFlie;
   final bool allowGetter;
@@ -25,6 +29,10 @@ class NsgGenMethod {
       this.description = '',
       required this.apiPrefix,
       required this.authorize,
+      required this.authorizeGet,
+      required this.authorizeCreate,
+      required this.authorizePost,
+      required this.authorizeDelete,
       this.getterType = 'POST',
       required this.dataTypeFlie,
       this.allowGetter = true,
@@ -49,6 +57,10 @@ class NsgGenMethod {
               ? parsedJson['apiPrefix']
               : name,
           authorize: parsedJson['authorize'] ?? 'none',
+          authorizeGet: parsedJson['authorize.get'] ?? '',
+          authorizeCreate: parsedJson['authorize.create'] ?? '',
+          authorizePost: parsedJson['authorize.post'] ?? '',
+          authorizeDelete: parsedJson['authorize.delete'] ?? '',
           getterType: (parsedJson.containsKey('getterType')
                   ? parsedJson['getterType']
                   : parsedJson['type'] ?? 'POST')
@@ -67,36 +79,92 @@ class NsgGenMethod {
     }
   }
 
+  String? getAuthAttr(String authLevel) {
+    if (authLevel == 'anonymous') {
+      return '[AllowAnonymous]';
+    } else if (authLevel == 'user') {
+      return '[Authorize(Roles = UserRoles.User)]';
+    } else if (authLevel == 'admin') {
+      return '[Authorize(Roles = UserRoles.Admin)]';
+    } else if (authLevel == 'none') {
+      return '';
+    }
+    return null;
+  }
+
   Future generateCode(List<String> codeList, NsgGenerator nsgGenerator,
       NsgGenController controller) async {
     // Приоритет: authorize из data item (user_item.json), иначе из метода (generation_config).
-    final effectiveAuthorize = genDataItem.authorize != 'none'
-        ? genDataItem.authorize
-        : authorize;
-    String authorizeAttr = '';
+    final effectiveAuthorize =
+        genDataItem.authorize != 'none' ? genDataItem.authorize : authorize;
+    final effectiveAuthorizeGet =
+        authorizeGet.isNotEmpty ? authorizeGet : effectiveAuthorize;
+    final effectiveAuthorizeCreate =
+        authorizeCreate.isNotEmpty ? authorizeCreate : effectiveAuthorize;
+    final effectiveAuthorizePost =
+        authorizePost.isNotEmpty ? authorizePost : effectiveAuthorize;
+    final effectiveAuthorizeDelete =
+        authorizeDelete.isNotEmpty ? authorizeDelete : effectiveAuthorize;
+
+    String authorizeAttr,
+        authorizeAttrGet,
+        authorizeAttrCreate,
+        authorizeAttrPost,
+        authorizeAttrDelete;
+
     if (allowGetter || allowPost || allowDelete) {
       Misc.writeDescription(codeList, description, true);
 
       //Authorization
       if (!controller.useAuthorization) {
-      } else if (effectiveAuthorize == 'anonymous') {
-        authorizeAttr = '[AllowAnonymous]';
-      } else if (effectiveAuthorize == 'user') {
-        authorizeAttr = '[Authorize(Roles = UserRoles.User)]';
-      } else if (effectiveAuthorize == 'admin') {
-        authorizeAttr = '[Authorize(Roles = UserRoles.Admin)]';
-      } else if (effectiveAuthorize != 'none') {
-        throw Exception('Wrong authorization type in method $name');
+        authorizeAttr = '';
+      } else {
+        var _authorizeAttr = getAuthAttr(effectiveAuthorize);
+        if (_authorizeAttr == null) {
+          throw Exception('Wrong authorization type in method $name');
+        }
+        authorizeAttr = _authorizeAttr;
       }
+
+      //get
+      if (authorizeGet.isEmpty || !controller.useAuthorization) {
+        authorizeAttrGet = authorizeAttr;
+      } else {
+        authorizeAttrGet = getAuthAttr(authorizeGet) ?? authorizeAttr;
+      }
+
+      //create
+      if (authorizeCreate.isEmpty || !controller.useAuthorization) {
+        authorizeAttrCreate = authorizeAttr;
+      } else {
+        authorizeAttrCreate = getAuthAttr(authorizeCreate) ?? authorizeAttr;
+      }
+
+      //post
+      if (authorizePost.isEmpty || !controller.useAuthorization) {
+        authorizeAttrPost = authorizeAttr;
+      } else {
+        authorizeAttrPost = getAuthAttr(authorizePost) ?? authorizeAttr;
+      }
+
+      //delete
+      if (authorizeDelete.isEmpty || !controller.useAuthorization) {
+        authorizeAttrDelete = authorizeAttr;
+      } else {
+        authorizeAttrDelete = getAuthAttr(authorizeDelete) ?? authorizeAttr;
+      }
+    } else {
+      authorizeAttr = '';
+      authorizeAttrGet = '';
+      authorizeAttrCreate = '';
+      authorizeAttrPost = '';
+      authorizeAttrDelete = '';
     }
-    final needUser = controller.useAuthorization &&
-        effectiveAuthorize != 'none' &&
-        effectiveAuthorize != 'anonymous';
     if (allowGetter) {
       codeList.add('[Route("$apiPrefix")]');
       //Authorization
-      if (authorizeAttr.isNotEmpty) {
-        codeList.add(authorizeAttr);
+      if (authorizeAttrGet.isNotEmpty) {
+        codeList.add(authorizeAttrGet);
       }
       //POST or GET
       var apiType = 'HttpGet';
@@ -112,6 +180,10 @@ class NsgGenMethod {
       codeList.add(
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name([FromBody] NsgFindParams findParams)');
       codeList.add('{');
+
+      final needUser = controller.useAuthorization &&
+          effectiveAuthorizeGet != 'none' &&
+          effectiveAuthorizeGet != 'anonymous';
       if (needUser) {
         codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
@@ -128,8 +200,8 @@ class NsgGenMethod {
       genDataItem.allowCreate = allowCreate;
       codeList.add('[Route("$apiPrefix/Create")]');
       //Authorization
-      if (authorizeAttr.isNotEmpty) {
-        codeList.add(authorizeAttr);
+      if (authorizeAttrCreate.isNotEmpty) {
+        codeList.add(authorizeAttrCreate);
       }
       codeList.add('[HttpPost]');
       // codeList.add(
@@ -137,6 +209,10 @@ class NsgGenMethod {
       codeList.add(
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}Create([FromBody] NsgFindParams findParams)');
       codeList.add('{');
+
+      final needUser = controller.useAuthorization &&
+          effectiveAuthorizeCreate != 'none' &&
+          effectiveAuthorizeCreate != 'anonymous';
       if (needUser) {
         codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
@@ -152,8 +228,8 @@ class NsgGenMethod {
     if (allowPost) {
       codeList.add('[Route("$apiPrefix/Post")]');
       //Authorization
-      if (authorizeAttr.isNotEmpty) {
-        codeList.add(authorizeAttr);
+      if (authorizeAttrPost.isNotEmpty) {
+        codeList.add(authorizeAttrPost);
       }
       codeList.add('[HttpPost]');
       // codeList.add(
@@ -161,6 +237,10 @@ class NsgGenMethod {
       codeList.add(
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}Post([FromBody] IEnumerable<${genDataItem.typeName}> items)');
       codeList.add('{');
+
+      final needUser = controller.useAuthorization &&
+          effectiveAuthorizePost != 'none' &&
+          effectiveAuthorizePost != 'anonymous';
       if (needUser) {
         codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
@@ -177,8 +257,8 @@ class NsgGenMethod {
     if (allowDelete) {
       codeList.add('[Route("$apiPrefix/Delete")]');
       //Authorization
-      if (authorizeAttr.isNotEmpty) {
-        codeList.add(authorizeAttr);
+      if (authorizeAttrDelete.isNotEmpty) {
+        codeList.add(authorizeAttrDelete);
       }
       codeList.add('[HttpPost]');
       // codeList.add(
@@ -186,6 +266,10 @@ class NsgGenMethod {
       codeList.add(
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}Delete([FromBody] IEnumerable<${genDataItem.typeName}> items)');
       codeList.add('{');
+
+      final needUser = controller.useAuthorization &&
+          effectiveAuthorizeDelete != 'none' &&
+          effectiveAuthorizeDelete != 'anonymous';
       if (needUser) {
         codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
