@@ -319,6 +319,26 @@ Uri сервера
 "authorize": "user",
 ```
 
+Уровень прав для метода GET (имеет приоритет, если задан)  
+```json
+"authorize.get": "none",
+```
+
+Уровень прав для метода CREATE (имеет приоритет, если задан)  
+```json
+"authorize.create": "none",
+```
+
+Уровень прав для метода POST (имеет приоритет, если задан)  
+```json
+"authorize.post": "admin",
+```
+
+Уровень прав для метода DELETE (имеет приоритет, если задан)  
+```json
+"authorize.delete": "admin",
+```
+
 Тип HTTP-запроса на чтение (GET или POST)  
 ```json
 "getterType": "get",

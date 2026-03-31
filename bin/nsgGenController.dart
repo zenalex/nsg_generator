@@ -223,15 +223,28 @@ class NsgGenController {
         codeList.add('}');
         codeList.add('}');
         codeList.add('');
-        await Future.forEach<NsgGenMethod>(methods, (element) async {
-          currentStage = 'C# method ${element.name}';
-          await element.generateCode(codeList, nsgGenerator, this);
-        });
+        if (methods.isNotEmpty) {
+          codeList.add('#region Methods');
+          codeList.add('');
+          await Future.forEach<NsgGenMethod>(methods, (element) async {
+            currentStage = 'C# method ${element.name}';
+            await element.generateCode(codeList, nsgGenerator, this);
+          });
+          codeList.add('#endregion Methods');
+          codeList.add('');
+        }
 
-        await Future.forEach<NsgGenFunction>(functions, (element) async {
-          currentStage = 'C# function ${element.name}';
-          await element.generateControllerMethod(codeList, nsgGenerator, this);
-        });
+        if (functions.isNotEmpty) {
+          codeList.add('#region Functions');
+          codeList.add('');
+          await Future.forEach<NsgGenFunction>(functions, (element) async {
+            currentStage = 'C# function ${element.name}';
+            await element.generateControllerMethod(
+                codeList, nsgGenerator, this);
+          });
+          codeList.add('#endregion Functions');
+          codeList.add('');
+        }
         currentStage = 'C# controller $className';
 
         codeList.add('}');
