@@ -635,10 +635,14 @@ class NsgGenController {
   Future generateExportFile(NsgGenerator nsgGenerator) async {
     var codeList = <String>[];
     methods.forEach((_) {
-      codeList.add(
-          "export '${Misc.getDartUnderscoreName(_.genDataItem.typeName)}.dart';");
-      codeList.add(
-          "export '${nsgGenerator.genPathName}/${Misc.getDartUnderscoreName(_.genDataItem.typeName)}.g.dart';");
+      [
+        "export '${Misc.getDartUnderscoreName(_.genDataItem.typeName)}.dart';",
+        "export '${nsgGenerator.genPathName}/${Misc.getDartUnderscoreName(_.genDataItem.typeName)}.g.dart';"
+      ].forEach((exportStr) {
+        if (!codeList.contains(exportStr)) {
+          codeList.add(exportStr);
+        }
+      });
     });
 
     await Misc.writeFileIfChanged(
@@ -776,15 +780,20 @@ class NsgGenController {
 
   void addRegisterDataItems(NsgGenerator nsgGenerator, List<String> codeList) {
     methods.forEach((_) {
-      codeList.add('    NsgDataClient.client');
-      codeList.add(
-          '        .registerDataItem(${_.genDataItem.typeName}(), remoteProvider: provider);');
+      var registerDataItemStr =
+          '        .registerDataItem(${_.genDataItem.typeName}(), remoteProvider: provider);';
+      if (!codeList.contains(registerDataItemStr)) {
+        codeList.add('    NsgDataClient.client');
+        codeList.add(registerDataItemStr);
+      }
     });
     nsgGenerator.enums.forEach((_) {
-      codeList.add('    NsgDataClient.client');
-
-      codeList.add(
-          '        .registerDataItem(${_.className}(0, \'\'), remoteProvider: provider);');
+      var registerDataItemStr =
+          '        .registerDataItem(${_.className}(0, \'\'), remoteProvider: provider);';
+      if (!codeList.contains(registerDataItemStr)) {
+        codeList.add('    NsgDataClient.client');
+        codeList.add(registerDataItemStr);
+      }
     });
   }
 }
