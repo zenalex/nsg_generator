@@ -137,9 +137,10 @@ class NsgGenEnum {
   static Future generateExportFile(
       NsgGenerator nsgGenerator, List<NsgGenEnum> enums) async {
     var codeList = <String>[];
-    enums.forEach((_) {
+    // Dart 3: `_` is a wildcard pattern. Renamed to `e`.
+    enums.forEach((e) {
       codeList.add(
-          "export 'enums/${Misc.getDartUnderscoreName(_.className)}.dart';");
+          "export 'enums/${Misc.getDartUnderscoreName(e.className)}.dart';");
     });
 
     await Misc.writeFileIfChanged(

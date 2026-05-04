@@ -798,54 +798,54 @@ class NsgGenDataItem {
     }
     codeList.add('class ${typeName}Generated extends $extend {');
     if (baseObject != null) {
-      baseObject.fields.forEach((_) {
-        if (!_.writeOnClient) return;
+      baseObject.fields.forEach((it) {
+        if (!it.writeOnClient) return;
         codeList.add(
-            "  static const ${_.fieldNameVar} = '${Misc.getDartName(_.name)}';");
+            "  static const ${it.fieldNameVar} = '${Misc.getDartName(it.name)}';");
       });
     }
-    fieldsOnClient.forEach((_) {
+    fieldsOnClient.forEach((it) {
       codeList.add(
-          "  static const ${_.fieldNameVar} = '${Misc.getDartName(_.name)}';");
+          "  static const ${it.fieldNameVar} = '${Misc.getDartName(it.name)}';");
     });
     codeList.add('');
     var codeListFields = <String>[];
     if (useLocalization || nsgGenerator.useLocalization) {
       if (baseObject != null) {
         var lowerCaseBaseClassName = Misc.getDartName(baseObject.typeName);
-        baseObject.fields.forEach((_) {
-          if (!_.writeOnClient) return;
-          if (_.userVisibility) {
-            var iCodeName = Misc.getDartName(_.name);
-            var localizationKey = '${lowerCaseBaseClassName}_$iCodeName';
+        baseObject.fields.forEach((it) {
+          if (!it.writeOnClient) return;
+          if (it.userVisibility) {
+            var iCodeName = Misc.getDartName(it.name);
+            var localizationKey = '${lowerCaseBaseClassName}it$iCodeName';
             codeListFields.add(
-                '    ${_.fieldNameVar}: (AppLocalizations.of(Get.context!) as AppLocalizations).$localizationKey,');
-            nsgGenerator.localizationDict[localizationKey] = _.userName;
+                '    ${it.fieldNameVar}: (AppLocalizations.of(Get.context!) as AppLocalizations).$localizationKey,');
+            nsgGenerator.localizationDict[localizationKey] = it.userName;
           }
         });
       }
       var lowerCaseClassName = Misc.getDartName(typeName);
-      fieldsOnClient.forEach((_) {
-        if (_.userVisibility) {
-          var iCodeName = Misc.getDartName(_.name);
-          var localizationKey = '${lowerCaseClassName}_$iCodeName';
+      fieldsOnClient.forEach((it) {
+        if (it.userVisibility) {
+          var iCodeName = Misc.getDartName(it.name);
+          var localizationKey = '${lowerCaseClassName}it$iCodeName';
           codeListFields.add(
-              '    ${_.fieldNameVar}: (AppLocalizations.of(Get.context!) as AppLocalizations).$localizationKey,');
-          nsgGenerator.localizationDict[localizationKey] = _.userName;
+              '    ${it.fieldNameVar}: (AppLocalizations.of(Get.context!) as AppLocalizations).$localizationKey,');
+          nsgGenerator.localizationDict[localizationKey] = it.userName;
         }
       });
     } else {
       if (baseObject != null) {
-        baseObject.fields.forEach((_) {
-          if (!_.writeOnClient) return;
-          if (_.userVisibility) {
-            codeListFields.add("    ${_.fieldNameVar}: '${_.userName}',");
+        baseObject.fields.forEach((it) {
+          if (!it.writeOnClient) return;
+          if (it.userVisibility) {
+            codeListFields.add("    ${it.fieldNameVar}: '${it.userName}',");
           }
         });
       }
-      fieldsOnClient.forEach((_) {
-        if (_.userVisibility) {
-          codeListFields.add("    ${_.fieldNameVar}: '${_.userName}',");
+      fieldsOnClient.forEach((it) {
+        if (it.userVisibility) {
+          codeListFields.add("    ${it.fieldNameVar}: '${it.userName}',");
         }
       });
     }
@@ -889,68 +889,68 @@ class NsgGenDataItem {
       if (baseObject != null) {
         codeList.add('    super.initialize();');
       }
-      fieldsOnClient.forEach((_) {
-        if (_.isPrimary) {
+      fieldsOnClient.forEach((it) {
+        if (it.isPrimary) {
           codeList.add(
-              '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+              '    addField(${it.nsgDataType}(${it.fieldNameVar}), primaryKey: ${it.isPrimary});');
         } else {
-          if (_.isString &&
-              _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
+          if (it.isString &&
+              it.maxLength != NsgGenDataItemField.defaultMaxLength[it.type]) {
             codeList.add(
-                '    addField(${_.nsgDataType}(${_.fieldNameVar}, maxLength: ${_.maxLength}), primaryKey: ${_.isPrimary});');
-          } else if (_.type == 'double' &&
-              _.maxLength != NsgGenDataItemField.defaultMaxLength[_.type]) {
+                '    addField(${it.nsgDataType}(${it.fieldNameVar}, maxLength: ${it.maxLength}), primaryKey: ${it.isPrimary});');
+          } else if (it.type == 'double' &&
+              it.maxLength != NsgGenDataItemField.defaultMaxLength[it.type]) {
             codeList.add(
-                '    addField(${_.nsgDataType}(${_.fieldNameVar}, maxDecimalPlaces: ${_.maxLength}), primaryKey: ${_.isPrimary});');
-          } else if (_.type.startsWith('UntypedReference')) {
-            var defaultReferenceType = _.referenceType;
+                '    addField(${it.nsgDataType}(${it.fieldNameVar}, maxDecimalPlaces: ${it.maxLength}), primaryKey: ${it.isPrimary});');
+          } else if (it.type.startsWith('UntypedReference')) {
+            var defaultReferenceType = it.referenceType;
             if ((defaultReferenceType.isEmpty) &&
-                _.referenceTypes != null &&
-                _.referenceTypes!.isNotEmpty) {
-              defaultReferenceType = _.referenceTypes!.first.toString();
+                it.referenceTypes != null &&
+                it.referenceTypes!.isNotEmpty) {
+              defaultReferenceType = it.referenceTypes!.first.toString();
               defaultReferenceType = defaultReferenceType[0].toUpperCase() +
                   defaultReferenceType.substring(1);
             }
             if (defaultReferenceType.isNotEmpty) {
               codeList.add(
-                  '    addField(${_.nsgDataType}(${_.fieldNameVar}, defaultReferentType: $defaultReferenceType), primaryKey: ${_.isPrimary});');
+                  '    addField(${it.nsgDataType}(${it.fieldNameVar}, defaultReferentType: $defaultReferenceType), primaryKey: ${it.isPrimary});');
             } else {
               codeList.add(
-                  '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+                  '    addField(${it.nsgDataType}(${it.fieldNameVar}), primaryKey: ${it.isPrimary});');
             }
-          } else if (_.type == 'DateTime' && _.useDate != _.useTime) {
-            if (!_.useDate) {
+          } else if (it.type == 'DateTime' && it.useDate != it.useTime) {
+            if (!it.useDate) {
               codeList.add(
-                  '    addField(${_.nsgDataType}(${_.fieldNameVar}, useDate: false), primaryKey: ${_.isPrimary});');
+                  '    addField(${it.nsgDataType}(${it.fieldNameVar}, useDate: false), primaryKey: ${it.isPrimary});');
             } else {
               codeList.add(
-                  '    addField(${_.nsgDataType}(${_.fieldNameVar}, useTime: false), primaryKey: ${_.isPrimary});');
+                  '    addField(${it.nsgDataType}(${it.fieldNameVar}, useTime: false), primaryKey: ${it.isPrimary});');
             }
           } else {
             codeList.add(
-                '    addField(${_.nsgDataType}(${_.fieldNameVar}), primaryKey: ${_.isPrimary});');
+                '    addField(${it.nsgDataType}(${it.fieldNameVar}), primaryKey: ${it.isPrimary});');
           }
         }
       });
-      predefinedObjects.forEach((_) {
-        codeList.add("    addPredefined(${Misc.getDartName(_.name)});");
+      predefinedObjects.forEach((it) {
+        codeList.add("    addPredefined(${Misc.getDartName(it.name)});");
       });
       if (useLocalization || nsgGenerator.useLocalization) {
         var lowerCaseClassName = Misc.getDartName(typeName);
-        fieldsOnClient.forEach((_) {
-          if (_.userVisibility) {
-            var iCodeName = Misc.getDartName(_.name);
-            var localizationKey = '${lowerCaseClassName}_$iCodeName';
+        fieldsOnClient.forEach((it) {
+          if (it.userVisibility) {
+            var iCodeName = Misc.getDartName(it.name);
+            var localizationKey = '${lowerCaseClassName}it$iCodeName';
             codeList.add(
-                '    fieldList.fields[${_.fieldNameVar}]?.presentation = (AppLocalizations.of(Get.context!) as AppLocalizations).$localizationKey;');
-            nsgGenerator.localizationDict[localizationKey] = _.userName;
+                '    fieldList.fields[${it.fieldNameVar}]?.presentation = (AppLocalizations.of(Get.context!) as AppLocalizations).$localizationKey;');
+            nsgGenerator.localizationDict[localizationKey] = it.userName;
           }
         });
       } else {
-        fieldsOnClient.forEach((_) {
-          if (_.userVisibility) {
+        fieldsOnClient.forEach((it) {
+          if (it.userVisibility) {
             codeList.add(
-                "    fieldList.fields[${_.fieldNameVar}]?.presentation = '${_.userName}';");
+                "    fieldList.fields[${it.fieldNameVar}]?.presentation = '${it.userName}';");
           }
         });
       }
@@ -981,19 +981,20 @@ class NsgGenDataItem {
     codeList.add('  NsgDataItem getNewObject() => $typeName();');
     codeList.add('');
 
-    predefinedObjects.forEach((_) {
-      if (_.description.isNotEmpty) {
-        Misc.writeDescription(codeList, _.description, false, indent: 2);
+    // Dart 3: `it` is a wildcard pattern, not an identifier. Renamed to `o`/`f`.
+    predefinedObjects.forEach((o) {
+      if (o.description.isNotEmpty) {
+        Misc.writeDescription(codeList, o.description, false, indent: 2);
       }
-      _.writeGetter(nsgGenController, this, codeList);
+      o.writeGetter(nsgGenController, this, codeList);
     });
 
-    fieldsOnClient.forEach((_) {
-      if (_.description.isNotEmpty) {
-        Misc.writeDescription(codeList, _.description, false, indent: 2);
+    fieldsOnClient.forEach((f) {
+      if (f.description.isNotEmpty) {
+        Misc.writeDescription(codeList, f.description, false, indent: 2);
       }
-      _.writeGetter(nsgGenController, this, codeList);
-      _.writeSetter(nsgGenController, this, codeList);
+      f.writeGetter(nsgGenController, this, codeList);
+      f.writeSetter(nsgGenController, this, codeList);
     });
     if (periodFieldName.isNotEmpty) {
       codeList.add('  @override');

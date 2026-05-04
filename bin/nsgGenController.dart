@@ -307,14 +307,14 @@ class NsgGenController {
         'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Delete<T>(INsgTokenExtension user, IEnumerable<T> items)');
     codeList.add('    where T : NsgServerDataItem, new();');
     //var publicMdf = (nsgGenerator.isDotNetCore ? 'public ' : '');
-    methods.forEach((_) {
-      // _.imageFieldList.forEach((el) {
-      //   if (_.authorize != 'none') {
+    methods.forEach((it) {
+      // it.imageFieldList.forEach((el) {
+      //   if (it.authorize != 'none') {
       //     codeList.add(
-      //         '${publicMdf}Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
+      //         '${publicMdf}Task<FileStreamResult> ${it.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
       //   } else {
       //     codeList.add(
-      //         '${publicMdf}Task<FileStreamResult> ${_.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
+      //         '${publicMdf}Task<FileStreamResult> ${it.name}${el.apiPrefix}(INsgTokenExtension user, String file);');
       //   }
       // });
     });
@@ -626,18 +626,18 @@ class NsgGenController {
   Future generateCodeDart(NsgGenerator nsgGenerator) async {
     //Init controller initialization
     await generateInitController(nsgGenerator);
-    await Future.forEach<NsgGenMethod>(methods, (_) async {
-      await _.generateCodeDart(nsgGenerator, this);
+    await Future.forEach<NsgGenMethod>(methods, (it) async {
+      await it.generateCodeDart(nsgGenerator, this);
     });
     await generateExportFile(nsgGenerator);
   }
 
   Future generateExportFile(NsgGenerator nsgGenerator) async {
     var codeList = <String>[];
-    methods.forEach((_) {
+    methods.forEach((it) {
       [
-        "export '${Misc.getDartUnderscoreName(_.genDataItem.typeName)}.dart';",
-        "export '${nsgGenerator.genPathName}/${Misc.getDartUnderscoreName(_.genDataItem.typeName)}.g.dart';"
+        "export '${Misc.getDartUnderscoreName(it.genDataItem.typeName)}.dart';",
+        "export '${nsgGenerator.genPathName}/${Misc.getDartUnderscoreName(it.genDataItem.typeName)}.g.dart';"
       ].forEach((exportStr) {
         if (!codeList.contains(exportStr)) {
           codeList.add(exportStr);
@@ -726,10 +726,10 @@ class NsgGenController {
     codeList.add('    sendNotify();');
     codeList.add('  }');
 
-    await Future.forEach<NsgGenFunction>(functions, (_) async {
-      if (!_.writeOnClient) return;
+    await Future.forEach<NsgGenFunction>(functions, (it) async {
+      if (!it.writeOnClient) return;
       codeList.add('');
-      await _.generateCodeDart(codeList, nsgGenerator, this);
+      await it.generateCodeDart(codeList, nsgGenerator, this);
     });
 
     codeList.add('}');
@@ -783,17 +783,17 @@ class NsgGenController {
   }
 
   void addRegisterDataItems(NsgGenerator nsgGenerator, List<String> codeList) {
-    methods.forEach((_) {
+    methods.forEach((it) {
       var registerDataItemStr =
-          '        .registerDataItem(${_.genDataItem.typeName}(), remoteProvider: provider);';
+          '        .registerDataItem(${it.genDataItem.typeName}(), remoteProvider: provider);';
       if (!codeList.contains(registerDataItemStr)) {
         codeList.add('    NsgDataClient.client');
         codeList.add(registerDataItemStr);
       }
     });
-    nsgGenerator.enums.forEach((_) {
+    nsgGenerator.enums.forEach((it) {
       var registerDataItemStr =
-          '        .registerDataItem(${_.className}(0, \'\'), remoteProvider: provider);';
+          '        .registerDataItem(${it.className}(0, \'\'), remoteProvider: provider);';
       if (!codeList.contains(registerDataItemStr)) {
         codeList.add('    NsgDataClient.client');
         codeList.add(registerDataItemStr);

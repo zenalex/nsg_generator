@@ -476,83 +476,84 @@ class NsgGenFunction {
       codeList
           .add('  Future<List<$dartType>> $dartName($paramTNString) async {');
     }
-    var _ = '';
+    // Dart 3: `_` is a wildcard pattern, not an identifier. Renamed to `indent`.
+    var indent = '';
     if (useProgressDialog) {
       codeList.add(
           '    var progress = NsgProgressDialogHelper(showProgress: showProgress, isStoppable: isStoppable, textDialog: textDialog);');
       codeList.add('    try {');
-      _ = '  ';
+      indent = '  ';
     }
-    codeList.add('$_    var params = <String, dynamic>{};');
+    codeList.add('$indent    var params = <String, dynamic>{};');
     if (params.isNotEmpty) {
       params.forEach((p) {
         if (p.type == 'String') {
-          codeList.add('$_    params[\'${p.name}\'] = ${p.name};');
+          codeList.add('$indent    params[\'${p.name}\'] = ${p.name};');
         } else if (p.type == 'DateTime') {
           codeList.add(
-              '$_    params[\'${p.name}\'] = ${p.name}.toIso8601String();');
+              '$indent    params[\'${p.name}\'] = ${p.name}.toIso8601String();');
         } else if (p.type.startsWith('List')) {
           if (p.isReference) {
             codeList.add(
-                '$_    params[\'${p.name}\'] = ${p.name}.map((obj) => obj.toJson()).toList();');
+                '$indent    params[\'${p.name}\'] = ${p.name}.map((obj) => obj.toJson()).toList();');
           } else {
-            codeList.add('$_    params[\'${p.name}\'] = ${p.name};');
+            codeList.add('$indent    params[\'${p.name}\'] = ${p.name};');
           }
         } else if (p.isReference) {
-          codeList.add('$_    params[\'${p.name}\'] = ${p.name}.toJson();');
+          codeList.add('$indent    params[\'${p.name}\'] = ${p.name}.toJson();');
         } else if (p.type.startsWith('Enum')) {
-          codeList.add('$_    params[\'${p.name}\'] = ${p.name}.value;');
+          codeList.add('$indent    params[\'${p.name}\'] = ${p.name}.value;');
         } else {
-          codeList.add('$_    params[\'${p.name}\'] = ${p.name}.toString();');
+          codeList.add('$indent    params[\'${p.name}\'] = ${p.name}.toString();');
         }
       });
     }
-    codeList.add('$_    filter ??= NsgDataRequestParams();');
-    codeList.add('$_    filter.params?.addAll(params);');
-    codeList.add('$_    filter.params ??= params;');
+    codeList.add('$indent    filter ??= NsgDataRequestParams();');
+    codeList.add('$indent    filter.params?.addAll(params);');
+    codeList.add('$indent    filter.params ??= params;');
     if (readReferences.isNotEmpty) {
-      codeList.add('$_    var loadReference = [');
+      codeList.add('$indent    var loadReference = [');
       readReferences.forEach((s) {
         if (s.contains('\$')) {
-          codeList.add('$_      \'${s}\',');
+          codeList.add('$indent      \'${s}\',');
         } else {
-          codeList.add('$_      ${s},');
+          codeList.add('$indent      ${s},');
         }
       });
-      codeList.add('$_    ];');
+      codeList.add('$indent    ];');
     }
     if (isReference) {
       if (type.startsWith('List')) {
         codeList.add(
-            '$_    var res = await NsgDataRequest<$dartType>().requestItems(');
+            '$indent    var res = await NsgDataRequest<$dartType>().requestItems(');
       } else {
         codeList.add(
-            '$_    var res = await NsgDataRequest<$dartType>().requestItem(');
+            '$indent    var res = await NsgDataRequest<$dartType>().requestItem(');
       }
     } else /*if (type.startsWith('List'))*/ {
       codeList.add(
-          '$_    var res = await NsgSimpleRequest<$dartType>().requestItems(');
-      codeList.add('$_        provider: provider!,');
+          '$indent    var res = await NsgSimpleRequest<$dartType>().requestItems(');
+      codeList.add('$indent        provider: provider!,');
       // } else {
       //   codeList.add(
       //       '      var res = await NsgSimpleRequest<$dartType>().requestItem(');
     }
     codeList
-        .add('$_        function: \'/${controller.apiPrefix}/$apiPrefix\',');
-    codeList.add('$_        method: \'${apiType.toUpperCase()}\',');
-    codeList.add('$_        filter: filter,');
-    codeList.add('$_        autoRepeate: ${retryCount > 0},');
-    var endParam = '$_        autoRepeateCount: $retryCount';
+        .add('$indent        function: \'/${controller.apiPrefix}/$apiPrefix\',');
+    codeList.add('$indent        method: \'${apiType.toUpperCase()}\',');
+    codeList.add('$indent        filter: filter,');
+    codeList.add('$indent        autoRepeate: ${retryCount > 0},');
+    var endParam = '$indent        autoRepeateCount: $retryCount';
     if (useProgressDialog) {
       codeList.add('$endParam,');
-      endParam = '$_        cancelToken: progress.cancelToken';
+      endParam = '$indent        cancelToken: progress.cancelToken';
     }
     if (readReferences.isNotEmpty) {
       codeList.add('$endParam,');
-      endParam = '$_        loadReference: loadReference';
+      endParam = '$indent        loadReference: loadReference';
     }
     codeList.add('$endParam);');
-    codeList.add('$_    return res;');
+    codeList.add('$indent    return res;');
     // codeList.add('    } catch (e) {');
     // if (type == 'List<Reference>') {
     //   codeList.add('      return [];');
