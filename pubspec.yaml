@@ -4,13 +4,12 @@ description: A simple command-line application.
 # homepage: https://www.example.com
 
 environment:
-  # Кросс-SDK constraint (вариант A в TASK01 §«Чек-лист совместимости»):
-  # пакет работает и на Dart 2.18+, и на Dart 3.x. Существующие потребители
-  # на Dart 2.18 не ломаются.
-  # Эмпирическая сверка детерминизма Dart 2 vs Dart 3 на реальном GeneratorConfig
-  # — на моменте написания не сделана (Dart 2 SDK локально не установлен).
-  # Любая правка SchemaHash.canonicalize обязана включать прогон на обеих версиях.
-  sdk: '>=2.18.1 <4.0.0'
+  # Финализировано постановщиком: фиксируем Dart 3.10+. Все актуальные потребители
+  # (FUTBOLISTA, nsg_discounts_app и др.) уже на 3.10+.
+  # Baseline schema hash (84af1356e618e48b на FootballersDiary GeneratorConfig)
+  # посчитан под этим SDK; при апгрейде верхней границы или смене канонизации
+  # — обязательная сверка baseline-а (см. TASK01.md, §«Чек-лист совместимости»).
+  sdk: '>=3.10.0 <4.0.0'
 
 
 dependencies:
