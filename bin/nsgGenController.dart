@@ -671,6 +671,9 @@ class NsgGenController {
     }
     codeList.add(
         "import '../${Misc.getDartUnderscoreName(className)}_model.dart';");
+    // Хеш схемы GeneratorConfig — генерируется в той же папке (_schema_meta.dart).
+    // Пробрасывается в NsgDataProvider(schemaHash: ...) ниже.
+    codeList.add("import '_schema_meta.dart';");
     codeList.add('');
     codeList.add('class ${className}Generated extends NsgBaseController {');
     codeList.add('  NsgDataProvider? provider;');
@@ -686,6 +689,7 @@ class NsgGenController {
         .add('        applicationName: \'${nsgGenerator.applicationName}\',');
     codeList.add('        applicationVersion: info.version,');
     codeList.add('        firebaseToken: \'\',');
+    codeList.add('        schemaHash: kNsgSchemaHash,');
     codeList
         .add('        availableServers: NsgServerOptions.availableServers,');
     if (nsgGenerator.newTableLogic) {
