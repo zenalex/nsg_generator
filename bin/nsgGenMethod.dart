@@ -81,7 +81,7 @@ class NsgGenMethod {
 
   String? getAuthAttr(String authLevel) {
     if (authLevel == 'anonymous') {
-      return '[AllowAnonymous]';
+      return '[Authorize]';
     } else if (authLevel == 'user') {
       return '[Authorize(Roles = UserRoles.User)]';
     } else if (authLevel == 'admin') {
@@ -181,9 +181,8 @@ class NsgGenMethod {
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> $name([FromBody] NsgFindParams findParams)');
       codeList.add('{');
 
-      final needUser = controller.useAuthorization &&
-          effectiveAuthorizeGet != 'none' &&
-          effectiveAuthorizeGet != 'anonymous';
+      final needUser =
+          controller.useAuthorization && effectiveAuthorizeGet != 'none';
       if (needUser) {
         codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
@@ -210,9 +209,8 @@ class NsgGenMethod {
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}Create([FromBody] NsgFindParams findParams)');
       codeList.add('{');
 
-      final needUser = controller.useAuthorization &&
-          effectiveAuthorizeCreate != 'none' &&
-          effectiveAuthorizeCreate != 'anonymous';
+      final needUser =
+          controller.useAuthorization && effectiveAuthorizeCreate != 'none';
       if (needUser) {
         codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
@@ -238,9 +236,8 @@ class NsgGenMethod {
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}Post([FromBody] IEnumerable<${genDataItem.typeName}> items)');
       codeList.add('{');
 
-      final needUser = controller.useAuthorization &&
-          effectiveAuthorizePost != 'none' &&
-          effectiveAuthorizePost != 'anonymous';
+      final needUser =
+          controller.useAuthorization && effectiveAuthorizePost != 'none';
       if (needUser) {
         codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
@@ -267,9 +264,8 @@ class NsgGenMethod {
           'public async Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> ${name}Delete([FromBody] IEnumerable<${genDataItem.typeName}> items)');
       codeList.add('{');
 
-      final needUser = controller.useAuthorization &&
-          effectiveAuthorizeDelete != 'none' &&
-          effectiveAuthorizeDelete != 'anonymous';
+      final needUser =
+          controller.useAuthorization && effectiveAuthorizeDelete != 'none';
       if (needUser) {
         codeList.add('var user = ${controller.callGetUserByToken};');
         codeList.add(
