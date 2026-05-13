@@ -2,6 +2,7 @@ import 'package:test/test.dart';
 
 import '../bin/nsgGenDataItem.dart';
 import '../bin/nsgGenDataItemField.dart';
+import '../bin/nsgGenerator.dart';
 
 // 2.1.1/2.1.2: проверка загрузки additive-полей pgTableName/pgColumnName
 // и валидации, что pgColumnName для Reference-полей не оканчивается на _id.
@@ -106,6 +107,71 @@ void main() {
     test('field-level pgColumnName propagates through nested parsing', () {
       final di = NsgGenDataItem.fromJson(shopJson(pgTable: 'shops'));
       expect(di.fields.single.pgColumnName, equals('id'));
+    });
+  });
+
+  group('NsgGenerator.fromJson — netcoreOutputPath / serverEmitKind', () {
+    // Минимальный валидный generator-конфиг с пустыми controller и enums.
+    Map<String, dynamic> baseConfig({
+      String? serverEmitKind,
+      String? netcoreOutputPath,
+    }) =>
+        {
+          'targetFramework': 'net10.0',
+          'cSharpNamespace': 'TestNs',
+          'cSharpPath': 'out_cs',
+          'dartPath': 'out_dart',
+          if (serverEmitKind != null) 'serverEmitKind': serverEmitKind,
+          if (netcoreOutputPath != null) 'netcoreOutputPath': netcoreOutputPath,
+          'controller': <dynamic>[],
+        };
+
+    test('default nsgframework mode: netcoreOutputPath optional, parses empty', () {
+      final g = NsgGenerator.fromJson(baseConfig());
+      expect(g.serverEmitKind, equals(NsgServerEmitKind.nsgframework));
+      expect(g.netcoreOutputPath, isEmpty);
+    });
+
+    test('nsgframework mode: netcoreOutputPath is read but not required', () {
+      // Если автор положил netcoreOutputPath в nsgframework-конфиг — не падаем,
+      // поле просто загружается. В nsgframework-эмите оно не используется.
+      final g = NsgGenerator.fromJson(
+          baseConfig(netcoreOutputPath: 'some/path'));
+      expect(g.netcoreOutputPath, equals('some/path'));
+    });
+
+    test('netcore mode: netcoreOutputPath required (missing → throw)', () {
+      expect(
+        () => NsgGenerator.fromJson(baseConfig(serverEmitKind: 'netcore')),
+        throwsA(predicate((e) =>
+            e is Exception &&
+            e.toString().contains('netcoreOutputPath is required'))),
+      );
+    });
+
+    test('netcore mode: netcoreOutputPath empty string → throw', () {
+      expect(
+        () => NsgGenerator.fromJson(
+            baseConfig(serverEmitKind: 'netcore', netcoreOutputPath: '')),
+        throwsA(predicate((e) =>
+            e is Exception &&
+            e.toString().contains('netcoreOutputPath is required'))),
+      );
+    });
+
+    test('netcore mode: netcoreOutputPath set → loads OK', () {
+      final g = NsgGenerator.fromJson(baseConfig(
+          serverEmitKind: 'netcore', netcoreOutputPath: 'out_netcore'));
+      expect(g.serverEmitKind, equals(NsgServerEmitKind.netcore));
+      expect(g.netcoreOutputPath, equals('out_netcore'));
+    });
+
+    test('unknown serverEmitKind → throw', () {
+      expect(
+        () => NsgGenerator.fromJson(baseConfig(serverEmitKind: 'rust')),
+        throwsA(predicate(
+            (e) => e is Exception && e.toString().contains('not valid'))),
+      );
     });
   });
 }

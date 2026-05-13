@@ -26,6 +26,13 @@ class NsgGenerator {
   final String serverEmitKind;
   String cSharpPath;
   final String cSharpNamespace;
+
+  /// Путь вывода для netcore-эмита (EF Core + Postgres). Изолирует netcore-вывод
+  /// от `cSharpPath`, чтобы on-first-run netcore-эмит не уничтожал ручные
+  /// бизнес-партиалы NsgFramework-проекта (TASK04 §2.1.3, ремарка №3 ревью).
+  /// В режиме `serverEmitKind: "netcore"` обязателен; в `nsgframework` —
+  /// игнорируется (без warning).
+  String netcoreOutputPath;
   String dartPath;
   final String applicationName;
   final bool useStaticDatabaseNames;
@@ -56,6 +63,7 @@ class NsgGenerator {
       required this.defaultLocale,
       required this.newTableLogic,
       this.serverEmitKind = NsgServerEmitKind.nsgframework,
+      this.netcoreOutputPath = '',
       this.doCSharp = true,
       this.doDart = true,
       this.useStaticDatabaseNames = false,
@@ -105,6 +113,17 @@ class NsgGenerator {
             'serverEmitKind="$serverEmitKind" is not valid. '
             'Allowed: ${NsgServerEmitKind.values.join(", ")}.');
       }
+      currentProperty = 'netcoreOutputPath';
+      var netcoreOutputPath =
+          (parsedJson['netcoreOutputPath'] ?? '').toString();
+      // Ранняя статическая валидация: netcore требует netcoreOutputPath.
+      // Семантическая валидация pg*-полей (`validateForNetcoreEmit`) идёт
+      // позже — после загрузки controllers и dataItems.
+      if (serverEmitKind == NsgServerEmitKind.netcore &&
+          netcoreOutputPath.isEmpty) {
+        throw Exception(
+            'netcoreOutputPath is required when serverEmitKind="netcore".');
+      }
       currentProperty = 'controller';
       var controllers = (parsedJson['controller'] as List)
           .map((i) => NsgGenController.fromJson(i))
@@ -114,6 +133,7 @@ class NsgGenerator {
           targetFramework: targetFramework,
           isDotNetCore: isDotNetCore,
           serverEmitKind: serverEmitKind,
+          netcoreOutputPath: netcoreOutputPath,
           cSharpPath: parsedJson['cSharpPath'] ?? '',
           cSharpNamespace: parsedJson['cSharpNamespace'] ?? '',
           dartPath: parsedJson['dartPath'] ?? '',
