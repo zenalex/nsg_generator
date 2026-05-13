@@ -214,6 +214,9 @@ class NsgGenerator {
       }
       // Раунд 3.А: AppDbContext.Designer.cs (overwrite) + AppDbContext.cs (one-shot).
       await NsgGenNetcore.emitDbContext(this);
+      // Раунд 3.Б: csproj + Program.cs + appsettings.json + launchSettings.json
+      // (всё one-shot).
+      await NsgGenNetcore.emitHostingFiles(this);
     }
     await Future.forEach<NsgGenController>(controllers, (element) async {
       print('generating ${element.className}');

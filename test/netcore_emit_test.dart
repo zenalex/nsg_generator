@@ -479,6 +479,160 @@ void main() {
       expect(mCfg < zCfg, isTrue);
     });
 
+    test('csproj: byte-identical with parameterized versions', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      final actual = NsgGenNetcore.emitCsproj(gen);
+      final expected = '<Project Sdk="Microsoft.NET.Sdk.Web">\n'
+          '\n'
+          '  <PropertyGroup>\n'
+          '    <TargetFramework>${NsgGenNetcore.targetFramework}</TargetFramework>\n'
+          '    <Nullable>enable</Nullable>\n'
+          '    <RootNamespace>NsgDiscountsServer</RootNamespace>\n'
+          '  </PropertyGroup>\n'
+          '\n'
+          '  <ItemGroup>\n'
+          '    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="${NsgGenNetcore.efCoreVersion}" />\n'
+          '    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="${NsgGenNetcore.efCoreVersion}">\n'
+          '      <PrivateAssets>all</PrivateAssets>\n'
+          '      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>\n'
+          '    </PackageReference>\n'
+          '    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="${NsgGenNetcore.npgsqlVersion}" />\n'
+          '  </ItemGroup>\n'
+          '\n'
+          '</Project>\n';
+      expect(actual, equals(expected));
+    });
+
+    test('Program.cs: byte-identical (no implicit usings — explicit using-list)', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      final actual = NsgGenNetcore.emitProgramCs(gen);
+      const expected = 'using Microsoft.AspNetCore.Builder;\n'
+          'using Microsoft.EntityFrameworkCore;\n'
+          'using Microsoft.Extensions.Configuration;\n'
+          'using Microsoft.Extensions.DependencyInjection;\n'
+          'using NsgDiscountsServer;\n'
+          '\n'
+          'var builder = WebApplication.CreateBuilder(args);\n'
+          'builder.Services.AddDbContext<AppDbContext>(opt =>\n'
+          '    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));\n'
+          'var app = builder.Build();\n'
+          'app.Run();\n';
+      expect(actual, equals(expected));
+    });
+
+    test('appsettings.json: dev-values with db name from cSharpNamespace (lowercased)', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      final actual = NsgGenNetcore.emitAppsettings(gen);
+      const expected = '{\n'
+          '  "ConnectionStrings": {\n'
+          '    "DefaultConnection": "Host=localhost;Port=5432;Database=nsgdiscountsserver;Username=postgres;Password=postgres"\n'
+          '  },\n'
+          '  "Logging": {\n'
+          '    "LogLevel": {\n'
+          '      "Default": "Information",\n'
+          '      "Microsoft.AspNetCore": "Warning"\n'
+          '    }\n'
+          '  },\n'
+          '  "AllowedHosts": "*"\n'
+          '}\n';
+      expect(actual, equals(expected));
+    });
+
+    test('launchSettings.json: single http profile on :5000', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      final actual = NsgGenNetcore.emitLaunchSettings(gen);
+      const expected = '{\n'
+          '  "\$schema": "http://json.schemastore.org/launchsettings.json",\n'
+          '  "profiles": {\n'
+          '    "http": {\n'
+          '      "commandName": "Project",\n'
+          '      "dotnetRunMessages": true,\n'
+          '      "launchBrowser": false,\n'
+          '      "applicationUrl": "http://localhost:5000",\n'
+          '      "environmentVariables": {\n'
+          '        "ASPNETCORE_ENVIRONMENT": "Development"\n'
+          '      }\n'
+          '    }\n'
+          '  }\n'
+          '}\n';
+      expect(actual, equals(expected));
+    });
+
+    test('emitHostingFiles: all 4 files are one-shot (not overwritten)', () async {
+      final outDir =
+          '${Directory.systemTemp.path}/nsg_hosting_oneshot_${DateTime.now().microsecondsSinceEpoch}';
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': outDir,
+        'controller': <dynamic>[],
+      });
+
+      try {
+        // 1) First emit — все 4 файла создаются.
+        await NsgGenNetcore.emitHostingFiles(gen);
+        final files = [
+          '$outDir/NsgDiscountsServer.csproj',
+          '$outDir/Program.cs',
+          '$outDir/appsettings.json',
+          '$outDir/Properties/launchSettings.json',
+        ];
+        for (final p in files) {
+          expect(await File(p).exists(), isTrue, reason: 'expected file: $p');
+        }
+
+        // 2) Симулируем ручную правку каждого.
+        const sentinel = '// MANUAL EDIT — MUST SURVIVE\n';
+        for (final p in files) {
+          await File(p).writeAsString(sentinel);
+        }
+
+        // 3) Re-emit без forceOverwrite — все 4 файла нетронуты.
+        await NsgGenNetcore.emitHostingFiles(gen);
+        for (final p in files) {
+          expect(await File(p).readAsString(), equals(sentinel),
+              reason: 'file should not be overwritten: $p');
+        }
+      } finally {
+        await Directory(outDir).delete(recursive: true);
+      }
+    });
+
     test('emitDbContext: AppDbContext.cs is one-shot (not overwritten)', () async {
       final gen = NsgGenerator.fromJson({
         'targetFramework': 'net10.0',

@@ -5,15 +5,25 @@ import 'nsgGenDataItem.dart';
 import 'nsgGenDataItemField.dart';
 import 'nsgGenerator.dart';
 
-/// Эмит netcore-проекта (EF Core + Postgres) — раунд 2 TASK04.
-/// На текущем этапе: только Models/<T>.cs и Configurations/<T>Configuration.cs.
-/// AppDbContext, csproj, Program.cs, appsettings.json — раунд 3.
+/// Эмит netcore-проекта (EF Core + Postgres) — раунды 2 + 3 TASK04.
+/// Раунд 2: Models/<T>.cs, Configurations/<T>Configuration.cs.
+/// Раунд 3.А: AppDbContext.Designer.cs (overwrite) + AppDbContext.cs (one-shot).
+/// Раунд 3.Б: <name>.csproj, Program.cs, appsettings.json,
+///            Properties/launchSettings.json (все one-shot).
 ///
 /// Маппинг типов JSON → C# / Postgres — см. TASK04 §2.1.4.0.
 /// Эталон — TASK02 §2.0.8 (ShopItem). Эмит сравнивается byte-identical.
 class NsgGenNetcore {
   /// Колонка, по которой выравниваются inline-комментарии вида `// из pgColumnName`.
   static const int _commentColumn = 49;
+
+  /// Версии NuGet-package-ов (TASK04 §«Версии package-ов»). При бампе —
+  /// менять здесь и в `expected`-литералах соответствующих тестов.
+  static const String efCoreVersion = '10.0.8';
+  static const String npgsqlVersion = '10.0.1';
+
+  /// TargetFramework (см. server-rewrite.md §1).
+  static const String targetFramework = 'net10.0';
 
   /// Эмитит Models/ + Configurations/ для одной сущности.
   static Future<void> emitDataItem(
@@ -114,6 +124,114 @@ class NsgGenNetcore {
         '    partial void OnModelCreatingGenerated(ModelBuilder modelBuilder);');
     sb.writeln('}');
     return sb.toString();
+  }
+
+  /// Эмит host-инфраструктуры (раунд 3.Б): csproj, Program.cs, appsettings.json,
+  /// Properties/launchSettings.json. Все 4 файла — **one-shot**: создаются при
+  /// первом эмите и не перезаписываются при повторном (если нет
+  /// `forceOverwrite`). Версии package-ов — см. `efCoreVersion`/`npgsqlVersion`.
+  static Future<void> emitHostingFiles(NsgGenerator gen) async {
+    final root = gen.netcoreOutputPath;
+    final propsDir = '$root/Properties';
+    await Directory(root).create(recursive: true);
+    await Directory(propsDir).create(recursive: true);
+
+    await _writeOneShot(gen,
+        path: '$root/${gen.cSharpNamespace}.csproj',
+        content: emitCsproj(gen));
+    await _writeOneShot(gen,
+        path: '$root/Program.cs', content: emitProgramCs(gen));
+    await _writeOneShot(gen,
+        path: '$root/appsettings.json', content: emitAppsettings(gen));
+    await _writeOneShot(gen,
+        path: '$propsDir/launchSettings.json',
+        content: emitLaunchSettings(gen));
+  }
+
+  static Future<void> _writeOneShot(NsgGenerator gen,
+      {required String path, required String content}) async {
+    final file = File(path);
+    if (!await file.exists() || gen.forceOverwrite) {
+      await Misc.writeFileIfChanged(path, content);
+    }
+  }
+
+  /// Эмит `<cSharpNamespace>.csproj`. SDK = `Microsoft.NET.Sdk.Web`,
+  /// без `<ImplicitUsings>` (явные using в Program.cs/Models/Configurations
+  /// предсказуемее). Public для тестов.
+  static String emitCsproj(NsgGenerator gen) {
+    final ns = gen.cSharpNamespace;
+    return '<Project Sdk="Microsoft.NET.Sdk.Web">\n'
+        '\n'
+        '  <PropertyGroup>\n'
+        '    <TargetFramework>$targetFramework</TargetFramework>\n'
+        '    <Nullable>enable</Nullable>\n'
+        '    <RootNamespace>$ns</RootNamespace>\n'
+        '  </PropertyGroup>\n'
+        '\n'
+        '  <ItemGroup>\n'
+        '    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$efCoreVersion" />\n'
+        '    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="$efCoreVersion">\n'
+        '      <PrivateAssets>all</PrivateAssets>\n'
+        '      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>\n'
+        '    </PackageReference>\n'
+        '    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="$npgsqlVersion" />\n'
+        '  </ItemGroup>\n'
+        '\n'
+        '</Project>\n';
+  }
+
+  /// Минимальный `Program.cs` — host ASP.NET Core с зарегистрированным
+  /// `AppDbContext` поверх Npgsql. Контроллеры — подзадача 2.1.10.
+  static String emitProgramCs(NsgGenerator gen) {
+    final ns = gen.cSharpNamespace;
+    return 'using Microsoft.AspNetCore.Builder;\n'
+        'using Microsoft.EntityFrameworkCore;\n'
+        'using Microsoft.Extensions.Configuration;\n'
+        'using Microsoft.Extensions.DependencyInjection;\n'
+        'using $ns;\n'
+        '\n'
+        'var builder = WebApplication.CreateBuilder(args);\n'
+        'builder.Services.AddDbContext<AppDbContext>(opt =>\n'
+        '    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));\n'
+        'var app = builder.Build();\n'
+        'app.Run();\n';
+  }
+
+  /// Минимальный `appsettings.json`. Connection string — dev-значения с
+  /// именем БД из `cSharpNamespace` (lowercase). Прод-секреты — out of scope.
+  static String emitAppsettings(NsgGenerator gen) {
+    final dbName = gen.cSharpNamespace.toLowerCase();
+    return '{\n'
+        '  "ConnectionStrings": {\n'
+        '    "DefaultConnection": "Host=localhost;Port=5432;Database=$dbName;Username=postgres;Password=postgres"\n'
+        '  },\n'
+        '  "Logging": {\n'
+        '    "LogLevel": {\n'
+        '      "Default": "Information",\n'
+        '      "Microsoft.AspNetCore": "Warning"\n'
+        '    }\n'
+        '  },\n'
+        '  "AllowedHosts": "*"\n'
+        '}\n';
+  }
+
+  /// `Properties/launchSettings.json` — один dev-профиль `http` на 5000.
+  static String emitLaunchSettings(NsgGenerator gen) {
+    return '{\n'
+        '  "\$schema": "http://json.schemastore.org/launchsettings.json",\n'
+        '  "profiles": {\n'
+        '    "http": {\n'
+        '      "commandName": "Project",\n'
+        '      "dotnetRunMessages": true,\n'
+        '      "launchBrowser": false,\n'
+        '      "applicationUrl": "http://localhost:5000",\n'
+        '      "environmentVariables": {\n'
+        '        "ASPNETCORE_ENVIRONMENT": "Development"\n'
+        '      }\n'
+        '    }\n'
+        '  }\n'
+        '}\n';
   }
 
   /// Имя `DbSet<T>` свойства по правилу из TASK04 §2.1.4.0:
