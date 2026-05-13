@@ -6,6 +6,7 @@ import 'nsgGenController.dart';
 import 'nsgGenDataItem.dart';
 import 'nsgGenEnum.dart';
 import 'nsgGenLocalization.dart';
+import 'nsgGenNetcore.dart';
 import 'schema_hash.dart';
 
 /// Тип серверного эмита. Ортогонален `targetFramework` (тот — версия runtime).
@@ -206,6 +207,11 @@ class NsgGenerator {
     // сущностях/полях — до начала эмита.
     if (serverEmitKind == NsgServerEmitKind.netcore) {
       validateForNetcoreEmit();
+      // Эмит EF Core: Models/ + Configurations/ в netcoreOutputPath.
+      // AppDbContext / csproj / Program.cs — раунд 3 TASK04.
+      for (final di in dataItems.values) {
+        await NsgGenNetcore.emitDataItem(this, di);
+      }
     }
     await Future.forEach<NsgGenController>(controllers, (element) async {
       print('generating ${element.className}');
