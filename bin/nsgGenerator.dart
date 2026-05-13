@@ -8,9 +8,22 @@ import 'nsgGenEnum.dart';
 import 'nsgGenLocalization.dart';
 import 'schema_hash.dart';
 
+/// Тип серверного эмита. Ортогонален `targetFramework` (тот — версия runtime).
+/// - `nsgframework` (default): текущий эмит C# поверх NsgSoft framework.
+///   `pg*`-поля в JSON игнорируются (additive, не ломают конфиги).
+/// - `netcore`: новый эмит EF Core + Postgres. Шаблоны — TASK04 §2.1.4+.
+///   Требует `pgTableName` на каждой сущности и `pgColumnName` на каждом
+///   поле с непустым `databaseName`.
+class NsgServerEmitKind {
+  static const String nsgframework = 'nsgframework';
+  static const String netcore = 'netcore';
+  static const List<String> values = [nsgframework, netcore];
+}
+
 class NsgGenerator {
   final String targetFramework;
   final bool isDotNetCore;
+  final String serverEmitKind;
   String cSharpPath;
   final String cSharpNamespace;
   String dartPath;
@@ -42,6 +55,7 @@ class NsgGenerator {
       required this.useLocalization,
       required this.defaultLocale,
       required this.newTableLogic,
+      this.serverEmitKind = NsgServerEmitKind.nsgframework,
       this.doCSharp = true,
       this.doDart = true,
       this.useStaticDatabaseNames = false,
@@ -82,6 +96,15 @@ class NsgGenerator {
             .map((i) => NsgGenEnum.fromJson(i))
             .toList();
       }
+      currentProperty = 'serverEmitKind';
+      var serverEmitKind =
+          (parsedJson['serverEmitKind'] ?? NsgServerEmitKind.nsgframework)
+              .toString();
+      if (!NsgServerEmitKind.values.contains(serverEmitKind)) {
+        throw Exception(
+            'serverEmitKind="$serverEmitKind" is not valid. '
+            'Allowed: ${NsgServerEmitKind.values.join(", ")}.');
+      }
       currentProperty = 'controller';
       var controllers = (parsedJson['controller'] as List)
           .map((i) => NsgGenController.fromJson(i))
@@ -90,6 +113,7 @@ class NsgGenerator {
       return NsgGenerator(
           targetFramework: targetFramework,
           isDotNetCore: isDotNetCore,
+          serverEmitKind: serverEmitKind,
           cSharpPath: parsedJson['cSharpPath'] ?? '',
           cSharpNamespace: parsedJson['cSharpNamespace'] ?? '',
           dartPath: parsedJson['dartPath'] ?? '',
@@ -115,6 +139,14 @@ class NsgGenerator {
 
   Future writeCode(String path) async {
     jsonPath = path;
+    // В режиме `netcore` текущий NsgFramework C#-эмит пропускается; шаблоны
+    // нового EF Core эмита реализуются отдельно — см. TASK04 §2.1.4+.
+    // Dart-эмит выполняется как обычно.
+    if (serverEmitKind == NsgServerEmitKind.netcore && doCSharp) {
+      print('netcore: NsgFramework C# emit skipped. '
+          'EF Core templates not yet implemented (see TASK04 §2.1.4+).');
+      doCSharp = false;
+    }
     Directory dir;
     if (doCSharp) {
       dir = Directory(cSharpPath);
@@ -150,6 +182,11 @@ class NsgGenerator {
       print('loading ${element.className}');
       await element.load(this);
     });
+    // В режиме netcore валидация наличия pgTableName/pgColumnName на всех
+    // сущностях/полях — до начала эмита.
+    if (serverEmitKind == NsgServerEmitKind.netcore) {
+      validateForNetcoreEmit();
+    }
     await Future.forEach<NsgGenController>(controllers, (element) async {
       print('generating ${element.className}');
       await element.generateCode(this);
@@ -160,6 +197,32 @@ class NsgGenerator {
     }
     await NsgGenEnum.generateEnums(this, enums);
     await NsgGenLocalization.writeLocalization(this);
+  }
+
+  /// Проверяет, что все сущности и поля размечены `pgTableName`/`pgColumnName`,
+  /// требуемыми для netcore-эмита (TASK02 §«Архитектурные решения» №2).
+  /// Поля без `databaseName` (write-only/derived) пропускаются — у них нет
+  /// SQL-маппинга и в БД они не попадают.
+  void validateForNetcoreEmit() {
+    final errors = <String>[];
+    for (final di in dataItems.values) {
+      if (di.pgTableName.isEmpty) {
+        errors.add(
+            'pgTableName is required on type "${di.typeName}".');
+      }
+      for (final f in di.fields) {
+        if (f.databaseName.isEmpty) continue;
+        if (f.pgColumnName.isEmpty) {
+          errors.add(
+              'pgColumnName is required on field "${f.name}" of "${di.typeName}" '
+              '(databaseName="${f.databaseName}").');
+        }
+      }
+    }
+    if (errors.isNotEmpty) {
+      throw Exception(
+          'netcore validation failed:\n  - ${errors.join("\n  - ")}');
+    }
   }
 
   /// Эмитит `<dartPathGen>/_schema_meta.dart` с константой `kNsgSchemaHash`.

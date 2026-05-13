@@ -17,6 +17,11 @@ class NsgGenDataItem {
   final String description;
   final String databaseType;
   final String databaseTypeNamespace;
+
+  /// Имя таблицы Postgres для netcore-эмита. Additive (см. TASK03/TASK04).
+  /// В режиме `serverEmitKind: "netcore"` обязательно; в режиме
+  /// `nsgframework` — игнорируется.
+  final String pgTableName;
   final String presentation;
 
   /// Авторизация для этого типа данных (anonymous, user, admin, none). Учитывается при генерации маршрутов контроллера.
@@ -43,6 +48,7 @@ class NsgGenDataItem {
       this.description = '',
       this.databaseType = '',
       this.databaseTypeNamespace = '',
+      this.pgTableName = '',
       this.presentation = '',
       this.authorize = 'none',
       this.useLocalization = false,
@@ -76,6 +82,7 @@ class NsgGenDataItem {
               : parsedJson['databaseType'] ?? '',
           databaseType: parsedJson['databaseType'] ?? '',
           databaseTypeNamespace: parsedJson['databaseTypeNamespace'] ?? '',
+          pgTableName: parsedJson['pgTableName'] ?? '',
           presentation: parsedJson['presentation'] ?? '',
           authorize:
               (parsedJson['authorize'] ?? 'none').toString().toLowerCase(),
