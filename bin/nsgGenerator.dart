@@ -208,10 +208,12 @@ class NsgGenerator {
     if (serverEmitKind == NsgServerEmitKind.netcore) {
       validateForNetcoreEmit();
       // Эмит EF Core: Models/ + Configurations/ в netcoreOutputPath.
-      // AppDbContext / csproj / Program.cs — раунд 3 TASK04.
+      // csproj / Program.cs — раунд 3.Б TASK04.
       for (final di in dataItems.values) {
         await NsgGenNetcore.emitDataItem(this, di);
       }
+      // Раунд 3.А: AppDbContext.Designer.cs (overwrite) + AppDbContext.cs (one-shot).
+      await NsgGenNetcore.emitDbContext(this);
     }
     await Future.forEach<NsgGenController>(controllers, (element) async {
       print('generating ${element.className}');
