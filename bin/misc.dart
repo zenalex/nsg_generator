@@ -5,15 +5,18 @@ class Misc {
   static List<String> changedFiles = [];
 
   /// Записывает файл и при реальном изменении содержимого добавляет полный путь в [changedFiles].
-  static Future<void> writeFileIfChanged(String filePath, String content) async {
+  static Future<void> writeFileIfChanged(
+      String filePath, String content) async {
     final file = File(filePath);
     final absolutePath = file.absolute.path;
     String existing = '';
     if (await file.exists()) {
       existing = await file.readAsString();
     }
-    final normalizedNew = content.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
-    final normalizedExisting = existing.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    final normalizedNew =
+        content.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    final normalizedExisting =
+        existing.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
     if (normalizedNew != normalizedExisting) {
       await file.writeAsString(content);
       if (!changedFiles.contains(absolutePath)) {
@@ -30,8 +33,10 @@ class Misc {
     if (file.existsSync()) {
       existing = file.readAsStringSync();
     }
-    final normalizedNew = content.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
-    final normalizedExisting = existing.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    final normalizedNew =
+        content.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    final normalizedExisting =
+        existing.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
     if (normalizedNew != normalizedExisting) {
       file.writeAsStringSync(content);
       if (!changedFiles.contains(absolutePath)) {
@@ -78,22 +83,8 @@ class Misc {
     return dn;
   }
 
-  static RegExp nonUpperCaseRE = RegExp(r'[^A-ZА-Я]');
   static String getDartName(String dn) {
-    if (dn.isEmpty) return dn;
-    var firstLowerCaseIndex = dn.indexOf(nonUpperCaseRE);
-    if (firstLowerCaseIndex == -1) {
-      return dn.toLowerCase();
-    }
-    if (firstLowerCaseIndex == 0) {
-      return dn;
-    }
-    if (firstLowerCaseIndex > 1) firstLowerCaseIndex--;
-    var fc = dn.substring(0, firstLowerCaseIndex);
-    if (fc.length != dn.length) {
-      dn = fc.toLowerCase() + dn.substring(firstLowerCaseIndex);
-    }
-    return dn;
+    return dn.toLowerCamelCase();
   }
 
   static String getDartUnderscoreName(String dn) {
@@ -207,5 +198,32 @@ class Misc {
 
   static bool parseBoolOrTrue(Object? field) {
     return field != false && field != 'false';
+  }
+}
+
+extension StringExtension on String {
+  String toLowerCamelCase() {
+    if (isEmpty || trim().isEmpty) return this;
+
+    // Если первая буква уже строчная, ничего делать не нужно
+    if (this[0] == this[0].toLowerCase() && this[0] != this[0].toUpperCase())
+      return this;
+
+    final chars = split('');
+
+    for (int i = 0; i < chars.length; i++) {
+      // Проверяем, есть ли следующий символ
+      if (i + 1 < chars.length) {
+        final next = chars[i + 1];
+        // Если символ в нижнем регистре, останавливаемся
+        if (next == next.toLowerCase() && next != next.toUpperCase()) {
+          if (i == 0) chars[i] = chars[i].toLowerCase();
+          break;
+        }
+      }
+      chars[i] = chars[i].toLowerCase();
+    }
+
+    return chars.join('');
   }
 }
