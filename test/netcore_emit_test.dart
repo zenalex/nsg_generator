@@ -636,6 +636,90 @@ void main() {
       }
     });
 
+    test('cascade: table-row Owner FK gets OnDelete(Cascade); other FKs Restrict', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'FutbolistaServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      // BannerPlayerList с List<BannerPlayerListTable>.
+      final owner = NsgGenDataItem.fromJson({
+        'typeName': 'BannerPlayerList',
+        'databaseType': 'ЭлементБаннера',
+        'pgTableName': 'banner_player_lists',
+        'fields': [
+          { 'name': 'Id', 'databaseName': 'Id', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true' },
+          { 'name': 'Players', 'databaseName': 'Players', 'pgColumnName': 'players', 'type': 'List<BannerPlayerListTable>' },
+        ],
+      });
+      // BannerPlayerListTable — табчасть-row (databaseType ends with .Строка).
+      final row = NsgGenDataItem.fromJson({
+        'typeName': 'BannerPlayerListTable',
+        'databaseType': 'ЭлементБаннера.Строка',
+        'pgTableName': 'banner_player_list_rows',
+        'fields': [
+          { 'name': 'Id', 'databaseName': 'Id', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true' },
+          { 'name': 'Owner', 'databaseName': 'Owner', 'pgColumnName': 'owner', 'type': 'Reference<BannerPlayerList>' },
+          { 'name': 'Player', 'databaseName': 'Player', 'pgColumnName': 'player', 'type': 'Reference<PlayerItem>' },
+        ],
+      });
+      gen.dataItems['BannerPlayerList'] = owner;
+      gen.dataItems['BannerPlayerListTable'] = row;
+
+      // 1) computeTableRowOwners видит owner.
+      final ownersMap = NsgGenNetcore.computeTableRowOwners(gen);
+      expect(ownersMap['BannerPlayerListTable'], equals('BannerPlayerList'));
+
+      // 2) В Configuration табчасти-row: Owner FK → Cascade, Player FK → Restrict.
+      final config = NsgGenNetcore.emitConfiguration(gen, row);
+      // Owner — это FK на owner-тип, должен быть Cascade.
+      final ownerHasOneIdx = config.indexOf('builder.HasOne(x => x.Owner)');
+      expect(ownerHasOneIdx, isNonNegative, reason: 'Owner HasOne expected');
+      final ownerSection = config.substring(ownerHasOneIdx);
+      expect(ownerSection, contains('.OnDelete(DeleteBehavior.Cascade)'),
+          reason: 'Owner FK should be Cascade');
+      // Player — это FK на обычный тип, должен быть Restrict.
+      final playerHasOneIdx = config.indexOf('builder.HasOne(x => x.Player)');
+      expect(playerHasOneIdx, isNonNegative, reason: 'Player HasOne expected');
+      final playerSection = config.substring(playerHasOneIdx);
+      expect(playerSection, contains('.OnDelete(DeleteBehavior.Restrict)'),
+          reason: 'Player FK should be Restrict (non-owner Reference)');
+      // Block-комментарий про Cascade присутствует только в Owner-блоке.
+      expect(config, contains('// FK табчасть → owner: Cascade'));
+    });
+
+    test('cascade: regular entity (not isTableRow) — all FK Restrict', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      // ShopItem из discount_server — обычная сущность, не isTableRow.
+      final shop = NsgGenDataItem.fromJson({
+        'typeName': 'ShopItem',
+        'databaseType': 'Магазины',
+        'pgTableName': 'shops',
+        'fields': [
+          { 'name': 'Id', 'databaseName': 'Id', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true' },
+          { 'name': 'Photo', 'databaseName': 'Фото', 'pgColumnName': 'photo', 'type': 'Reference<FileItem>' },
+        ],
+      });
+      gen.dataItems['ShopItem'] = shop;
+      // Нет isTableRow-сущностей → ownersMap пуст.
+      expect(NsgGenNetcore.computeTableRowOwners(gen), isEmpty);
+      final config = NsgGenNetcore.emitConfiguration(gen, shop);
+      expect(config, contains('.OnDelete(DeleteBehavior.Restrict)'));
+      expect(config, isNot(contains('Cascade')));
+    });
+
     test('emitDbContext: AppDbContext.cs is one-shot (not overwritten)', () async {
       final gen = NsgGenerator.fromJson({
         'targetFramework': 'net10.0',
