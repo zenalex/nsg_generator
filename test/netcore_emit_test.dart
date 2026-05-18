@@ -670,22 +670,28 @@ void main() {
       gen.dataItems['BannerPlayerList'] = owner;
       gen.dataItems['BannerPlayerListTable'] = row;
 
-      // 1) computeTableRowOwners видит owner.
+      // 1) computeTableRowOwners видит owner и имя его обратной коллекции.
       final ownersMap = NsgGenNetcore.computeTableRowOwners(gen);
-      expect(ownersMap['BannerPlayerListTable'], equals('BannerPlayerList'));
+      expect(ownersMap['BannerPlayerListTable']?.typeName,
+          equals('BannerPlayerList'));
+      expect(ownersMap['BannerPlayerListTable']?.collectionFieldName,
+          equals('Players'));
 
-      // 2) В Configuration табчасти-row: Owner FK → Cascade, Player FK → Restrict.
+      // 2) В Configuration табчасти-row: Owner FK → Cascade + WithMany(o => o.Players),
+      //    Player FK → Restrict + WithMany().
       final config = NsgGenNetcore.emitConfiguration(gen, row);
-      // Owner — это FK на owner-тип, должен быть Cascade.
       final ownerHasOneIdx = config.indexOf('builder.HasOne(x => x.Owner)');
       expect(ownerHasOneIdx, isNonNegative, reason: 'Owner HasOne expected');
       final ownerSection = config.substring(ownerHasOneIdx);
+      expect(ownerSection, contains('.WithMany(o => o.Players)'),
+          reason: 'Owner FK must name back-collection or EF creates shadow FK');
       expect(ownerSection, contains('.OnDelete(DeleteBehavior.Cascade)'),
           reason: 'Owner FK should be Cascade');
-      // Player — это FK на обычный тип, должен быть Restrict.
       final playerHasOneIdx = config.indexOf('builder.HasOne(x => x.Player)');
       expect(playerHasOneIdx, isNonNegative, reason: 'Player HasOne expected');
       final playerSection = config.substring(playerHasOneIdx);
+      expect(playerSection, contains('.WithMany()'),
+          reason: 'Non-owner Reference: WithMany without arg');
       expect(playerSection, contains('.OnDelete(DeleteBehavior.Restrict)'),
           reason: 'Player FK should be Restrict (non-owner Reference)');
       // Block-комментарий про Cascade присутствует только в Owner-блоке.

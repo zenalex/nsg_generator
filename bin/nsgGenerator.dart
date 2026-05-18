@@ -212,6 +212,13 @@ class NsgGenerator {
       for (final di in dataItems.values) {
         await NsgGenNetcore.emitDataItem(this, di);
       }
+      // Enum-эмит для netcore: Models/<className>.cs (overwrite).
+      // Enum.values заполняются в NsgGenEnum.load, который для legacy-эмита
+      // вызывается ниже в generateEnums; для netcore явно загружаем заранее.
+      for (final e in enums) {
+        await e.load(this);
+        await NsgGenNetcore.emitEnum(this, e);
+      }
       // Раунд 3.А: AppDbContext.Designer.cs (overwrite) + AppDbContext.cs (one-shot).
       await NsgGenNetcore.emitDbContext(this);
       // Раунд 3.Б: csproj + Program.cs + appsettings.json + launchSettings.json
@@ -243,6 +250,8 @@ class NsgGenerator {
       }
       for (final f in di.fields) {
         if (f.databaseName.isEmpty) continue;
+        // List<...> — nav-коллекция (табчасть), не БД-колонка → pgColumnName не нужен.
+        if (f.type.startsWith('List<')) continue;
         if (f.pgColumnName.isEmpty) {
           errors.add(
               'pgColumnName is required on field "${f.name}" of "${di.typeName}" '
