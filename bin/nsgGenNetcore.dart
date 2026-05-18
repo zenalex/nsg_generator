@@ -369,7 +369,13 @@ class NsgGenNetcore {
       for (final owner in gen.dataItems.values) {
         if (owner.typeName == tableRow.typeName) continue;
         for (final f in owner.fields) {
+          // Owner-detection: `List<TableRow>` (simple list of table-row
+          // entities). Defensive: исключаем `List<UntypedReference<...>>`,
+          // у которого `referenceType` после nested-парсинга может случайно
+          // совпасть с `tableRow.typeName` — это полиморфная коллекция,
+          // не owner-привязка.
           if (f.type.startsWith('List<') &&
+              !f.type.contains('UntypedReference') &&
               f.referenceType == tableRow.typeName) {
             result[tableRow.typeName] =
                 (typeName: owner.typeName, collectionFieldName: f.name);

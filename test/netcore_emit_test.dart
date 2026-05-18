@@ -698,6 +698,45 @@ void main() {
       expect(config, contains('// FK табчасть → owner: Cascade'));
     });
 
+    test('cascade auto-detect: List<UntypedReference<X,...>> in owner is NOT treated as owner-attribute for X', () {
+      // Synthetic кейс: тип `Bag` имеет `List<UntypedReference<XRow, YRow>>`.
+      // XRow — isTableRow. Без defensive-фильтра auto-detect мог бы решить,
+      // что Bag — owner для XRow (потому что parser выставит referenceType=XRow).
+      // Это полиморфная коллекция, не owner-привязка. Owner НЕ должен найтись.
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'X',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      final xRow = NsgGenDataItem.fromJson({
+        'typeName': 'XRow',
+        'databaseType': 'X.Строка',
+        'pgTableName': 'x_rows',
+        'fields': [
+          { 'name': 'Id', 'databaseName': 'Id', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true' },
+        ],
+      });
+      final bag = NsgGenDataItem.fromJson({
+        'typeName': 'Bag',
+        'databaseType': 'Bag',
+        'pgTableName': 'bags',
+        'fields': [
+          { 'name': 'Id', 'databaseName': 'Id', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true' },
+          { 'name': 'Items', 'databaseName': 'Items', 'type': 'List<UntypedReference<XRow, YRow>>' },
+        ],
+      });
+      gen.dataItems['XRow'] = xRow;
+      gen.dataItems['Bag'] = bag;
+
+      final map = NsgGenNetcore.computeTableRowOwners(gen);
+      expect(map['XRow'], isNull,
+          reason: 'List<UntypedReference<...>> must not be treated as owner-attribute');
+    });
+
     test('cascade: regular entity (not isTableRow) — all FK Restrict', () {
       final gen = NsgGenerator.fromJson({
         'targetFramework': 'net10.0',
