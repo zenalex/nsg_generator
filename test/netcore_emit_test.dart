@@ -791,6 +791,87 @@ void main() {
       expect(out, contains('public static class TypeNameMap'));
     });
 
+    test('TypeFieldMapRegistry: maps every entity to its FieldMap pair', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'DiscountServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      Map<String, dynamic> mk(String name, String table) => {
+            'typeName': name,
+            'databaseType': name,
+            'pgTableName': table,
+            'fields': [
+              { 'name': 'Id', 'databaseName': 'Id', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true' },
+            ],
+          };
+      gen.dataItems['ZItem'] = NsgGenDataItem.fromJson(mk('ZItem', 'zs'));
+      gen.dataItems['AItem'] = NsgGenDataItem.fromJson(mk('AItem', 'as_'));
+
+      final out = NsgGenNetcore.emitTypeFieldMapRegistry(gen);
+      expect(out, contains('public sealed record FieldMaps('));
+      expect(out, contains('public static class TypeFieldMapRegistry'));
+      expect(out, contains('[typeof(AItem)] = new FieldMaps(AItemFieldMap.WireToCSharp, AItemFieldMap.CSharpToWire),'));
+      expect(out, contains('[typeof(ZItem)] = new FieldMaps(ZItemFieldMap.WireToCSharp, ZItemFieldMap.CSharpToWire),'));
+      // Alphabetic.
+      expect(out.indexOf('AItem'), lessThan(out.indexOf('ZItem')));
+    });
+
+    test('Wire DTO emit: NsgCompareDto + NsgRequestDto have expected records', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'DiscountServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      final compareDto = NsgGenNetcore.emitNsgCompareDto(gen);
+      expect(compareDto, contains('namespace DiscountServer.Wire;'));
+      expect(compareDto, contains('public sealed record NsgCompareDto('));
+      expect(compareDto, contains('int LogicalOperator,'));
+      expect(compareDto, contains('NsgCompareParamDto[] ParamList);'));
+      expect(compareDto, contains('public sealed record NsgCompareParamDto('));
+      expect(compareDto, contains('string Name,'));
+      expect(compareDto, contains('int ComparisonOperator,'));
+      expect(compareDto, contains('JsonElement Value);'));
+
+      final reqDto = NsgGenNetcore.emitNsgRequestDto(gen);
+      expect(reqDto, contains('public sealed record NsgRequestDto('));
+      expect(reqDto, contains('int? Top,'));
+      expect(reqDto, contains('NsgCompareDto? Compare,'));
+      expect(reqDto, contains('bool ShowDeletedObjects,'));
+    });
+
+    test('Wire deserializer/serializer emit: contains required parts', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'DiscountServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      final deserializer = NsgGenNetcore.emitNsgWireDeserializer(gen);
+      expect(deserializer, contains('public static class NsgWireDeserializer'));
+      expect(deserializer, contains('public static NsgRequestDto ParseRequest(JsonElement root)'));
+      expect(deserializer, contains('public static NsgCompareDto ParseCompare(JsonElement compareEl)'));
+      expect(deserializer, contains('private static int? TryGetInt('));
+      expect(deserializer, contains('JsonValueKind.String => int.TryParse'));
+
+      final serializer = NsgGenNetcore.emitNsgWireSerializer(gen);
+      expect(serializer, contains('public static class NsgWireSerializer'));
+      expect(serializer, contains('TypeFieldMapRegistry.ByType.TryGetValue'));
+      expect(serializer, contains('Enum e     => Convert.ToInt32(e)'));
+      expect(serializer, contains('Guid g     => g.ToString'));
+    });
+
     test('cascade auto-detect: List<UntypedReference<X,...>> in owner is NOT treated as owner-attribute for X', () {
       // Synthetic кейс: тип `Bag` имеет `List<UntypedReference<XRow, YRow>>`.
       // XRow — isTableRow. Без defensive-фильтра auto-detect мог бы решить,

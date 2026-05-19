@@ -223,6 +223,10 @@ class NsgGenerator {
       await NsgGenNetcore.emitDbContext(this);
       // TASK05 §5.1.gen: глобальный TypeNameMap (wire typeName ↔ pgTableName).
       await NsgGenNetcore.emitTypeNameMapFile(this);
+      // TASK05 §5.1.gen continuation: TypeFieldMapRegistry (Type → FieldMaps).
+      await NsgGenNetcore.emitTypeFieldMapRegistryFile(this);
+      // TASK05 §5.1.runtime: Wire/*.cs — one-shot DTO + (de)serializers.
+      await NsgGenNetcore.emitWireFiles(this);
       // Раунд 3.Б: csproj + Program.cs + appsettings.json + launchSettings.json
       // (всё one-shot).
       await NsgGenNetcore.emitHostingFiles(this);
