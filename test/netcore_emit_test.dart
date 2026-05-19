@@ -530,12 +530,18 @@ void main() {
           'using Microsoft.Extensions.Configuration;\n'
           'using Microsoft.Extensions.DependencyInjection;\n'
           'using NsgDiscountsServer;\n'
+          'using NsgDiscountsServer.Configurations;\n'
           '\n'
           'var builder = WebApplication.CreateBuilder(args);\n'
+          'builder.Services.AddNsgGeneratedServices();\n'
           'builder.Services.AddDbContext<AppDbContext>(opt =>\n'
           '    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));\n'
           'var app = builder.Build();\n'
-          'app.Run();\n';
+          'app.MapControllers();\n'
+          'app.Run();\n'
+          '\n'
+          '// Required for WebApplicationFactory<Program> in integration tests.\n'
+          'public partial class Program { }\n';
       expect(actual, equals(expected));
     });
 

@@ -225,8 +225,19 @@ class NsgGenerator {
       await NsgGenNetcore.emitTypeNameMapFile(this);
       // TASK05 §5.1.gen continuation: TypeFieldMapRegistry (Type → FieldMaps).
       await NsgGenNetcore.emitTypeFieldMapRegistryFile(this);
+      // TASK05 §5.2.2: NsgGeneratedServicesExtensions (extension methods, в-2).
+      await NsgGenNetcore.emitGeneratedServicesExtensionsFile(this);
       // TASK05 §5.1.runtime: Wire/*.cs — one-shot DTO + (de)serializers.
       await NsgGenNetcore.emitWireFiles(this);
+      // TASK05 §5.2.1: Controllers/<T>Controller.cs (overwrite) + .Custom.cs (one-shot).
+      // Per-method emission: takes apiPrefix + allowGetter/Post/Delete flags into account.
+      for (final controller in controllers) {
+        for (final method in controller.methods) {
+          await NsgGenNetcore.emitControllerForMethod(this, controller, method);
+        }
+      }
+      // TASK05 §5.2.4: test-project skeleton (one-shot, sibling dir).
+      await NsgGenNetcore.emitTestProject(this);
       // Раунд 3.Б: csproj + Program.cs + appsettings.json + launchSettings.json
       // (всё one-shot).
       await NsgGenNetcore.emitHostingFiles(this);
