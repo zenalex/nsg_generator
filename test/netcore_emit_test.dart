@@ -698,6 +698,99 @@ void main() {
       expect(config, contains('// FK табчасть → owner: Cascade'));
     });
 
+    test('FieldMap per-entity: wire ↔ C# round-trip for scalar+FK', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'DiscountServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      final shop = NsgGenDataItem.fromJson({
+        'typeName': 'ShopItem',
+        'databaseType': 'Магазины',
+        'pgTableName': 'shops',
+        'fields': [
+          { 'name': 'Id',    'databaseName': 'Id',   'pgColumnName': 'id',   'type': 'String', 'isPrimary': 'true' },
+          { 'name': 'Name',  'databaseName': 'Name', 'pgColumnName': 'name', 'type': 'String' },
+          { 'name': 'Photo', 'databaseName': 'Фото', 'pgColumnName': 'photo', 'type': 'Reference<FileItem>' },
+        ],
+      });
+      final out = NsgGenNetcore.emitFieldMap(gen, shop);
+      // Wire-имена — snake_case (dartName). FK имеет name=PhotoId после
+      // fromJson-мутации, dartName=photo_id (совпадает с SQL-колонкой).
+      expect(out, contains('"id"] = "Id"'));
+      expect(out, contains('"name"] = "Name"'));
+      expect(out, contains('"photoId"] = "PhotoId"'));
+      // И обратное направление.
+      expect(out, contains('"Id"] = "id"'));
+      expect(out, contains('"PhotoId"] = "photoId"'));
+      // Namespace и имя класса.
+      expect(out, contains('namespace DiscountServer.Configurations;'));
+      expect(out, contains('public static class ShopItemFieldMap'));
+    });
+
+    test('FieldMap skips fields without databaseName and List<> nav-collections', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'X',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      final di = NsgGenDataItem.fromJson({
+        'typeName': 'BannerPlayerList',
+        'databaseType': 'X',
+        'pgTableName': 'banner_player_lists',
+        'fields': [
+          { 'name': 'Id', 'databaseName': 'Id', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true' },
+          { 'name': 'Players', 'databaseName': 'Players', 'type': 'List<BannerPlayerListTable>' },
+          { 'name': 'Internal', 'type': 'String' },  // no databaseName
+        ],
+      });
+      final out = NsgGenNetcore.emitFieldMap(gen, di);
+      expect(out, contains('"id"] = "Id"'));
+      expect(out, isNot(contains('Players')),  reason: 'List<> nav-collection has no wire-key in NsgCompare');
+      expect(out, isNot(contains('Internal')), reason: 'fields without databaseName are skipped');
+    });
+
+    test('TypeNameMap: wire typeName ↔ pgTableName for all entities, sorted by typeName', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'DiscountServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      Map<String, dynamic> mk(String name, String table) => {
+            'typeName': name,
+            'databaseType': name,
+            'pgTableName': table,
+            'fields': [
+              { 'name': 'Id', 'databaseName': 'Id', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true' },
+            ],
+          };
+      gen.dataItems['ZItem'] = NsgGenDataItem.fromJson(mk('ZItem', 'zs'));
+      gen.dataItems['AItem'] = NsgGenDataItem.fromJson(mk('AItem', 'as_'));
+
+      final out = NsgGenNetcore.emitTypeNameMap(gen);
+      // Алфавитный порядок по typeName.
+      expect(out.indexOf('"AItem"'), lessThan(out.indexOf('"ZItem"')));
+      // WireToPgTable: typeName → pgTableName.
+      expect(out, contains('"AItem"] = "as_"'));
+      expect(out, contains('"ZItem"] = "zs"'));
+      // PgTableToWire: обратно.
+      expect(out, contains('"as_"] = "AItem"'));
+      expect(out, contains('"zs"] = "ZItem"'));
+      expect(out, contains('public static class TypeNameMap'));
+    });
+
     test('cascade auto-detect: List<UntypedReference<X,...>> in owner is NOT treated as owner-attribute for X', () {
       // Synthetic кейс: тип `Bag` имеет `List<UntypedReference<XRow, YRow>>`.
       // XRow — isTableRow. Без defensive-фильтра auto-detect мог бы решить,

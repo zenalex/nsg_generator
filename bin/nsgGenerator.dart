@@ -221,6 +221,8 @@ class NsgGenerator {
       }
       // Раунд 3.А: AppDbContext.Designer.cs (overwrite) + AppDbContext.cs (one-shot).
       await NsgGenNetcore.emitDbContext(this);
+      // TASK05 §5.1.gen: глобальный TypeNameMap (wire typeName ↔ pgTableName).
+      await NsgGenNetcore.emitTypeNameMapFile(this);
       // Раунд 3.Б: csproj + Program.cs + appsettings.json + launchSettings.json
       // (всё one-shot).
       await NsgGenNetcore.emitHostingFiles(this);
