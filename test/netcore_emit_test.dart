@@ -845,7 +845,8 @@ void main() {
       expect(compareDto, contains('public sealed record NsgCompareParamDto('));
       expect(compareDto, contains('string Name,'));
       expect(compareDto, contains('int ComparisonOperator,'));
-      expect(compareDto, contains('JsonElement Value);'));
+      expect(compareDto, contains('JsonElement Value,'));
+      expect(compareDto, contains('NsgCompareDto? Nested = null);'));
 
       final reqDto = NsgGenNetcore.emitNsgRequestDto(gen);
       expect(reqDto, contains('public sealed record NsgRequestDto('));
