@@ -229,6 +229,9 @@ class NsgGenerator {
       await NsgGenNetcore.emitGeneratedServicesExtensionsFile(this);
       // TASK05 §5.1.runtime: Wire/*.cs — one-shot DTO + (de)serializers.
       await NsgGenNetcore.emitWireFiles(this);
+      // TASK06 §6.3: Auth/*.cs (one-shot) + Configurations/UserRoles.cs (overwrite)
+      // + Controllers/AuthController.cs (one-shot — NsgDiscounts-pilot assumptions).
+      await NsgGenNetcore.emitAuthFiles(this);
       // TASK05 §5.2.1: Controllers/<T>Controller.cs (overwrite) + .Custom.cs (one-shot).
       // Per-method emission: takes apiPrefix + allowGetter/Post/Delete flags into account.
       for (final controller in controllers) {
