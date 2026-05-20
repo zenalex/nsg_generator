@@ -552,6 +552,7 @@ void main() {
           'builder.Services.AddDbContext<AppDbContext>(opt =>\n'
           '    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));\n'
           'var app = builder.Build();\n'
+          'app.UseCors();  // TASK06 §6.6.1 — должен быть ПЕРЕД UseAuthentication.\n'
           'app.UseAuthentication();\n'
           'app.UseAuthorization();\n'
           'app.MapControllers();\n'
