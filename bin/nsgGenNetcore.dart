@@ -1071,7 +1071,7 @@ class NsgGenNetcore {
         '/// Lookup по `Phone`/`Email` поля в зависимости от loginType (хвост AH:\n'
         '/// case-sensitive exact match без normalization — до prod normalize обязательно).</summary>\n'
         '[ApiController]\n'
-        '[Route("Api/Auth/Login")]\n'
+        '[Route("Api/Auth")]  // TASK06 §6.6.2 fix — nsg_data default authorizationApi="Api/Auth" (без /Login/).\n'
         'public class AuthController : ControllerBase\n'
         '{\n'
         '    private readonly AppDbContext _db;\n'
