@@ -464,18 +464,49 @@ class NsgGenFunction {
       paramTNString += '{NsgDataRequestParams? filter}';
     }
 
+    String functionType = dartType;
     // if (type.startsWith('List') && isReference) {
-    //   codeList.add(
-    //       '  Future<List<$dartType>> $dartName($paramTNString) async {');
+    //   functionType = 'List<$functionType>';
     // } else
     if (isReference && !type.startsWith('List')) {
-      String functionType = dartType;
       if (isNullable) functionType += '?';
-      codeList.add('  Future<$functionType> $dartName($paramTNString) async {');
     } else {
-      codeList
-          .add('  Future<List<$dartType>> $dartName($paramTNString) async {');
+      functionType = 'List<$functionType>';
     }
+    var funcSignature =
+        '  Future<$functionType> $dartName($paramTNString) async {';
+    if (funcSignature.length <= nsgGenerator.dartLineLength) {
+      codeList.add(funcSignature);
+    } else {
+      String functionType = dartType;
+      if (isReference && !type.startsWith('List')) {
+        if (isNullable) functionType += '?';
+      } else {
+        functionType = 'List<$functionType>';
+      }
+      funcSignature = '  Future<$functionType> $dartName(';
+      if (params.isEmpty) {
+        funcSignature += '{';
+      }
+      codeList.add(funcSignature);
+
+      if (params.isNotEmpty) {
+        params.forEach((p) {
+          codeList.add('    ${p.returnType} ${p.name},');
+        });
+        codeList[codeList.length - 1] += ' {';
+      }
+
+      codeList.add('    NsgDataRequestParams? filter,');
+      if (useProgressDialog) {
+        codeList.add('    bool showProgress = false,');
+        codeList.add('    bool isStoppable = false,');
+        var dlg = dialogText.isEmpty ? '' : ' = \'$dialogText\'';
+        codeList.add('    String? textDialog$dlg,');
+      }
+      codeList.add('  }) async {');
+    }
+
     var _ = '';
     if (useProgressDialog) {
       codeList.add(
@@ -532,26 +563,26 @@ class NsgGenFunction {
     } else /*if (type.startsWith('List'))*/ {
       codeList.add(
           '$_    var res = await NsgSimpleRequest<$dartType>().requestItems(');
-      codeList.add('$_        provider: provider!,');
+      codeList.add('$_      provider: provider!,');
       // } else {
       //   codeList.add(
       //       '      var res = await NsgSimpleRequest<$dartType>().requestItem(');
     }
-    codeList
-        .add('$_        function: \'/${controller.apiPrefix}/$apiPrefix\',');
-    codeList.add('$_        method: \'${apiType.toUpperCase()}\',');
-    codeList.add('$_        filter: filter,');
-    codeList.add('$_        autoRepeate: ${retryCount > 0},');
-    var endParam = '$_        autoRepeateCount: $retryCount';
+    codeList.add('$_      function: \'/${controller.apiPrefix}/$apiPrefix\',');
+    codeList.add('$_      method: \'${apiType.toUpperCase()}\',');
+    codeList.add('$_      filter: filter,');
+    codeList.add('$_      autoRepeate: ${retryCount > 0},');
+    var endParam = '$_      autoRepeateCount: $retryCount,';
     if (useProgressDialog) {
-      codeList.add('$endParam,');
-      endParam = '$_        cancelToken: progress.cancelToken';
+      codeList.add('$endParam');
+      endParam = '$_      cancelToken: progress.cancelToken,';
     }
     if (readReferences.isNotEmpty) {
-      codeList.add('$endParam,');
-      endParam = '$_        loadReference: loadReference';
+      codeList.add('$endParam');
+      endParam = '$_      loadReference: loadReference,';
     }
-    codeList.add('$endParam);');
+    codeList.add('$endParam');
+    codeList.add('$_    );');
     codeList.add('$_    return res;');
     // codeList.add('    } catch (e) {');
     // if (type == 'List<Reference>') {

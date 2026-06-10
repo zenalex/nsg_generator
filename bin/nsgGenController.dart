@@ -682,14 +682,12 @@ class NsgGenController {
     }
     codeList.add('    NsgMetrica.reportAppStart();');
     codeList.add('    provider ??= NsgDataProvider(');
-    codeList
-        .add('        applicationName: \'${nsgGenerator.applicationName}\',');
-    codeList.add('        applicationVersion: info.version,');
-    codeList.add('        firebaseToken: \'\',');
-    codeList
-        .add('        availableServers: NsgServerOptions.availableServers,');
+    codeList.add('      applicationName: \'${nsgGenerator.applicationName}\',');
+    codeList.add('      applicationVersion: info.version,');
+    codeList.add('      firebaseToken: \'\',');
+    codeList.add('      availableServers: NsgServerOptions.availableServers,');
     if (nsgGenerator.newTableLogic) {
-      codeList.add('        newTableLogic: true,');
+      codeList.add('      newTableLogic: true,');
     }
     codeList.add('    );');
     codeList.add('    provider?.loadServerAddress();');
@@ -781,18 +779,34 @@ class NsgGenController {
   void addRegisterDataItems(NsgGenerator nsgGenerator, List<String> codeList) {
     methods.forEach((_) {
       var registerDataItemStr =
-          '        .registerDataItem(${_.genDataItem.typeName}(), remoteProvider: provider);';
-      if (!codeList.contains(registerDataItemStr)) {
-        codeList.add('    NsgDataClient.client');
-        codeList.add(registerDataItemStr);
+          '    NsgDataClient.client.registerDataItem(${_.genDataItem.typeName}(), remoteProvider: provider);';
+      if (registerDataItemStr.length <= nsgGenerator.dartLineLength) {
+        if (!codeList.contains(registerDataItemStr)) {
+          codeList.add(registerDataItemStr);
+        }
+      } else {
+        var registerDataItemStr =
+            '      .registerDataItem(${_.genDataItem.typeName}(), remoteProvider: provider);';
+        if (!codeList.contains(registerDataItemStr)) {
+          codeList.add('    NsgDataClient.client');
+          codeList.add(registerDataItemStr);
+        }
       }
     });
     nsgGenerator.enums.forEach((_) {
       var registerDataItemStr =
-          '        .registerDataItem(${_.className}(0, \'\'), remoteProvider: provider);';
-      if (!codeList.contains(registerDataItemStr)) {
-        codeList.add('    NsgDataClient.client');
-        codeList.add(registerDataItemStr);
+          '    NsgDataClient.client.registerDataItem(${_.className}(0, \'\'), remoteProvider: provider);';
+      if (registerDataItemStr.length <= nsgGenerator.dartLineLength) {
+        if (!codeList.contains(registerDataItemStr)) {
+          codeList.add(registerDataItemStr);
+        }
+      } else {
+        var registerDataItemStr =
+            '      .registerDataItem(${_.className}(0, \'\'), remoteProvider: provider);';
+        if (!codeList.contains(registerDataItemStr)) {
+          codeList.add('    NsgDataClient.client');
+          codeList.add(registerDataItemStr);
+        }
       }
     });
   }
