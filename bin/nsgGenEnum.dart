@@ -53,6 +53,7 @@ class NsgGenEnum {
         codeList.add('using System.Linq;');
         codeList.add('using NsgServerClasses;');
         codeList.add('');
+        Misc.writeThisFileIsGeneratedClient(codeList);
         codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
         codeList.add('{');
         if (description.isNotEmpty) {
@@ -148,6 +149,7 @@ class NsgGenEnum {
 
   Future generateEnumDart(NsgGenerator nsgGenerator) async {
     var codeList = <String>[];
+    Misc.writeThisFileIsGeneratedClient(codeList);
     if (useLocalization || nsgGenerator.useLocalization) {
       codeList.add('import \'package:get/get.dart\';');
       codeList.add('import \'../../l10n/app_localizations.dart\';');
