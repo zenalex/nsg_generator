@@ -53,7 +53,7 @@ class NsgGenEnum {
         codeList.add('using System.Linq;');
         codeList.add('using NsgServerClasses;');
         codeList.add('');
-        Misc.writeThisFileIsGeneratedClient(codeList);
+        Misc.writeThisFileIsGeneratedServer(codeList);
         codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
         codeList.add('{');
         if (description.isNotEmpty) {
