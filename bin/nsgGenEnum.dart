@@ -137,10 +137,22 @@ class NsgGenEnum {
 
   static Future generateExportFile(
       NsgGenerator nsgGenerator, List<NsgGenEnum> enums) async {
-    var codeList = <String>[];
+    List<String> codeList;
+
+    var filePath = '${nsgGenerator.dartPath}/enums.dart';
+    var file = File(filePath);
+    if (await file.exists()) {
+      codeList = await file.readAsLines();
+    } else {
+      codeList = <String>[];
+    }
+
     enums.forEach((_) {
-      codeList.add(
-          "export 'enums/${Misc.getDartUnderscoreName(_.className)}.dart';");
+      var item =
+          "export 'enums/${Misc.getDartUnderscoreName(_.className)}.dart';";
+      if (!codeList.contains(item)) {
+        codeList.add(item);
+      }
     });
 
     await Misc.writeFileIfChanged(
