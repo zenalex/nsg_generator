@@ -16,6 +16,7 @@ class NsgGenFunction {
   final bool isNullable;
   final bool writeOnClient;
   final bool useProgressDialog;
+  final bool serverUseRequestMessage;
   final int retryCount;
   final String dialogText;
   final List<String> readReferences;
@@ -35,6 +36,7 @@ class NsgGenFunction {
       this.isNullable = true,
       this.writeOnClient = true,
       this.useProgressDialog = false,
+      this.serverUseRequestMessage = false,
       this.retryCount = 3,
       this.dialogText = '',
       this.readReferences = const [],
@@ -112,6 +114,8 @@ class NsgGenFunction {
           writeOnClient: Misc.parseBoolOrTrue(parsedJson['writeOnClient']),
           useProgressDialog:
               Misc.parseBoolOrTrue(parsedJson['useProgressDialog']),
+          serverUseRequestMessage:
+              Misc.parseBool(parsedJson['serverUseRequestMessage']),
           retryCount: retryCount,
           dialogText: parsedJson['dialogText'] ?? '',
           readReferences: parsedJson.containsKey('readReferences')
@@ -208,6 +212,9 @@ class NsgGenFunction {
     var paramNString = controller.useAuthorization && authorize != 'none'
         ? 'user, findParams'
         : 'null, findParams';
+    if (serverUseRequestMessage) {
+      paramNString = 'Request, $paramNString';
+    }
     if (params.isNotEmpty) {
       params.forEach((p) {
         paramNString += ', ' + p.name;
@@ -308,6 +315,9 @@ class NsgGenFunction {
   Future generateControllerInterfaceMethod(List<String> codeList,
       NsgGenerator nsgGenerator, NsgGenController controller) async {
     var paramTNString = 'INsgTokenExtension user, NsgFindParams findParams';
+    if (serverUseRequestMessage) {
+      paramTNString = 'HttpRequestMessage requestMessage, $paramTNString';
+    }
     if (params.isNotEmpty) {
       params.forEach((p) {
         paramTNString += ', ' + p.returnType + ' ' + p.name;
@@ -342,6 +352,10 @@ class NsgGenFunction {
       NsgGenerator nsgGenerator, NsgGenController controller) async {
     var paramTNString = 'INsgTokenExtension user, NsgFindParams findParams';
     var paramNString = 'user, findParams';
+    if (serverUseRequestMessage) {
+      paramTNString = 'HttpRequestMessage requestMessage, $paramTNString';
+      paramNString = 'requestMessage, $paramNString';
+    }
     if (params.isNotEmpty) {
       params.forEach((p) {
         paramTNString += ', ' + p.returnType + ' ' + p.name;
@@ -384,6 +398,9 @@ class NsgGenFunction {
   Future generateControllerImplMethod(List<String> codeList,
       NsgGenerator nsgGenerator, NsgGenController controller) async {
     var paramTNString = 'INsgTokenExtension user, NsgFindParams findParams';
+    if (serverUseRequestMessage) {
+      paramTNString = 'HttpRequestMessage requestMessage, $paramTNString';
+    }
     if (params.isNotEmpty) {
       params.forEach((p) {
         paramTNString += ', ' + p.returnType + ' ' + p.name;

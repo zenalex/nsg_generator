@@ -92,6 +92,7 @@ class NsgGenController {
     try {
       if (nsgGenerator.doCSharp) {
         currentStage = 'C# controller $className';
+        // ${DataController}.cs
         var codeList = <String>[];
         codeList.add('using Microsoft.Extensions.Logging;');
         codeList.add('using System;');
@@ -273,11 +274,13 @@ class NsgGenController {
   }
 
   Future generateInterfaceData(NsgGenerator nsgGenerator) async {
+    // ${DataController}Interface.cs
     var codeList = <String>[];
     codeList.add('using System;');
     codeList.add('using System.Collections.Generic;');
     codeList.add('using System.IO;');
     codeList.add('using System.Net;');
+    codeList.add('using System.Net.Http;');
     codeList.add('using ${nsgGenerator.cSharpNamespace};');
     codeList.add('using NsgServerClasses;');
     codeList.add('using System.Threading.Tasks;');
@@ -344,6 +347,7 @@ class NsgGenController {
     codeList.add('using System.IO;');
     codeList.add('using System.Linq;');
     codeList.add('using System.Net;');
+    codeList.add('using System.Net.Http;');
     codeList.add('using ${nsgGenerator.cSharpNamespace};');
     codeList.add('using NsgServerClasses;');
     codeList.add('using System.Threading.Tasks;');
@@ -438,6 +442,7 @@ class NsgGenController {
     codeList.add('using System.IO;');
     codeList.add('using System.Linq;');
     codeList.add('using System.Net;');
+    codeList.add('using System.Net.Http;');
     if (functions.any((f) => ['Image', 'Binary'].contains(f.type))) {
       codeList.add('using System.Net.Http;');
       codeList.add('using System.Net.Http.Headers;');
