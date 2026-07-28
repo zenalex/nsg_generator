@@ -24,6 +24,11 @@ class NsgGenMethod {
 
   late NsgGenDataItem genDataItem;
 
+  /// Описание типа данных прямо в конфиге вместо отдельного файла
+  /// (`dataTypeFile`). Используется, когда метаданные синтезирует сам
+  /// генератор — например, для `supportChat` (см. NsgGenerator).
+  final Map<String, dynamic>? dataTypeInline;
+
   NsgGenMethod(
       {required this.name,
       this.description = '',
@@ -35,6 +40,7 @@ class NsgGenMethod {
       required this.authorizeDelete,
       this.getterType = 'POST',
       required this.dataTypeFlie,
+      this.dataTypeInline,
       this.allowGetter = true,
       this.allowCreate = false,
       this.allowPost = false,
@@ -67,6 +73,9 @@ class NsgGenMethod {
               .toString()
               .toUpperCase(),
           dataTypeFlie: parsedJson['dataTypeFile'] ?? '',
+          dataTypeInline: parsedJson['dataType'] is Map<String, dynamic>
+              ? parsedJson['dataType'] as Map<String, dynamic>
+              : null,
           allowGetter:
               Misc.parseBoolOrTrue(parsedJson['allowGetter']) || needsAllCRUD,
           allowCreate: Misc.parseBool(parsedJson['allowCreate']),
@@ -308,9 +317,14 @@ class NsgGenMethod {
 
   Future loadGenDataItem(NsgGenerator nsgGenerator) async {
     print('$name genDataItem initializing');
-    var text =
-        await File('${nsgGenerator.jsonPath}/$dataTypeFlie').readAsString();
-    genDataItem = NsgGenDataItem.fromJson(json.decode(text));
+    if (dataTypeInline != null) {
+      // Тип описан прямо в конфиге (синтезированные метаданные) — файла нет.
+      genDataItem = NsgGenDataItem.fromJson(dataTypeInline!);
+    } else {
+      var text =
+          await File('${nsgGenerator.jsonPath}/$dataTypeFlie').readAsString();
+      genDataItem = NsgGenDataItem.fromJson(json.decode(text));
+    }
     print('$name genDataItem initialized');
   }
 

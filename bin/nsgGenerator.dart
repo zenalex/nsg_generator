@@ -7,6 +7,7 @@ import 'nsgGenDataItem.dart';
 import 'nsgGenEnum.dart';
 import 'nsgGenLocalization.dart';
 import 'nsgGenNetcore.dart';
+import 'nsgGenSupportChat.dart';
 import 'schema_hash.dart';
 
 /// Тип серверного эмита. Ортогонален `targetFramework` (тот — версия runtime).
@@ -42,6 +43,13 @@ class NsgGenerator {
   final bool newTableLogic;
   final List<NsgGenController> controllers;
   final List<NsgGenEnum> enums;
+
+  /// Чат поддержки Chatista Connect (см. NsgGenSupportChat).
+  /// По умолчанию выключен — на существующие конфиги не влияет.
+  NsgGenSupportChat supportChat = NsgGenSupportChat(
+      enabled: false,
+      productExternalKey: '',
+      typeName: NsgGenSupportChat.defaultTypeName);
   final Map<String, NsgGenDataItem> dataItems = Map();
   final Map<String, String> localizationDict = Map();
   bool doCSharp = true;
@@ -125,6 +133,13 @@ class NsgGenerator {
         throw Exception(
             'netcoreOutputPath is required when serverEmitKind="netcore".');
       }
+      // Чат поддержки: разворачиваем флаг в обычные метаданные (тип + функция)
+      // ДО разбора контроллеров, чтобы дальше работал штатный конвейер.
+      currentProperty = 'supportChat';
+      var supportChat = NsgGenSupportChat.fromJson(
+          parsedJson['supportChat'], parsedJson['applicationName'] ?? '');
+      supportChat.injectInto(parsedJson);
+
       currentProperty = 'controller';
       var controllers = (parsedJson['controller'] as List)
           .map((i) => NsgGenController.fromJson(i))
@@ -147,7 +162,8 @@ class NsgGenerator {
           useStaticDatabaseNames:
               Misc.parseBool(parsedJson['useStaticDatabaseNames']),
           controllers: controllers,
-          enums: enums);
+          enums: enums)
+        ..supportChat = supportChat;
     } catch (e) {
       print(
           '--- ERROR parsing${currentProperty.isEmpty ? '' : ' property \'$currentProperty\' from'} generation_config.json ---');
