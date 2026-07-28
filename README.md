@@ -7,6 +7,10 @@
 1.	проект сервера ASP.NET на языке C#
 2.	модели данных для клиентского приложения Flutter на языке Dart
 
+### Дополнительно
+
+- [Интеграция чата поддержки (Chatista Connect)](docs/support-chat-integration.md) — флаг `supportChat`, серверный хук, клиент Flutter, диагностика
+
 ## Порядок действий для генерации модели обмена данных
 
 1.	Непосредственно генерацию осуществляет данный проект (nsg_generator https://github.com/zenalex/nsg_generator.git)
