@@ -277,6 +277,28 @@ await NsgMessenger.openRoom(context, room.id);
 | Комната создаётся, оператор её не видит | не тот тенант/продукт | сверить `tenantExternalKey` и `productExternalKey` |
 | У пользователя каждый раз новая история | `externalUserId` непостоянный | в хуке отдавать постоянный id, **не** `user.UserId` |
 | `kernel_snapshot failed`, `record_linux` | конфликт версий транзитивной зависимости | override `record_linux: ^1.3.1` |
+| **Вылет приложения при вложении файла** | нативный плагин соц-логина ловит чужой результат activity | см. ниже |
+
+### Вылет при прикреплении файла (нативный краш)
+
+Симптом: пользователь жмёт «прикрепить файл», выбирает фото — приложение
+показывает «произошёл сбой» и закрывается. В GlitchTip — `fatal`:
+
+```
+UninitializedPropertyAccessException: lateinit property authManager
+  → ru.innim.flutter_login_vk.ActivityListener.onActivityResult
+```
+
+Это **не дефект чата**. Flutter раздаёт результат выбора файла всем плагинам;
+pub-версия `flutter_login_vk` вызывает `VK.onActivityResult` безусловно, а в
+продукте без VK-входа SDK никогда не инициализируется → нативный краш. Чат
+просто первым добавляет выбор файла и вскрывает мину.
+
+Лечится в `nsg_login` (пропатченный форк плагина подключён путём) —
+подробности и правило для новых соц-логинов:
+`nsg_login/docs/social-login-native-plugins.md`. В приложении ничего делать не
+нужно; проверить можно так — после `flutter pub get` в `pubspec.lock` у
+`flutter_login_vk` должно быть `source: path`, а не `hosted`.
 
 ---
 
