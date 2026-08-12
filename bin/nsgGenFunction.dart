@@ -568,6 +568,10 @@ class NsgGenFunction {
         }
       });
       codeList.add('$_    ];');
+      codeList.add('$_    if (filter.referenceList?.isNotEmpty ?? false) {');
+      codeList.add(
+          '$_      loadReference = (loadReference.toSet()..addAll(filter.referenceList!)).toList();');
+      codeList.add('$_    }');
     }
     if (isReference) {
       if (type.startsWith('List')) {
