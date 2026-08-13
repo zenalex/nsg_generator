@@ -253,6 +253,9 @@ class NsgGenFunction {
         uriParamNString = controller.useAuthorization && authorize != 'none'
             ? 'user, requestMessage'
             : 'null, requestMessage';
+      } else if (serverUseHttpRequestMessage) {
+        uriParamTNString = 'HttpRequestMessage requestMessage$uriParamTNString';
+        uriParamNString = 'requestMessage$uriParamNString';
       } else {
         uriParamTNString = uriParamTNString.substring(2);
         uriParamNString = uriParamNString.substring(2);
@@ -336,6 +339,8 @@ class NsgGenFunction {
       if (uriParamTNString.isEmpty) {
         uriParamTNString =
             'INsgTokenExtension user, System.Net.Http.HttpRequestMessage requestMessage';
+      } else if (serverUseHttpRequestMessage) {
+        uriParamTNString = 'HttpRequestMessage requestMessage$uriParamTNString';
       } else {
         uriParamTNString = uriParamTNString.substring(2);
       }
@@ -381,6 +386,9 @@ class NsgGenFunction {
         uriParamTNString =
             'INsgTokenExtension user, System.Net.Http.HttpRequestMessage requestMessage';
         uriParamNString = 'user, requestMessage';
+      } else if (serverUseHttpRequestMessage) {
+        uriParamTNString = 'HttpRequestMessage requestMessage$uriParamTNString';
+        uriParamNString = 'requestMessage$uriParamNString';
       } else {
         uriParamTNString = uriParamTNString.substring(2);
         uriParamNString = uriParamNString.substring(2);
@@ -422,6 +430,8 @@ class NsgGenFunction {
       if (uriParamTNString.isEmpty) {
         uriParamTNString =
             'INsgTokenExtension user, HttpRequestMessage requestMessage';
+      } else if (serverUseHttpRequestMessage) {
+        uriParamTNString = 'HttpRequestMessage requestMessage$uriParamTNString';
       } else {
         uriParamTNString = uriParamTNString.substring(2);
       }
