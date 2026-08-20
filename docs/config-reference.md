@@ -1,0 +1,106 @@
+# Справочник конфигурации
+
+Все ключи ниже действительно разбираются генератором — список сверен с `parsedJson['…']` в
+`bin/nsgGenerator.dart`, `bin/nsgGenDataItem.dart`, `bin/nsgGenDataItemField.dart`,
+`bin/nsgGenMethod.dart`. Ключ, отсутствующий здесь, генератором игнорируется молча.
+
+## 1. `generation_config.json` — корень
+
+| ключ | назначение |
+|---|---|
+| `serverEmitKind` | `netcore` — самостоятельный сервер ASP.NET Core; отсутствует или иное — классический эмит на `NsgServerClasses` |
+| `targetFramework` | `net5.0`…`net10.0`; при пустом значении подставляется `net5.0` |
+| `cSharpNamespace` | пространство имён серверного проекта (обязателен при `doCSharp`) |
+| `cSharpPath` | каталог вывода серверного проекта (классический эмит) |
+| `netcoreOutputPath` | каталог вывода при `serverEmitKind: netcore` |
+| `dartPath` | каталог вывода Dart-моделей клиента |
+| `doCSharp` · `doDart` | включение серверной и клиентской генерации |
+| `applicationName` | имя приложения, попадает в клиентский `NsgDataProvider` |
+| `controller` | описание контроллера клиента: список методов (см. раздел 3) |
+| `enums` | список перечислений |
+| `useLocalization` | генерация локализуемых представлений |
+| `defaultLocale` | локаль по умолчанию |
+| `newTableLogic` | новая логика табличных частей на клиенте |
+| `useStaticDatabaseNames` | статические имена полей БД |
+| `supportChat` | генерация интеграции чата поддержки |
+
+## 2. Файл описания типа (`dataTypeFile`)
+
+| ключ | назначение |
+|---|---|
+| `typeName` | имя типа; определяет имена классов на сервере и клиенте |
+| `description` · `presentation` | описание и представление объекта |
+| `fields` | список полей (раздел 4) |
+| `databaseType` · `databaseTypeNamespace` | тип метаданных классического эмита |
+| `pgTableName` | имя таблицы PostgreSQL (netcore-эмит) |
+| `authorize` | требуемый уровень доступа к типу |
+| `entityType` | вид сущности |
+| `isTableRow` | тип является строкой табличной части |
+| `isDistributed` | участие в распределённом обмене |
+| `extends` · `allowExtend` · `extensionTypeField` | наследование и расширение типов |
+| `additionalDataField` | поле дополнительных данных |
+| `periodFieldName` · `lastEditedFieldName` | поле периода и поле отметки изменения |
+| `predefinedObjects` | предопределённые объекты |
+| `maxHttpGetItems` | предел числа объектов в ответе |
+| `useLocalization` · `useStaticDatabaseNames` | переопределение корневых настроек |
+
+## 3. Метод контроллера (элемент `controller.methods`)
+
+Здесь задаётся **состав операций**: генератор порождает только то, что разрешено.
+
+| ключ | назначение |
+|---|---|
+| `name` | имя метода и основа маршрута |
+| `dataTypeFile` · `dataType` | описание типа данных метода |
+| `apiPrefix` | префикс маршрута |
+| `getterType` · `type` | HTTP-метод чтения (по умолчанию `POST`) |
+| **`allowGetter`** | порождать чтение (по умолчанию — да) |
+| **`allowCreate`** | порождать создание объекта |
+| **`allowPost`** | порождать запись (`Post`) |
+| **`allowDelete`** | порождать удаление (`Delete`) |
+| `authorize` | уровень доступа ко всем операциям метода |
+| `authorize.get` · `authorize.create` · `authorize.post` · `authorize.delete` | уровень доступа по каждой операции отдельно |
+| `description` | описание |
+
+**Отсутствие операции и запрет операции — разные вещи.** При `allowDelete: false` метод удаления в
+порождённом контроллере **не появляется вовсе**; при `authorize.delete` он существует, но требует
+прав. Для данных, которые не должны удаляться никогда (журналы, измерения, аудит), правильным
+является первое.
+
+## 4. Поле типа (элемент `fields`)
+
+| ключ | назначение |
+|---|---|
+| `name` | имя поля |
+| `type` | тип значения |
+| `databaseName` | имя поля в обмене и в БД классического эмита |
+| `pgColumnName` | имя колонки PostgreSQL (netcore-эмит) |
+| `isPrimary` | первичный ключ |
+| `maxLength` | предельная длина |
+| **`allowPost`** | клиенту разрешено присылать это поле (по умолчанию — да) |
+| `writeOnClient` · `writeOnServer` | сторона, изменяющая поле |
+| `referenceName` · `referenceType` · `referenceTypes` · `defaultReferenceType` | ссылочные поля |
+| `useDate` · `useTime` | использование даты и времени |
+| `userName` · `userVisibility` | пользовательское имя и видимость |
+| `apiPrefix` | префикс для поля-ссылки |
+| `description` | описание |
+
+Поля с `writeOnServer: true` и `allowPost: false` исключаются из приёма: сервер их не берёт из
+запроса, даже если клиент прислал.
+
+## 5. Пример: тип только для добавления
+
+Конфигурация для данных, которые пишутся один раз и не изменяются:
+
+```json
+{
+  "name": "Trial",
+  "dataTypeFile": "trial.json",
+  "authorize": "user",
+  "allowGetter": "true",
+  "allowPost": "true",
+  "allowDelete": "false"
+}
+```
+
+Порождается чтение и запись; операции удаления в контроллере не существует.
