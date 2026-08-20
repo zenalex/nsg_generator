@@ -58,6 +58,7 @@ class NsgGenerator {
   bool copyCsproj = false;
   bool copyProgramCs = false;
   bool copyStartupCs = false;
+  int dartLineLength = 160; // TODO: в json проектов
 
   String? jsonPath;
 

@@ -17,6 +17,7 @@ class NsgGenFunction {
   final bool isNullable;
   final bool writeOnClient;
   final bool useProgressDialog;
+  final bool serverUseHttpRequestMessage;
   final int retryCount;
   final String dialogText;
   final List<String> readReferences;
@@ -36,6 +37,7 @@ class NsgGenFunction {
       this.isNullable = true,
       this.writeOnClient = true,
       this.useProgressDialog = false,
+      this.serverUseHttpRequestMessage = false,
       this.retryCount = 3,
       this.dialogText = '',
       this.readReferences = const [],
@@ -113,6 +115,8 @@ class NsgGenFunction {
           writeOnClient: Misc.parseBoolOrTrue(parsedJson['writeOnClient']),
           useProgressDialog:
               Misc.parseBoolOrTrue(parsedJson['useProgressDialog']),
+          serverUseHttpRequestMessage:
+              Misc.parseBool(parsedJson['serverUseHttpRequestMessage']),
           retryCount: retryCount,
           dialogText: parsedJson['dialogText'] ?? '',
           readReferences: parsedJson.containsKey('readReferences')
@@ -209,6 +213,9 @@ class NsgGenFunction {
     var paramNString = controller.useAuthorization && authorize != 'none'
         ? 'user, findParams'
         : 'null, findParams';
+    if (serverUseHttpRequestMessage) {
+      paramNString = 'Request, $paramNString';
+    }
     if (params.isNotEmpty) {
       params.forEach((p) {
         paramNString += ', ' + p.name;
@@ -247,6 +254,9 @@ class NsgGenFunction {
         uriParamNString = controller.useAuthorization && authorize != 'none'
             ? 'user, requestMessage'
             : 'null, requestMessage';
+      } else if (serverUseHttpRequestMessage) {
+        uriParamTNString = 'HttpRequestMessage requestMessage$uriParamTNString';
+        uriParamNString = 'requestMessage$uriParamNString';
       } else {
         uriParamTNString = uriParamTNString.substring(2);
         uriParamNString = uriParamNString.substring(2);
@@ -309,6 +319,9 @@ class NsgGenFunction {
   Future generateControllerInterfaceMethod(List<String> codeList,
       NsgGenerator nsgGenerator, NsgGenController controller) async {
     var paramTNString = 'INsgTokenExtension user, NsgFindParams findParams';
+    if (serverUseHttpRequestMessage) {
+      paramTNString = 'HttpRequestMessage requestMessage, $paramTNString';
+    }
     if (params.isNotEmpty) {
       params.forEach((p) {
         paramTNString += ', ' + p.returnType + ' ' + p.name;
@@ -327,6 +340,8 @@ class NsgGenFunction {
       if (uriParamTNString.isEmpty) {
         uriParamTNString =
             'INsgTokenExtension user, System.Net.Http.HttpRequestMessage requestMessage';
+      } else if (serverUseHttpRequestMessage) {
+        uriParamTNString = 'HttpRequestMessage requestMessage$uriParamTNString';
       } else {
         uriParamTNString = uriParamTNString.substring(2);
       }
@@ -343,6 +358,10 @@ class NsgGenFunction {
       NsgGenerator nsgGenerator, NsgGenController controller) async {
     var paramTNString = 'INsgTokenExtension user, NsgFindParams findParams';
     var paramNString = 'user, findParams';
+    if (serverUseHttpRequestMessage) {
+      paramTNString = 'HttpRequestMessage requestMessage, $paramTNString';
+      paramNString = 'requestMessage, $paramNString';
+    }
     if (params.isNotEmpty) {
       params.forEach((p) {
         paramTNString += ', ' + p.returnType + ' ' + p.name;
@@ -368,6 +387,9 @@ class NsgGenFunction {
         uriParamTNString =
             'INsgTokenExtension user, System.Net.Http.HttpRequestMessage requestMessage';
         uriParamNString = 'user, requestMessage';
+      } else if (serverUseHttpRequestMessage) {
+        uriParamTNString = 'HttpRequestMessage requestMessage$uriParamTNString';
+        uriParamNString = 'requestMessage$uriParamNString';
       } else {
         uriParamTNString = uriParamTNString.substring(2);
         uriParamNString = uriParamNString.substring(2);
@@ -385,6 +407,9 @@ class NsgGenFunction {
   Future generateControllerImplMethod(List<String> codeList,
       NsgGenerator nsgGenerator, NsgGenController controller) async {
     var paramTNString = 'INsgTokenExtension user, NsgFindParams findParams';
+    if (serverUseHttpRequestMessage) {
+      paramTNString = 'HttpRequestMessage requestMessage, $paramTNString';
+    }
     if (params.isNotEmpty) {
       params.forEach((p) {
         paramTNString += ', ' + p.returnType + ' ' + p.name;
@@ -412,6 +437,8 @@ class NsgGenFunction {
       if (uriParamTNString.isEmpty) {
         uriParamTNString =
             'INsgTokenExtension user, HttpRequestMessage requestMessage';
+      } else if (serverUseHttpRequestMessage) {
+        uriParamTNString = 'HttpRequestMessage requestMessage$uriParamTNString';
       } else {
         uriParamTNString = uriParamTNString.substring(2);
       }
@@ -471,19 +498,50 @@ class NsgGenFunction {
       paramTNString += '{NsgDataRequestParams? filter}';
     }
 
+    String functionType = dartType;
     // if (type.startsWith('List') && isReference) {
-    //   codeList.add(
-    //       '  Future<List<$dartType>> $dartName($paramTNString) async {');
+    //   functionType = 'List<$functionType>';
     // } else
     if (isReference && !type.startsWith('List')) {
-      String functionType = dartType;
       if (isNullable) functionType += '?';
-      codeList.add('  Future<$functionType> $dartName($paramTNString) async {');
     } else {
-      codeList
-          .add('  Future<List<$dartType>> $dartName($paramTNString) async {');
+      functionType = 'List<$functionType>';
     }
-    // Dart 3: `_` is a wildcard pattern, not an identifier. Renamed to `indent`.
+    var funcSignature =
+        '  Future<$functionType> $dartName($paramTNString) async {';
+    if (funcSignature.length <= nsgGenerator.dartLineLength) {
+      codeList.add(funcSignature);
+    } else {
+      String functionType = dartType;
+      if (isReference && !type.startsWith('List')) {
+        if (isNullable) functionType += '?';
+      } else {
+        functionType = 'List<$functionType>';
+      }
+      funcSignature = '  Future<$functionType> $dartName(';
+      if (params.isEmpty) {
+        funcSignature += '{';
+      }
+      codeList.add(funcSignature);
+
+      if (params.isNotEmpty) {
+        params.forEach((p) {
+          codeList.add('    ${p.returnType} ${p.name},');
+        });
+        codeList[codeList.length - 1] += ' {';
+      }
+
+      codeList.add('    NsgDataRequestParams? filter,');
+      if (useProgressDialog) {
+        codeList.add('    bool showProgress = false,');
+        codeList.add('    bool isStoppable = false,');
+        var dlg = dialogText.isEmpty ? '' : ' = \'$dialogText\'';
+        codeList.add('    String? textDialog$dlg,');
+      }
+      codeList.add('  }) async {');
+    }
+
+    // Dart 3: `_` — подстановочный знак, не имя. Переименовано в `indent`.
     var indent = '';
     if (useProgressDialog) {
       codeList.add(
@@ -528,6 +586,10 @@ class NsgGenFunction {
         }
       });
       codeList.add('$indent    ];');
+      codeList.add('$indent    if (filter.referenceList?.isNotEmpty ?? false) {');
+      codeList.add(
+          '$indent      loadReference = (loadReference.toSet()..addAll(filter.referenceList!)).toList();');
+      codeList.add('$indent    }');
     }
     if (isReference) {
       if (type.startsWith('List')) {
@@ -540,26 +602,26 @@ class NsgGenFunction {
     } else /*if (type.startsWith('List'))*/ {
       codeList.add(
           '$indent    var res = await NsgSimpleRequest<$dartType>().requestItems(');
-      codeList.add('$indent        provider: provider!,');
+      codeList.add('$indent      provider: provider!,');
       // } else {
       //   codeList.add(
       //       '      var res = await NsgSimpleRequest<$dartType>().requestItem(');
     }
-    codeList
-        .add('$indent        function: \'/${controller.apiPrefix}/$apiPrefix\',');
-    codeList.add('$indent        method: \'${apiType.toUpperCase()}\',');
-    codeList.add('$indent        filter: filter,');
-    codeList.add('$indent        autoRepeate: ${retryCount > 0},');
-    var endParam = '$indent        autoRepeateCount: $retryCount';
+    codeList.add('$indent      function: \'/${controller.apiPrefix}/$apiPrefix\',');
+    codeList.add('$indent      method: \'${apiType.toUpperCase()}\',');
+    codeList.add('$indent      filter: filter,');
+    codeList.add('$indent      autoRepeate: ${retryCount > 0},');
+    var endParam = '$indent      autoRepeateCount: $retryCount,';
     if (useProgressDialog) {
-      codeList.add('$endParam,');
-      endParam = '$indent        cancelToken: progress.cancelToken';
+      codeList.add('$endParam');
+      endParam = '$indent      cancelToken: progress.cancelToken,';
     }
     if (readReferences.isNotEmpty) {
-      codeList.add('$endParam,');
-      endParam = '$indent        loadReference: loadReference';
+      codeList.add('$endParam');
+      endParam = '$indent      loadReference: loadReference,';
     }
-    codeList.add('$endParam);');
+    codeList.add('$endParam');
+    codeList.add('$indent    );');
     codeList.add('$indent    return res;');
     // codeList.add('    } catch (e) {');
     // if (type == 'List<Reference>') {

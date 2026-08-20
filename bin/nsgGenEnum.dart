@@ -53,6 +53,7 @@ class NsgGenEnum {
         codeList.add('using System.Linq;');
         codeList.add('using NsgServerClasses;');
         codeList.add('');
+        Misc.writeThisFileIsGeneratedServer(codeList);
         codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
         codeList.add('{');
         if (description.isNotEmpty) {
@@ -136,11 +137,25 @@ class NsgGenEnum {
 
   static Future generateExportFile(
       NsgGenerator nsgGenerator, List<NsgGenEnum> enums) async {
-    var codeList = <String>[];
-    // Dart 3: `_` is a wildcard pattern. Renamed to `e`.
+    // master: существующие экспорты не удаляются — файл дополняется.
+    // netcore-линия: `_` в Dart 3 — подстановочный знак и не может быть именем
+    // параметра, поэтому переименовано в `e`.
+    List<String> codeList;
+
+    var filePath = '${nsgGenerator.dartPath}/enums.dart';
+    var file = File(filePath);
+    if (await file.exists()) {
+      codeList = await file.readAsLines();
+    } else {
+      codeList = <String>[];
+    }
+
     enums.forEach((e) {
-      codeList.add(
-          "export 'enums/${Misc.getDartUnderscoreName(e.className)}.dart';");
+      var item =
+          "export 'enums/${Misc.getDartUnderscoreName(e.className)}.dart';";
+      if (!codeList.contains(item)) {
+        codeList.add(item);
+      }
     });
 
     await Misc.writeFileIfChanged(
@@ -149,6 +164,7 @@ class NsgGenEnum {
 
   Future generateEnumDart(NsgGenerator nsgGenerator) async {
     var codeList = <String>[];
+    Misc.writeThisFileIsGeneratedClient(codeList);
     if (useLocalization || nsgGenerator.useLocalization) {
       codeList.add('import \'package:get/get.dart\';');
       codeList.add('import \'../../l10n/app_localizations.dart\';');
