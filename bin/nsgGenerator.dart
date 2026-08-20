@@ -41,6 +41,11 @@ class NsgGenerator {
   final bool useLocalization;
   final String defaultLocale;
   final bool newTableLogic;
+
+  /// Вход участника по одноразовому непредсказуемому коду вместо учётной
+  /// записи. Код выдаётся сервером при подключении и служит единственным
+  /// ключом доступа к собственным данным.
+  final bool anonymousCodeAuth;
   final List<NsgGenController> controllers;
   final List<NsgGenEnum> enums;
 
@@ -72,6 +77,7 @@ class NsgGenerator {
       required this.useLocalization,
       required this.defaultLocale,
       required this.newTableLogic,
+      this.anonymousCodeAuth = false,
       this.serverEmitKind = NsgServerEmitKind.nsgframework,
       this.netcoreOutputPath = '',
       this.doCSharp = true,
@@ -100,6 +106,10 @@ class NsgGenerator {
         'net9.0',
         'net10.0'
       ].contains(targetFramework);
+      currentProperty = 'anonymousCodeAuth';
+      // Вход по одноразовому непредсказуемому коду вместо учётной записи:
+      // код выдаётся сервером при подключении и служит единственным ключом.
+      var anonymousCodeAuth = Misc.parseBool(parsedJson['anonymousCodeAuth']);
       currentProperty = 'cSharpNamespace';
       var doCSharp = Misc.parseBoolOrTrue(parsedJson['doCSharp']);
       var cSharpNamespace = parsedJson['cSharpNamespace'] ?? '';
@@ -160,6 +170,7 @@ class NsgGenerator {
           useLocalization: Misc.parseBool(parsedJson['useLocalization']),
           defaultLocale: parsedJson['defaultLocale'] ?? 'ru',
           newTableLogic: Misc.parseBool(parsedJson['newTableLogic']),
+          anonymousCodeAuth: anonymousCodeAuth,
           useStaticDatabaseNames:
               Misc.parseBool(parsedJson['useStaticDatabaseNames']),
           controllers: controllers,

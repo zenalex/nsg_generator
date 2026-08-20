@@ -23,6 +23,7 @@
 | `newTableLogic` | новая логика табличных частей на клиенте |
 | `useStaticDatabaseNames` | статические имена полей БД |
 | `supportChat` | генерация интеграции чата поддержки |
+| **`anonymousCodeAuth`** | вход участника по одноразовому непредсказуемому коду вместо учётной записи (см. [netcore-emit.md](netcore-emit.md)) |
 
 ## 2. Файл описания типа (`dataTypeFile`)
 

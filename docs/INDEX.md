@@ -15,7 +15,7 @@ Flutter-клиента на Dart.
 `feat/netcore-emit` 19.08.2026 перемотана на `feat/netcore-wire` (та содержала её целиком) и в неё
 влит `master`. Дальнейшая работа по netcore ведётся в `feat/netcore-emit`.
 
-Проверка: `dart analyze` без замечаний, `dart test` — 63 теста проходят.
+Проверка: `dart analyze` без замечаний, `dart test` — 66 тестов проходят.
 
 ## Документы
 

@@ -15,6 +15,44 @@ import '../bin/nsgGenMethod.dart';
 // для unit-тестов проверяем парсинг и поле-уровневую валидацию напрямую.
 
 void main() {
+  group('Вход по коду (anonymousCodeAuth)', () {
+    NsgGenerator gen({bool codeAuth = true}) => NsgGenerator(
+        targetFramework: 'net10.0',
+        isDotNetCore: true,
+        cSharpPath: '',
+        cSharpNamespace: 'TestServer',
+        dartPath: '',
+        applicationName: 'test',
+        useLocalization: false,
+        defaultLocale: 'ru',
+        newTableLogic: false,
+        anonymousCodeAuth: codeAuth);
+
+    test('код имеет алфавит без неразличимых знаков и запрет коротких длин', () {
+      final code = NsgGenNetcore.emitNsgAccessCode(gen());
+      expect(code, contains('23456789ABCDEFGHJKMNPQRSTUVWXYZ'));
+      expect(code, isNot(contains('"0O1IL"')));
+      expect(code, contains('FixedTimeEquals'));
+      expect(code, contains('length < 8'));
+    });
+
+    test('контроллер: выдача, обмен, ограничение частоты, одинаковый ответ на неизвестный код', () {
+      final c = NsgGenNetcore.emitNsgCodeAuthController(gen());
+      expect(c, contains('EnableRateLimiting("nsg-code-exchange")'));
+      expect(c, contains('unknown_code'));
+      expect(c, contains('Issue'));
+      expect(c, contains('Exchange'));
+    });
+
+    test('ограничение частоты попадает в регистрацию служб только при флаге', () {
+      final withAuth = NsgGenNetcore.emitGeneratedServicesExtensions(gen());
+      expect(withAuth, contains('nsg-code-exchange'));
+      final without =
+          NsgGenNetcore.emitGeneratedServicesExtensions(gen(codeAuth: false));
+      expect(without, isNot(contains('nsg-code-exchange')));
+    });
+  });
+
   group('NsgGenMethod.fromJson — postMode', () {
     Map<String, dynamic> base(String? mode) => {
           'name': 'Trial',
