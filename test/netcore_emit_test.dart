@@ -6,6 +6,7 @@ import '../bin/nsgGenDataItem.dart';
 import '../bin/nsgGenDataItemField.dart';
 import '../bin/nsgGenerator.dart';
 import '../bin/nsgGenNetcore.dart';
+import '../bin/nsgGenMethod.dart';
 
 // 2.1.1/2.1.2: проверка загрузки additive-полей pgTableName/pgColumnName
 // и валидации, что pgColumnName для Reference-полей не оканчивается на _id.
@@ -14,6 +15,29 @@ import '../bin/nsgGenNetcore.dart';
 // для unit-тестов проверяем парсинг и поле-уровневую валидацию напрямую.
 
 void main() {
+  group('NsgGenMethod.fromJson — postMode', () {
+    Map<String, dynamic> base(String? mode) => {
+          'name': 'Trial',
+          'dataTypeFile': 'trial.json',
+          if (mode != null) 'postMode': mode,
+        };
+
+    test('по умолчанию upsert', () {
+      expect(NsgGenMethod.fromJson(base(null)).postMode, equals('upsert'));
+    });
+
+    test('insert-only распознаётся', () {
+      expect(NsgGenMethod.fromJson(base('insert-only')).postMode,
+          equals('insert-only'));
+    });
+
+    test('неизвестное значение отклоняется, а не игнорируется', () {
+      // Молча принятое значение означало бы, что тип, объявленный
+      // неизменяемым, продолжает перезаписываться.
+      expect(() => NsgGenMethod.fromJson(base('append')), throwsException);
+    });
+  });
+
   group('NsgGenDataItemField.fromJson — pgColumnName parsing', () {
     test('default empty pgColumnName when absent', () {
       final f = NsgGenDataItemField.fromJson({

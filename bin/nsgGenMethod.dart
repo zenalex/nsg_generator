@@ -22,6 +22,14 @@ class NsgGenMethod {
   final bool allowPost;
   final bool allowDelete;
 
+  /// Режим записи: `upsert` (по умолчанию) — найденный объект обновляется;
+  /// `insert-only` — обновления нет, повтор с тем же содержимым считается
+  /// успехом, а с другим содержимым отклоняется как конфликт.
+  ///
+  /// Нужен типам, которые пишутся один раз и не изменяются: измерения, события,
+  /// журналы. Для них тихая перезапись уничтожает признак сбоя клиента.
+  final String postMode;
+
   late NsgGenDataItem genDataItem;
 
   /// Описание типа данных прямо в конфиге вместо отдельного файла
@@ -44,7 +52,8 @@ class NsgGenMethod {
       this.allowGetter = true,
       this.allowCreate = false,
       this.allowPost = false,
-      this.allowDelete = false});
+      this.allowDelete = false,
+      this.postMode = 'upsert'});
 
   static Map<String, String> obsoleteKeys = {
     'api_prefix': 'apiPrefix',
@@ -81,11 +90,26 @@ class NsgGenMethod {
           allowCreate: Misc.parseBool(parsedJson['allowCreate']),
           allowPost: Misc.parseBool(parsedJson['allowPost']) || needsAllCRUD,
           allowDelete:
-              Misc.parseBool(parsedJson['allowDelete']) || needsAllCRUD);
+              Misc.parseBool(parsedJson['allowDelete']) || needsAllCRUD,
+          postMode: _parsePostMode(parsedJson['postMode'], name));
     } catch (e) {
       print('--- ERROR parsing method \'$name\' ---');
       rethrow;
     }
+  }
+
+  /// Неизвестное значение — ошибка, а не умолчание: молча проигнорированный
+  /// ключ означал бы, что тип, объявленный неизменяемым, продолжает
+  /// перезаписываться, и заметить это можно было бы только по данным.
+  static String _parsePostMode(dynamic value, String methodName) {
+    if (value == null) return 'upsert';
+    final mode = value.toString();
+    const allowed = ['upsert', 'insert-only'];
+    if (!allowed.contains(mode)) {
+      throw Exception(
+          "method '$methodName': неизвестное postMode '$mode'; допустимо: ${allowed.join(', ')}");
+    }
+    return mode;
   }
 
   String? getAuthAttr(String authLevel) {
