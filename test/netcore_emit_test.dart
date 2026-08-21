@@ -1148,5 +1148,35 @@ void main() {
       expect(check, lessThan(run));
     });
 
+
+    test('ограничитель частоты разделён по адресу и читает настройку', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'out_cs',
+        'dartPath': 'out_dart',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'out_cs',
+        'anonymousCodeAuth': true,
+        'controller': <dynamic>[],
+      });
+      final src = NsgGenNetcore.emitGeneratedServicesExtensions(gen);
+
+      // Окно обязано быть своим у каждого адреса. Неразделённое окно — одно на
+      // всех: один клиент исчерпывает его для остальных, и ограничитель из
+      // защиты превращается в способ отказать в обслуживании всей аудитории.
+      expect(src, contains('RateLimitPartition.GetFixedWindowLimiter'));
+      expect(src, contains('RemoteIpAddress'));
+      expect(src, isNot(contains('AddFixedWindowLimiter')));
+
+      // Предел берётся из настройки, а не зашивается. Настройка, которая
+      // выглядит настраиваемой и ни на что не влияет, хуже отсутствующей.
+      expect(src, contains('PermitLimit = nsgCodeAuthOptions.ExchangeAttemptsPerMinute'));
+      expect(src, isNot(contains('PermitLimit = 10')));
+
+      // Отказ — 429, а не умолчательный 503.
+      expect(src, contains('StatusCodes.Status429TooManyRequests'));
+    });
+
   });
 }
