@@ -258,6 +258,7 @@ class NsgGenerator {
       await NsgGenNetcore.emitTypeFieldMapRegistryFile(this);
       // TASK05 §5.2.2: NsgGeneratedServicesExtensions (extension methods, в-2).
       await NsgGenNetcore.emitGeneratedServicesExtensionsFile(this);
+      await NsgGenNetcore.emitDatabaseMigratorFile(this);
       // TASK05 §5.1.runtime: Wire/*.cs — one-shot DTO + (de)serializers.
       await NsgGenNetcore.emitWireFiles(this);
       // TASK06 §6.3: Auth/*.cs (one-shot) + Configurations/UserRoles.cs (overwrite)

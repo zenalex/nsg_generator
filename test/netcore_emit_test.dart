@@ -614,6 +614,11 @@ void main() {
           'builder.Services.AddDbContext<AppDbContext>(opt =>\n'
           '    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));\n'
           'var app = builder.Build();\n'
+          '// Режим `--migrate`: применить миграции и выйти, не начиная обслуживание.\n'
+          'if (await NsgDatabaseMigrator.RunMigrateCommandAsync(app.Services, args)) return;\n'
+          '// Сверка версии схемы с версией сборки. На отставшей схеме запись прошла бы\n'
+          '// успешно, но с потерей полей, поэтому обслуживание не начинается.\n'
+          'await NsgDatabaseMigrator.EnsureSchemaCurrentAsync(app.Services, builder.Configuration);\n'
           'app.UseCors();  // TASK06 §6.6.1 — должен быть ПЕРЕД UseAuthentication.\n'
           'app.UseAuthentication();\n'
           'app.UseAuthorization();\n'
@@ -637,6 +642,9 @@ void main() {
       });
       final actual = NsgGenNetcore.emitAppsettings(gen);
       const expected = '{\n'
+          '  "Database": {\n'
+          '    "MigrateOnStartup": false\n'
+          '  },\n'
           '  "ConnectionStrings": {\n'
           '    "DefaultConnection": "Host=localhost;Port=5432;Database=nsgdiscountsserver;Username=postgres;Password=postgres"\n'
           '  },\n'
@@ -1084,5 +1092,61 @@ void main() {
         await Directory(gen.netcoreOutputPath).delete(recursive: true);
       }
     });
+
+    test('emitDatabaseMigrator: сверка обязательна, применение — по флагу', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'out_cs',
+        'dartPath': 'out_dart',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'out_cs',
+        'controller': <dynamic>[],
+      });
+      final src = NsgGenNetcore.emitDatabaseMigrator(gen);
+
+      // Сверка версии схемы не имеет выключателя: флаг влияет только на то,
+      // применять ли миграции, но не на то, проверять ли отставание.
+      expect(src, contains('GetPendingMigrationsAsync'));
+      expect(src, contains('Database:MigrateOnStartup'));
+      expect(src, contains('throw new InvalidOperationException'));
+
+      // Режим --migrate: применить и выйти, без обслуживания запросов.
+      expect(src, contains('"--migrate"'));
+      expect(src, contains('RunMigrateCommandAsync'));
+
+      // Отсутствующая база отличается от отставшей схемы: журнала миграций
+      // ещё нет, и читать его нельзя — иначе вместо внятного сообщения
+      // придёт ошибка драйвера.
+      expect(src, contains('CanConnectAsync'));
+
+      // EnsureCreated не порождается намеренно: он строит схему из модели без
+      // журнала миграций, и обновить такую базу потом можно только пересозданием.
+      expect(src, isNot(contains('EnsureCreated')));
+    });
+
+    test('emitProgramCs: сверка схемы вызывается до начала обслуживания', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'out_cs',
+        'dartPath': 'out_dart',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'out_cs',
+        'controller': <dynamic>[],
+      });
+      final program = NsgGenNetcore.emitProgramCs(gen);
+      final check = program.indexOf('EnsureSchemaCurrentAsync');
+      final migrateCmd = program.indexOf('RunMigrateCommandAsync');
+      final run = program.indexOf('app.Run()');
+      final mapControllers = program.indexOf('app.MapControllers()');
+      expect(check, greaterThan(-1));
+      expect(migrateCmd, greaterThan(-1));
+      // Порядок важен: проверка бесполезна, если маршруты уже отвечают.
+      expect(migrateCmd, lessThan(check));
+      expect(check, lessThan(mapControllers));
+      expect(check, lessThan(run));
+    });
+
   });
 }
