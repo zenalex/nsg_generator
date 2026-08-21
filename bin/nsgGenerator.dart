@@ -235,6 +235,9 @@ class NsgGenerator {
     // сущностях/полях — до начала эмита.
     if (serverEmitKind == NsgServerEmitKind.netcore) {
       validateForNetcoreEmit();
+      // Состав схемы нужен до эмита: имена коллекций DbSet зависят от того,
+      // есть ли в схеме тип, с которым совпадёт отбрасывание суффикса `Item`.
+      NsgGenNetcore.rememberTypeNames(dataItems.values.map((di) => di.typeName));
       // Эмит EF Core: Models/ + Configurations/ в netcoreOutputPath.
       // csproj / Program.cs — раунд 3.Б TASK04.
       for (final di in dataItems.values) {
