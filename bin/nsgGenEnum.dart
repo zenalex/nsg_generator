@@ -6,6 +6,19 @@ import 'misc.dart';
 import 'nsgGenerator.dart';
 
 class NsgGenEnum {
+  /// Имя файла-аксессора локализации, который эмитится рядом с
+  /// перечислениями.
+  ///
+  /// Аксессор нужен потому, что геттеры перечислений читают локализованное
+  /// имя сразу, а вызываются в том числе вне дерева виджетов (фоновая
+  /// догрузка, permanent-контроллеры, обработка событий сокета). Там
+  /// Get.context == null, и прямое AppLocalizations.of(Get.context!) падает
+  /// с "Null check operator used on a null value".
+  static const localizationAccessorFile = '_enum_localization.dart';
+
+  /// Имя геттера в этом файле.
+  static const localizationAccessor = 'enumTran';
+
   final String className;
   final String dataTypeFile;
   final bool useLocalization;
@@ -132,6 +145,7 @@ class NsgGenEnum {
     });
     if (nsgGenerator.doDart) {
       await generateExportFile(nsgGenerator, enums);
+      await generateLocalizationAccessorFile(nsgGenerator, enums);
     }
   }
 
@@ -159,12 +173,71 @@ class NsgGenEnum {
         '${nsgGenerator.dartPath}/enums.dart', codeList.join('\r\n'));
   }
 
+  /// Эмитит рядом с перечислениями файл с безопасным аксессором локализации.
+  ///
+  /// Пустую строку при отсутствии контекста возвращать нельзя: initialize()
+  /// заполняет NsgEnum.listAllValues этими же геттерами, и один вызов без
+  /// имени закеширует ВСЕ имена перечисления пустыми до перезапуска
+  /// приложения. Поэтому фолбэк идёт на локаль: сначала Get.locale, затем
+  /// defaultLocale проекта (язык arb-шаблона).
+  static Future generateLocalizationAccessorFile(
+      NsgGenerator nsgGenerator, List<NsgGenEnum> enums) async {
+    if (!nsgGenerator.useLocalization &&
+        !enums.any((e) => e.useLocalization)) {
+      return;
+    }
+
+    var codeList = <String>[];
+    Misc.writeThisFileIsGeneratedClient(codeList);
+    codeList.add('import \'package:flutter/widgets.dart\';');
+    codeList.add('import \'package:get/get.dart\';');
+    codeList.add('import \'../../l10n/app_localizations.dart\';');
+    codeList.add('');
+    codeList.add('/// Локализация для автогенерируемых перечислений.');
+    codeList.add('///');
+    codeList.add(
+        '/// Контекст здесь только предпочтителен: геттеры перечислений');
+    codeList.add(
+        '/// вызываются и вне дерева виджетов, где Get.context == null.');
+    codeList.add(
+        '/// Нет контекста - имя берётся по текущей локали GetX, нет и её');
+    codeList.add(
+        '/// (или язык не поддерживается) - по локали-шаблону проекта.');
+    codeList.add('AppLocalizations get $localizationAccessor {');
+    codeList.add('  final ctx = Get.context;');
+    codeList.add(
+        '  final fromContext = ctx != null ? AppLocalizations.of(ctx) : null;');
+    codeList.add('  if (fromContext != null) return fromContext;');
+    codeList.add(
+        '  return lookupAppLocalizations(_supportedLocale(Get.locale));');
+    codeList.add('}');
+    codeList.add('');
+    codeList.add(
+        'const Locale _fallbackLocale = Locale(\'${nsgGenerator.defaultLocale}\');');
+    codeList.add('');
+    codeList.add('Locale _supportedLocale(Locale? locale) {');
+    codeList.add('  if (locale == null) return _fallbackLocale;');
+    codeList.add('  final supported = AppLocalizations.supportedLocales');
+    codeList.add(
+        '      .any((e) => e.languageCode == locale.languageCode);');
+    codeList.add('  return supported ? locale : _fallbackLocale;');
+    codeList.add('}');
+    codeList.add('');
+
+    await Misc.writeFileIfChanged(
+        '${nsgGenerator.dartPath}/enums/$localizationAccessorFile',
+        codeList.join('\r\n'));
+  }
+
   Future generateEnumDart(NsgGenerator nsgGenerator) async {
     var codeList = <String>[];
     Misc.writeThisFileIsGeneratedClient(codeList);
     if (useLocalization || nsgGenerator.useLocalization) {
-      codeList.add('import \'package:get/get.dart\';');
-      codeList.add('import \'../../l10n/app_localizations.dart\';');
+      // Локализованное имя берётся через аксессор, а не через
+      // AppLocalizations.of(Get.context!): геттеры перечислений вызываются
+      // и вне дерева виджетов, где Get.context == null. Сам аксессор
+      // эмитится рядом, см. generateLocalizationAccessorFile.
+      codeList.add('import \'$localizationAccessorFile\';');
     }
     codeList.add('import \'package:nsg_data/nsg_data.dart\';');
     codeList.add('');
@@ -178,7 +251,7 @@ class NsgGenEnum {
         var iCodeName = Misc.getDartName(i.codeName);
         var localizationKey = '${lowerCaseClassName}_$iCodeName';
         codeList.add(
-            '  static $className get ${Misc.getDartName(i.codeName)} => $className(${i.value}, (AppLocalizations.of(Get.context!) as AppLocalizations).$localizationKey);');
+            '  static $className get ${Misc.getDartName(i.codeName)} => $className(${i.value}, $localizationAccessor.$localizationKey);');
         nsgGenerator.localizationDict[localizationKey] = i.name;
       });
     } else {
