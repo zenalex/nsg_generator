@@ -1011,6 +1011,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using $ns.Auth;
+using $ns.Configurations;
 
 namespace $ns.Controllers;
 
@@ -1042,7 +1043,7 @@ public class NsgCodeAuthController : ControllerBase
         var code = NsgAccessCode.Generate(_options.CodeLength);
         var hash = NsgAccessCode.Hash(code, _options.Pepper);
         var identity = await _store.CreateIdentityAsync(hash, request?.Attributes ?? new());
-        return Ok(new NsgCodeIssueResponse(code, identity, _jwt.Issue(identity, null, Array.Empty<string>())));
+        return Ok(new NsgCodeIssueResponse(code, identity, _jwt.Issue(identity, null, new[] { UserRoles.User })));
     }
 
     /// <summary>Обменять код на токен. Ограничение частоты обязательно: перебор
@@ -1057,7 +1058,7 @@ public class NsgCodeAuthController : ControllerBase
         // Ответ одинаков для неизвестного кода и для ошибки в нём: различие
         // ответов позволяло бы отделять существующие коды от несуществующих.
         if (found is not Guid identity) return Unauthorized(new { error = "unknown_code" });
-        return Ok(new NsgCodeExchangeResponse(identity, _jwt.Issue(identity, null, Array.Empty<string>())));
+        return Ok(new NsgCodeExchangeResponse(identity, _jwt.Issue(identity, null, new[] { UserRoles.User })));
     }
 }
 ''';
