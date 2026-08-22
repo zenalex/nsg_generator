@@ -395,6 +395,12 @@ public static class NsgDatabaseMigrator
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var log = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
             .CreateLogger("NsgDatabaseMigrator");
+        if (!db.Database.IsRelational())
+        {
+            log.LogInformation(
+                "Поставщик данных нереляционный, применять миграции не к чему.");
+            return true;
+        }
         var pending = (await db.Database.GetPendingMigrationsAsync()).ToList();
         if (pending.Count == 0)
         {
@@ -418,6 +424,17 @@ public static class NsgDatabaseMigrator
         var log = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
             .CreateLogger("NsgDatabaseMigrator");
         var migrateOnStartup = configuration.GetValue<bool>(MigrateOnStartupKey);
+
+        // Нереляционный поставщик (база в памяти) миграций не имеет вовсе:
+        // схема создаётся из модели при первом обращении. Вызов реляционных
+        // методов здесь падает, а падает он при старте приложения — то есть
+        // ломает и заготовку теста, которую порождает этот же генератор.
+        if (!db.Database.IsRelational())
+        {
+            log.LogInformation(
+                "Поставщик данных нереляционный, сверка версии схемы не выполняется.");
+            return;
+        }
 
         // База может отсутствовать целиком: тогда читать журнал миграций не из
         // чего, и GetPendingMigrationsAsync упадёт невнятной ошибкой драйвера.
