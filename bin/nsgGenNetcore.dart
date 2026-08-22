@@ -32,8 +32,8 @@ class NsgGenNetcore {
   /// Включает FieldMap (per-entity, решение A + G2 в TASK05 §5.0).
   static Future<void> emitDataItem(
       NsgGenerator gen, NsgGenDataItem di) async {
-    final modelsDir = '${gen.netcoreOutputPath}/Models';
-    final configsDir = '${gen.netcoreOutputPath}/Configurations';
+    final modelsDir = '${gen.netcoreGeneratedPath}/Models';
+    final configsDir = '${gen.netcoreGeneratedPath}/Configurations';
     await Directory(modelsDir).create(recursive: true);
     await Directory(configsDir).create(recursive: true);
 
@@ -174,7 +174,7 @@ class NsgGenNetcore {
   /// `Misc.writeFileIfChanged`; не имеет one-shot-семантики, так как новый
   /// тип в проекте требует обновления словаря — это overwrite.
   static Future<void> emitTypeNameMapFile(NsgGenerator gen) async {
-    final configsDir = '${gen.netcoreOutputPath}/Configurations';
+    final configsDir = '${gen.netcoreGeneratedPath}/Configurations';
     await Directory(configsDir).create(recursive: true);
     final content = emitTypeNameMap(gen);
     await Misc.writeFileIfChanged(
@@ -222,7 +222,7 @@ class NsgGenNetcore {
   }
 
   static Future<void> emitTypeFieldMapRegistryFile(NsgGenerator gen) async {
-    final configsDir = '${gen.netcoreOutputPath}/Configurations';
+    final configsDir = '${gen.netcoreGeneratedPath}/Configurations';
     await Directory(configsDir).create(recursive: true);
     final content = emitTypeFieldMapRegistry(gen);
     await Misc.writeFileIfChanged(
@@ -455,14 +455,14 @@ public static class NsgDatabaseMigrator
   }
 
   static Future<void> emitDatabaseMigratorFile(NsgGenerator gen) async {
-    final configsDir = '${gen.netcoreOutputPath}/Configurations';
+    final configsDir = '${gen.netcoreGeneratedPath}/Configurations';
     await Directory(configsDir).create(recursive: true);
     await Misc.writeFileIfChanged(
         '$configsDir/NsgDatabaseMigrator.cs', emitDatabaseMigrator(gen));
   }
 
   static Future<void> emitGeneratedServicesExtensionsFile(NsgGenerator gen) async {
-    final configsDir = '${gen.netcoreOutputPath}/Configurations';
+    final configsDir = '${gen.netcoreGeneratedPath}/Configurations';
     await Directory(configsDir).create(recursive: true);
     final content = emitGeneratedServicesExtensions(gen);
     await Misc.writeFileIfChanged(
@@ -649,14 +649,16 @@ public static class NsgDatabaseMigrator
   /// (one-shot, partial-stub для бизнес-логики).
   static Future<void> emitControllerForMethod(
       NsgGenerator gen, NsgGenController controller, NsgGenMethod method) async {
-    final controllersDir = '${gen.netcoreOutputPath}/Controllers';
+    final controllersDir = '${gen.netcoreGeneratedPath}/Controllers';
+    final customDir = '${gen.netcoreOutputPath}/Controllers';
     await Directory(controllersDir).create(recursive: true);
     final di = method.genDataItem;
     final dsName = dbSetName(di.typeName);
     final generatedContent = emitControllerGenerated(gen, controller, method, dsName);
     await Misc.writeFileIfChanged(
         '$controllersDir/${di.typeName}Controller.cs', generatedContent);
-    final customPath = '$controllersDir/${di.typeName}Controller.Custom.cs';
+    await Directory(customDir).create(recursive: true);
+    final customPath = '$customDir/${di.typeName}Controller.Custom.cs';
     await _writeOneShot(gen,
         path: customPath,
         content: emitControllerCustom(gen, di));
@@ -1215,7 +1217,7 @@ public class NsgCodeAuthController : ControllerBase
           content: emitNsgCodeAuthOptions(gen));
       // Контроллер перегенерируется: его содержимое целиком определяется
       // генератором, своя логика проекта живёт в хранилище кодов.
-      final codeAuthDir = '${gen.netcoreOutputPath}/Controllers';
+      final codeAuthDir = '${gen.netcoreGeneratedPath}/Controllers';
       await Directory(codeAuthDir).create(recursive: true);
       await Misc.writeFileIfChanged(
           '$codeAuthDir/NsgCodeAuthController.cs',
@@ -1228,7 +1230,7 @@ public class NsgCodeAuthController : ControllerBase
         path: '$authDir/NsgRawTokenAuthHandler.cs',
         content: emitNsgRawTokenAuthHandler(gen));
     // UserRoles — overwrite, статика констант.
-    final configsDir = '${gen.netcoreOutputPath}/Configurations';
+    final configsDir = '${gen.netcoreGeneratedPath}/Configurations';
     await Directory(configsDir).create(recursive: true);
     await Misc.writeFileIfChanged(
         '$configsDir/UserRoles.cs', emitUserRoles(gen));
@@ -1238,10 +1240,13 @@ public class NsgCodeAuthController : ControllerBase
     // и схем без UserItem — пользователь правит вручную после первого emit'а
     // на нужные user-entity DbSet + property.
     if (gen.dataItems.containsKey('UserItem')) {
-      final controllersDir = '${gen.netcoreOutputPath}/Controllers';
-      await Directory(controllersDir).create(recursive: true);
+      // AuthController одноразовый: пользователь правит его после первого
+      // эмита под свои сущности. Поэтому он в корне проекта, а не среди
+      // порождаемого — иначе правка исчезла бы вместе с каталогом.
+      final authControllerDir = '${gen.netcoreOutputPath}/Controllers';
+      await Directory(authControllerDir).create(recursive: true);
       await _writeOneShot(gen,
-          path: '$controllersDir/AuthController.cs',
+          path: '$authControllerDir/AuthController.cs',
           content: emitAuthController(gen));
     }
   }
@@ -2824,7 +2829,7 @@ public class NsgCodeAuthController : ControllerBase
 
     final designer = emitDbContextDesigner(gen);
     await Misc.writeFileIfChanged(
-        '${gen.netcoreOutputPath}/AppDbContext.Designer.cs', designer);
+        '${gen.netcoreGeneratedPath}/AppDbContext.Designer.cs', designer);
 
     final manualPath = '${gen.netcoreOutputPath}/AppDbContext.cs';
     final manualFile = File(manualPath);
@@ -2904,7 +2909,7 @@ public class NsgCodeAuthController : ControllerBase
   /// Эмит C#-enum для netcore. `<netcoreOutputPath>/Models/<className>.cs`,
   /// overwrite. `EFCore` маппит enum ↔ integer автоматически (решение №4 таблицы 2.1.4.0).
   static Future<void> emitEnum(NsgGenerator gen, NsgGenEnum e) async {
-    final modelsDir = '${gen.netcoreOutputPath}/Models';
+    final modelsDir = '${gen.netcoreGeneratedPath}/Models';
     await Directory(modelsDir).create(recursive: true);
     final content = emitEnumContent(gen, e);
     await Misc.writeFileIfChanged(

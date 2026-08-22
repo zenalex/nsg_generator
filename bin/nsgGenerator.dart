@@ -42,6 +42,23 @@ class NsgGenerator {
   final String defaultLocale;
   final bool newTableLogic;
 
+  /// Подкаталог для перезаписываемых файлов netcore-эмита.
+  ///
+  /// Пустое значение — прежнее поведение: всё в один каталог. Заданное —
+  /// порождаемое уходит в `<netcoreOutputPath>/<значение>`, а одноразовое
+  /// (csproj, Program.cs, ручные части контроллеров, слой аутентификации,
+  /// wire) остаётся в корне проекта.
+  ///
+  /// Смысл разделения не в порядке ради порядка: пока обе группы лежат вместе,
+  /// отличить порождаемое от написанного руками можно только по документации,
+  /// а хранить в репозитории нужно ровно вторую группу.
+  final String netcoreGeneratedSubdir;
+
+  /// Куда писать перезаписываемые файлы.
+  String get netcoreGeneratedPath => netcoreGeneratedSubdir.isEmpty
+      ? netcoreOutputPath
+      : '$netcoreOutputPath/$netcoreGeneratedSubdir';
+
   /// Передавать ли хеш схемы в NsgDataProvider (`schemaHash:`).
   ///
   /// Требует поддержки в nsg_data: параметр появился в ветке
@@ -86,6 +103,7 @@ class NsgGenerator {
       required this.defaultLocale,
       required this.newTableLogic,
       this.emitSchemaHash = false,
+      this.netcoreGeneratedSubdir = '',
       this.anonymousCodeAuth = false,
       this.serverEmitKind = NsgServerEmitKind.nsgframework,
       this.netcoreOutputPath = '',
@@ -180,6 +198,8 @@ class NsgGenerator {
           defaultLocale: parsedJson['defaultLocale'] ?? 'ru',
           newTableLogic: Misc.parseBool(parsedJson['newTableLogic']),
           emitSchemaHash: Misc.parseBool(parsedJson['emitSchemaHash']),
+          netcoreGeneratedSubdir:
+              parsedJson['netcoreGeneratedSubdir']?.toString() ?? '',
           anonymousCodeAuth: anonymousCodeAuth,
           useStaticDatabaseNames:
               Misc.parseBool(parsedJson['useStaticDatabaseNames']),
