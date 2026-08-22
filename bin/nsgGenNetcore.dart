@@ -776,7 +776,14 @@ public static class NsgDatabaseMigrator
       sb.writeln('        var saved = new List<$t>();');
       sb.writeln('        foreach (var el in body.EnumerateArray())');
       sb.writeln('        {');
-      sb.writeln('            var fresh = NsgEntityMapper.MapFromWire<$t>(el, _db.Model);');
+      // Негодное значение — отказ клиенту с указанием поля, а не 500:
+      // это ошибка присланных данных, а не сбой сервера.
+      sb.writeln('            $t fresh;');
+      sb.writeln('            try { fresh = NsgEntityMapper.MapFromWire<$t>(el, _db.Model); }');
+      sb.writeln('            catch (NsgWireFormatException error)');
+      sb.writeln('            {');
+      sb.writeln('                return BadRequest(new { error = "wire_format", reason = error.Message });');
+      sb.writeln('            }');
       sb.writeln('            var existing = await _db.$dsName.FindAsync(fresh.Id);');
       sb.writeln('            if (existing is null)');
       sb.writeln('            {');
@@ -2490,6 +2497,15 @@ public class NsgCodeAuthController : ControllerBase
         '/// C# property names. ConvertFromWire handles primitive marshalling.\n'
         '/// FK-columns with Guid.Empty get converted to null (decision F1.a) —\n'
         '/// EF IModel is consulted to detect FK at the property level.</summary>\n'
+        '/// <summary>Присланное значение не разбирается в объявленный тип.</summary>\n'
+        '///\n'
+        '/// Отдельный тип нужен, чтобы отличить негодные данные клиента от сбоя\n'
+        '/// сервера: первое — отказ с причиной, второе — 500.\n'
+        'public class NsgWireFormatException : Exception\n'
+        '{\n'
+        '    public NsgWireFormatException(string message) : base(message) { }\n'
+        '}\n'
+        '\n'
         'public static class NsgEntityMapper\n'
         '{\n'
         '    public static T MapFromWire<T>(JsonElement el, IModel efModel) where T : class, new()\n'
@@ -2507,7 +2523,12 @@ public class NsgCodeAuthController : ControllerBase
         '            var prop = t.GetProperty(csName);\n'
         '            if (prop is null || !prop.CanWrite) continue;\n'
         '            var isFk = efType?.FindProperty(csName)?.IsForeignKey() ?? false;\n'
-        '            var value = ConvertFromWire(p.Value, prop.PropertyType, isFk);\n'
+        '            object? value;\n'
+        '            try { value = ConvertFromWire(p.Value, prop.PropertyType, isFk); }\n'
+        '            catch (NsgWireFormatException error)\n'
+        '            {\n'
+        '                throw new NsgWireFormatException(\$"поле «{p.Name}»: {error.Message}");\n'
+        '            }\n'
         '            prop.SetValue(item, value);\n'
         '        }\n'
         '        return item;\n'
@@ -2523,8 +2544,15 @@ public class NsgCodeAuthController : ControllerBase
         '\n'
         '        if (underlying == typeof(Guid))\n'
         '        {\n'
-        '            if (v.ValueKind != JsonValueKind.String) return null;\n'
-        '            if (!Guid.TryParse(v.GetString(), out var g)) return null;\n'
+        '            // Негодный идентификатор — отказ, а не null. Прежде такое\n'
+        '            // значение обнулялось, EF выдавал записи случайный ключ, а\n'
+        '            // ответ был успешным: запись сохранялась под идентификатором,\n'
+        '            // которого клиент никогда не видел, и ссылки на неё\n'
+        '            // указывали в пустоту.\n'
+        '            if (v.ValueKind != JsonValueKind.String)\n'
+        '                throw new NsgWireFormatException(\$"ожидался идентификатор строкой, получено {v.ValueKind}");\n'
+        '            if (!Guid.TryParse(v.GetString(), out var g))\n'
+        '                throw new NsgWireFormatException(\$"«{v.GetString()}» не является идентификатором");\n'
         '            // F1.a: Guid.Empty in FK column → null (avoid FK-constraint violation)\n'
         '            if (isFk && g == Guid.Empty) return null;\n'
         '            return g;\n'
