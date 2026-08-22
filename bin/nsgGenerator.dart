@@ -42,6 +42,14 @@ class NsgGenerator {
   final String defaultLocale;
   final bool newTableLogic;
 
+  /// Передавать ли хеш схемы в NsgDataProvider (`schemaHash:`).
+  ///
+  /// Требует поддержки в nsg_data: параметр появился в ветке
+  /// feat/protocol-version и в master не влит. По умолчанию выключен —
+  /// порождённый клиент обязан собираться против библиотеки в её обычном
+  /// состоянии, а не против ветки, о которой нужно знать заранее.
+  final bool emitSchemaHash;
+
   /// Вход участника по одноразовому непредсказуемому коду вместо учётной
   /// записи. Код выдаётся сервером при подключении и служит единственным
   /// ключом доступа к собственным данным.
@@ -77,6 +85,7 @@ class NsgGenerator {
       required this.useLocalization,
       required this.defaultLocale,
       required this.newTableLogic,
+      this.emitSchemaHash = false,
       this.anonymousCodeAuth = false,
       this.serverEmitKind = NsgServerEmitKind.nsgframework,
       this.netcoreOutputPath = '',
@@ -170,6 +179,7 @@ class NsgGenerator {
           useLocalization: Misc.parseBool(parsedJson['useLocalization']),
           defaultLocale: parsedJson['defaultLocale'] ?? 'ru',
           newTableLogic: Misc.parseBool(parsedJson['newTableLogic']),
+          emitSchemaHash: Misc.parseBool(parsedJson['emitSchemaHash']),
           anonymousCodeAuth: anonymousCodeAuth,
           useStaticDatabaseNames:
               Misc.parseBool(parsedJson['useStaticDatabaseNames']),

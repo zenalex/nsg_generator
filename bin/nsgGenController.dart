@@ -682,8 +682,11 @@ class NsgGenController {
     codeList.add(
         "import '../${Misc.getDartUnderscoreName(className)}_model.dart';");
     // Хеш схемы GeneratorConfig — генерируется в той же папке (_schema_meta.dart).
-    // Пробрасывается в NsgDataProvider(schemaHash: ...) ниже.
-    codeList.add("import '_schema_meta.dart';");
+    // Импортируется только вместе с передачей в провайдер: неиспользованный
+    // импорт — предупреждение анализатора в каждом порождённом проекте.
+    if (nsgGenerator.emitSchemaHash) {
+      codeList.add("import '_schema_meta.dart';");
+    }
     codeList.add('');
     codeList.add('class ${className}Generated extends NsgBaseController {');
     codeList.add('  NsgDataProvider? provider;');
@@ -698,8 +701,12 @@ class NsgGenController {
     codeList.add('      applicationName: \'${nsgGenerator.applicationName}\',');
     codeList.add('      applicationVersion: info.version,');
     codeList.add('      firebaseToken: \'\',');
-    // netcore-линия: хеш схемы для проверки совместимости клиента и сервера
-    codeList.add('      schemaHash: kNsgSchemaHash,');
+    // Хеш схемы для проверки совместимости клиента и сервера. Требует
+    // поддержки в nsg_data (ветка feat/protocol-version): без неё
+    // порождённый клиент не собирается — параметра у провайдера нет.
+    if (nsgGenerator.emitSchemaHash) {
+      codeList.add('      schemaHash: kNsgSchemaHash,');
+    }
     codeList.add('      availableServers: NsgServerOptions.availableServers,');
     if (nsgGenerator.newTableLogic) {
       codeList.add('      newTableLogic: true,');
