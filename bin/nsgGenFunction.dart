@@ -1,5 +1,6 @@
 import 'misc.dart';
 import 'nsgGenController.dart';
+import 'nsgGenSupportChat.dart';
 import 'nsgGenerator.dart';
 
 class NsgGenFunction {
@@ -418,7 +419,13 @@ class NsgGenFunction {
       codeList.add(
           'public async Task<IEnumerable<$returnType>> On$name($paramTNString)');
       codeList.add('{');
-      codeList.add('throw new NotImplementedException();');
+      if (nsgGenerator.supportChat.enabled &&
+          name == NsgGenSupportChat.functionName &&
+          returnType == nsgGenerator.supportChat.typeName) {
+        NsgGenSupportChat.generateImplBody(codeList, nsgGenerator, returnType);
+      } else {
+        codeList.add('throw new NotImplementedException();');
+      }
       codeList.add('}');
     } else if (['Image', 'Binary'].contains(type)) {
       var uriParamTNString = '';

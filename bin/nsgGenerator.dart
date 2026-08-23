@@ -6,6 +6,7 @@ import 'nsgGenController.dart';
 import 'nsgGenDataItem.dart';
 import 'nsgGenEnum.dart';
 import 'nsgGenLocalization.dart';
+import 'nsgGenSupportChat.dart';
 
 class NsgGenerator {
   final String targetFramework;
@@ -20,6 +21,13 @@ class NsgGenerator {
   final bool newTableLogic;
   final List<NsgGenController> controllers;
   final List<NsgGenEnum> enums;
+
+  /// Чат поддержки Chatista Connect (см. NsgGenSupportChat).
+  /// По умолчанию выключен — на существующие конфиги не влияет.
+  NsgGenSupportChat supportChat = NsgGenSupportChat(
+      enabled: false,
+      productExternalKey: '',
+      typeName: NsgGenSupportChat.defaultTypeName);
   final Map<String, NsgGenDataItem> dataItems = Map();
   final Map<String, String> localizationDict = Map();
   bool doCSharp = true;
@@ -48,9 +56,53 @@ class NsgGenerator {
       this.controllers = const [],
       this.enums = const []});
 
+  /// Ключи верхнего уровня, которые генератор умеет читать.
+  static const knownProperties = <String>{
+    'applicationName',
+    'cSharpNamespace',
+    'cSharpPath',
+    'controller',
+    'dartPath',
+    'defaultLocale',
+    'doCSharp',
+    'doDart',
+    'enums',
+    'newTableLogic',
+    'supportChat',
+    'targetFramework',
+    'useLocalization',
+    'useStaticDatabaseNames',
+  };
+
+  /// Сказать вслух про ключи, которых генератор не знает.
+  ///
+  /// **Зачем.** Незнакомый ключ раньше пропускался совершенно молча, и это
+  /// оборачивалось не пропущенной настройкой, а сломанным чужим
+  /// репозиторием: 23.08.2026 конфиг titan_lk был переведён на `supportChat`,
+  /// а генерация выполнена сборкой, где этого ключа ещё не было. Флаг
+  /// проигнорировали, обвязка чата поддержки в вывод не попала, и приложение
+  /// перестало компилироваться — притом что генерация отработала «успешно».
+  ///
+  /// **Почему предупреждение, а не отказ.** Отказ ломал бы конфиги, где
+  /// лишние ключи лежат осознанно — комментарии, поля под будущие версии,
+  /// настройки чужих инструментов. Расхождение версий надо показать, а не
+  /// наказать за него.
+  static void warnAboutUnknownProperties(Map<String, dynamic> parsedJson) {
+    final unknown = parsedJson.keys
+        .where((k) => !knownProperties.contains(k))
+        .toList()
+      ..sort();
+    if (unknown.isEmpty) return;
+    print('ВНИМАНИЕ: в generation_config.json есть ключи, которых этот '
+        'генератор не знает: ${unknown.join(', ')}.');
+    print('Они НЕ применены. Если ключ должен работать — обновите генератор: '
+        'скорее всего, ваша сборка старее конфига.');
+  }
+
   factory NsgGenerator.fromJson(Map<String, dynamic> parsedJson) {
     String currentProperty = 'targetFramework';
     try {
+      warnAboutUnknownProperties(parsedJson);
       var targetFramework = parsedJson['targetFramework'] ?? 'net10.0';
       if (targetFramework.isEmpty) targetFramework = 'net10.0';
       var isDotNetCore = [
@@ -82,6 +134,13 @@ class NsgGenerator {
             .map((i) => NsgGenEnum.fromJson(i))
             .toList();
       }
+      // Чат поддержки: разворачиваем флаг в обычные метаданные (тип + функция)
+      // ДО разбора контроллеров, чтобы дальше работал штатный конвейер.
+      currentProperty = 'supportChat';
+      var supportChat = NsgGenSupportChat.fromJson(
+          parsedJson['supportChat'], parsedJson['applicationName'] ?? '');
+      supportChat.injectInto(parsedJson);
+
       currentProperty = 'controller';
       var controllers = (parsedJson['controller'] as List)
           .map((i) => NsgGenController.fromJson(i))
@@ -102,7 +161,8 @@ class NsgGenerator {
           useStaticDatabaseNames:
               Misc.parseBool(parsedJson['useStaticDatabaseNames']),
           controllers: controllers,
-          enums: enums);
+          enums: enums)
+        ..supportChat = supportChat;
     } catch (e) {
       print(
           '--- ERROR parsing${currentProperty.isEmpty ? '' : ' property \'$currentProperty\' from'} generation_config.json ---');

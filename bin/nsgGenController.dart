@@ -5,6 +5,7 @@ import 'misc.dart';
 import 'nsgGenDataItem.dart';
 import 'nsgGenMethod.dart';
 import 'nsgGenFunction.dart';
+import 'nsgGenSupportChat.dart';
 import 'nsgGenerator.dart';
 
 class NsgGenController {
@@ -427,6 +428,13 @@ class NsgGenController {
     codeList.add('OnApplyServerFilter(user, obj, findParams);');
     codeList.add('obj.ApplyServerFilter(user, findParams);');
     codeList.add('}');
+
+    // Объявление продуктового хука чата поддержки держим в генерируемой части:
+    // реализация живёт в рукописной, которая при перегенерации не переписывается.
+    if (nsgGenerator.supportChat.enabled) {
+      codeList.add('');
+      NsgGenSupportChat.generateImplHook(codeList);
+    }
 
     codeList.add('}');
     codeList.add('}');
