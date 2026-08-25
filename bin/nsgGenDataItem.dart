@@ -748,6 +748,27 @@ class NsgGenDataItem {
     }
   }
 
+  /// Имена типов, которые попадут в порождённый dart-код этого объекта:
+  /// базовый класс и типы ссылочных полей. Перечисления сюда не входят —
+  /// они приходят из `enums.dart` отдельным импортом.
+  Set<String> referencedTypeNames(NsgGenerator nsgGenerator) {
+    var names = <String>{};
+    if (extend.isNotEmpty && nsgGenerator.dataItems.containsKey(extend)) {
+      names.add(extend);
+    }
+    for (var field in fields.where((field) => field.writeOnClient)) {
+      if (field.type.startsWith('Enum')) continue;
+      if (field.referenceType.isNotEmpty) names.add(field.referenceType);
+      // Список допустимых типов нетипизированной ссылки пишется в конфиг
+      // и со строчной буквы: в код уходит имя класса.
+      for (var name in field.referenceTypes ?? const <String>[]) {
+        if (name.isEmpty) continue;
+        names.add(name[0].toUpperCase() + name.substring(1));
+      }
+    }
+    return names;
+  }
+
   Future generateCodeDart(NsgGenerator nsgGenerator,
       NsgGenController nsgGenController, NsgGenMethod nsgGenMethod) async {
     //----------------------------------------------------------
@@ -764,6 +785,8 @@ class NsgGenDataItem {
     codeList.add("import 'dart:typed_data';");
     codeList.add(
         "import '../${Misc.getDartUnderscoreName(nsgGenController.className)}_model.dart';");
+    codeList.addAll(nsgGenerator.crossControllerModelImports(
+        nsgGenController, referencedTypeNames(nsgGenerator)));
     var fieldsOnClient = fields.where((field) => field.writeOnClient);
     if (nsgGenerator.enums.isNotEmpty &&
         fieldsOnClient.any((field) => field.type.startsWith('Enum'))) {

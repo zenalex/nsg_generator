@@ -173,6 +173,45 @@ class NsgGenerator {
   String get genPathName => 'generated';
   String get dartPathGen => dartPath + '/' + genPathName;
 
+  /// Типы, которые экспортирует файл-модель контроллера
+  /// (`<className>_model.dart`) — по одному на метод контроллера.
+  Set<String> exportedTypesOf(NsgGenController controller) =>
+      controller.methods.map((it) => it.genDataItem.typeName).toSet();
+
+  /// Импорты файлов-моделей соседних контроллеров.
+  ///
+  /// Порождённый файл импортирует модель только своего контроллера, но
+  /// ссылаться может и на тип соседнего: операторская витрина держит
+  /// `Reference<UserItem>` и возвращает `GenericAnswer` — типы абонентского
+  /// контура. Без этих импортов такие имена в порождённом коде не
+  /// разрешаются, и клиент не собирается.
+  ///
+  /// Тип, экспортируемый собственной моделью, не импортируется повторно:
+  /// импорт двух моделей, экспортирующих одно имя, — неоднозначность.
+  List<String> crossControllerModelImports(
+      NsgGenController owner, Iterable<String> usedTypes) {
+    var ownTypes = exportedTypesOf(owner);
+    var enumNames = enums.map((it) => it.className).toSet();
+    var otherTypes = <NsgGenController, Set<String>>{};
+    for (var controller in controllers) {
+      if (identical(controller, owner)) continue;
+      otherTypes[controller] = exportedTypesOf(controller);
+    }
+    var fileNames = <String>{};
+    for (var typeName in usedTypes) {
+      if (typeName.isEmpty ||
+          ownTypes.contains(typeName) ||
+          enumNames.contains(typeName)) continue;
+      for (var entry in otherTypes.entries) {
+        if (!entry.value.contains(typeName)) continue;
+        fileNames.add(Misc.getDartUnderscoreName(entry.key.className));
+        break;
+      }
+    }
+    var sorted = fileNames.toList()..sort();
+    return sorted.map((it) => "import '../${it}_model.dart';").toList();
+  }
+
   Future writeCode(String path) async {
     jsonPath = path;
     Directory dir;

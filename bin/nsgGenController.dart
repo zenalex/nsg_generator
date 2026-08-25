@@ -659,6 +659,33 @@ class NsgGenController {
         codeList.join('\r\n'));
   }
 
+  /// Имена типов, которые попадут в порождённый dart-код контроллера:
+  /// возвращаемые значения функций, типы их параметров и объекты,
+  /// подгружаемые по `readReferences`.
+  Set<String> functionTypeNames() {
+    var names = <String>{};
+    void addType(String type, String referenceType) {
+      if (Misc.needToSpecifyType(type)) {
+        if (referenceType.isNotEmpty) names.add(referenceType);
+      } else if (!Misc.isPrimitiveType(type)) {
+        names.add(type);
+      }
+    }
+
+    for (var function in functions.where((it) => it.writeOnClient)) {
+      addType(function.type, function.referenceType);
+      for (var param in function.params) {
+        addType(param.type, param.referenceType);
+      }
+      for (var reference in function.readReferences) {
+        if (reference.contains('\$')) continue;
+        var typeName = reference.split('.').first.trim();
+        if (typeName.isNotEmpty) names.add(typeName);
+      }
+    }
+    return names;
+  }
+
   Future generateInitController(NsgGenerator nsgGenerator) async {
     //----------------------------------------------------------
     //generate service class controllerName.g.dart
@@ -681,6 +708,8 @@ class NsgGenController {
     }
     codeList.add(
         "import '../${Misc.getDartUnderscoreName(className)}_model.dart';");
+    codeList.addAll(
+        nsgGenerator.crossControllerModelImports(this, functionTypeNames()));
     codeList.add('');
     codeList.add('class ${className}Generated extends NsgBaseController {');
     codeList.add('  NsgDataProvider? provider;');
