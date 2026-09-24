@@ -1,50 +1,33 @@
 import 'dart:io';
-
+import 'dart:convert';
 import 'misc.dart';
 import 'nsgGenerator.dart';
 
 class NsgGenLocalization {
   static Future writeLocalization(NsgGenerator generator) async {
-    var localizationDict = Map<String, String>();
+    Map<String, Object?> localizationDict;
 
     var l10n = Directory('${Directory(generator.dartPath).parent.path}/l10n');
     var arbFile = File('${l10n.path}/app_${generator.defaultLocale}.arb');
     if (arbFile.existsSync()) {
       var str = arbFile.readAsStringSync();
-      var regex = RegExp(r'"(\w+)"\s*:\s*"(((\\.)|[^"])*)"');
-
-      final matches = regex.allMatches(str);
-
-      matches.forEach((match) {
-        final key = match.group(1);
-        final value = match.group(2);
-        if (key != null &&
-            !localizationDict.containsKey(key) &&
-            value != null) {
-          localizationDict[key] = value;
-        }
-      });
+      localizationDict = jsonDecode(str) as Map<String, Object?>;
+    } else {
+      localizationDict = Map<String, Object?>();
     }
 
     generator.localizationDict.forEach((key, value) {
       localizationDict[key] = value;
     });
 
-    var codeList = <String>[];
-    codeList.add("{");
-    var kvpList = <String>[];
-    localizationDict.forEach((k, v) {
-      kvpList.add("  \"$k\": \"$v\"");
-    });
-    codeList.add(kvpList.join(',\r\n'));
-    codeList.add("}");
+    var locJson = jsonEncode(localizationDict);
 
     if (localizationDict.isNotEmpty) {
       if (!l10n.existsSync()) {
         l10n.createSync();
       }
 
-      await Misc.writeFileIfChanged(arbFile.path, codeList.join('\r\n'));
+      await Misc.writeFileIfChanged(arbFile.path, locJson);
     }
   }
 }
