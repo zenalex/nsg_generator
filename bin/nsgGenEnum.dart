@@ -20,6 +20,7 @@ class NsgGenEnum {
   static const localizationAccessor = 'enumTran';
 
   final String className;
+  final String databaseType;
   final String dataTypeFile;
   final bool useLocalization;
   String description;
@@ -27,9 +28,10 @@ class NsgGenEnum {
 
   NsgGenEnum(
       {required this.className,
+      required this.databaseType,
       required this.dataTypeFile,
       required this.useLocalization,
-      this.description = ''});
+      required this.description});
 
   factory NsgGenEnum.fromJson(Map<String, dynamic> parsedJson) {
     Misc.checkObsoleteKeysInJSON(
@@ -37,6 +39,7 @@ class NsgGenEnum {
         throwIfAny: true);
     return NsgGenEnum(
         className: parsedJson['className'],
+        databaseType: parsedJson['databaseType'] ?? '',
         dataTypeFile: parsedJson['dataTypeFile'] ?? '',
         useLocalization: Misc.parseBool(parsedJson['useLocalization']),
         description: parsedJson['description'] ?? '');
@@ -182,8 +185,7 @@ class NsgGenEnum {
   /// defaultLocale проекта (язык arb-шаблона).
   static Future generateLocalizationAccessorFile(
       NsgGenerator nsgGenerator, List<NsgGenEnum> enums) async {
-    if (!nsgGenerator.useLocalization &&
-        !enums.any((e) => e.useLocalization)) {
+    if (!nsgGenerator.useLocalization && !enums.any((e) => e.useLocalization)) {
       return;
     }
 
@@ -195,21 +197,21 @@ class NsgGenEnum {
     codeList.add('');
     codeList.add('/// Локализация для автогенерируемых перечислений.');
     codeList.add('///');
-    codeList.add(
-        '/// Контекст здесь только предпочтителен: геттеры перечислений');
-    codeList.add(
-        '/// вызываются и вне дерева виджетов, где Get.context == null.');
+    codeList
+        .add('/// Контекст здесь только предпочтителен: геттеры перечислений');
+    codeList
+        .add('/// вызываются и вне дерева виджетов, где Get.context == null.');
     codeList.add(
         '/// Нет контекста - имя берётся по текущей локали GetX, нет и её');
-    codeList.add(
-        '/// (или язык не поддерживается) - по локали-шаблону проекта.');
+    codeList
+        .add('/// (или язык не поддерживается) - по локали-шаблону проекта.');
     codeList.add('AppLocalizations get $localizationAccessor {');
     codeList.add('  final ctx = Get.context;');
     codeList.add(
         '  final fromContext = ctx != null ? AppLocalizations.of(ctx) : null;');
     codeList.add('  if (fromContext != null) return fromContext;');
-    codeList.add(
-        '  return lookupAppLocalizations(_supportedLocale(Get.locale));');
+    codeList
+        .add('  return lookupAppLocalizations(_supportedLocale(Get.locale));');
     codeList.add('}');
     codeList.add('');
     codeList.add(
@@ -218,8 +220,7 @@ class NsgGenEnum {
     codeList.add('Locale _supportedLocale(Locale? locale) {');
     codeList.add('  if (locale == null) return _fallbackLocale;');
     codeList.add('  final supported = AppLocalizations.supportedLocales');
-    codeList.add(
-        '      .any((e) => e.languageCode == locale.languageCode);');
+    codeList.add('      .any((e) => e.languageCode == locale.languageCode);');
     codeList.add('  return supported ? locale : _fallbackLocale;');
     codeList.add('}');
     codeList.add('');
