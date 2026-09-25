@@ -9,9 +9,10 @@ class NsgGenLocalization {
 
     var l10n = Directory('${Directory(generator.dartPath).parent.path}/l10n');
     var arbFile = File('${l10n.path}/app_${generator.defaultLocale}.arb');
+    String? arbFileContent = null;
     if (arbFile.existsSync()) {
-      var str = arbFile.readAsStringSync();
-      localizationDict = jsonDecode(str) as Map<String, Object?>;
+      arbFileContent = arbFile.readAsStringSync();
+      localizationDict = jsonDecode(arbFileContent) as Map<String, Object?>;
     } else {
       localizationDict = Map<String, Object?>();
     }
@@ -19,8 +20,15 @@ class NsgGenLocalization {
     generator.localizationDict.forEach((key, value) {
       localizationDict[key] = value;
     });
-
-    var locJson = jsonEncode(localizationDict);
+    var encoder = JsonEncoder.withIndent('  ');
+    var locJson = encoder.convert(localizationDict);
+    if ((arbFileContent?.contains('\r\n') ?? false) ||
+        Platform.lineTerminator != '\n') {
+      locJson = locJson
+          .replaceAll('\r', '')
+          .replaceAll('\n', Platform.lineTerminator);
+    }
+    locJson += Platform.lineTerminator;
 
     if (localizationDict.isNotEmpty) {
       if (!l10n.existsSync()) {
