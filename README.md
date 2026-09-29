@@ -291,6 +291,13 @@ Uri сервера
 "useGetUserByTokenSync": "true",
 ```
 > Пример применения: назначение CurrentCulture в асинхронном контексте работает только до выхода из асихнронного контекста. Поэтому, чтобы назначать локаль по токену пользователя в GetUserByToken, его необходимо сделать синхронным  
+> ⚠️ `GetUserByTokenSync` — это sync-over-async: на промахе кэша токенов (холодный старт узла) он держит поток пула, пока ждёт Redis и БД. Вместо него используйте `ensureUser` ниже (futbolista-tasks#2753).
+
+Вызывать ли после `await GetUserByToken` синхронный `<implAuthControllerName>.EnsureUser(user)`. Действует только при `useGetUserByTokenSync: false`. По умолчанию false  
+```json
+"ensureUser": "true",
+```
+Генерируется `var user = AuthControllerImplementation.EnsureUser(await authController.GetUserByToken(Request));`. Шаг закрывает два отличия асинхронного пути от синхронного: при `null` отвечает 401, а культуру пользователя выставляет уже в контексте самого экшена (выставленная внутри `GetUserByToken` при выходе из него откатывается). Сервер обязан объявить `public static INsgTokenExtension EnsureUser(INsgTokenExtension user)` в классе `implAuthControllerName`.
 
 Массив методов работы с объектами данных.
 Для каждого элемента будет наздан набор методов  

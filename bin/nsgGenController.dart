@@ -21,12 +21,26 @@ class NsgGenController {
   final bool loginRequired;
   final bool writeOnClient;
   final bool useGetUserByTokenSync;
+
+  /// Вызывать ли после `await GetUserByToken` синхронный
+  /// `<implAuthControllerName>.EnsureUser(user)` (futbolista-tasks#2753).
+  ///
+  /// Асинхронный `GetUserByToken` при неавторизованном запросе возвращает
+  /// `null` (а не 401), и культура, выставленная внутри него, не доживает до
+  /// экшена: `CurrentCulture` живёт в контексте исполнения, и завершившийся
+  /// async-метод восстанавливает контекст вызывающего. Синхронный шаг в самом
+  /// экшене закрывает оба пробела без `GetUserByTokenSync`, то есть без
+  /// sync-over-async. Сервер обязан объявить
+  /// `public static INsgTokenExtension EnsureUser(INsgTokenExtension user)`.
+  final bool ensureUser;
   final List<NsgGenMethod> methods;
   final List<NsgGenFunction> functions;
   bool hasGetStreamFunction;
   String get callGetUserByToken => useGetUserByTokenSync
       ? "authController.GetUserByTokenSync(Request)"
-      : "await authController.GetUserByToken(Request)";
+      : ensureUser
+          ? "$implAuthControllerName.EnsureUser(await authController.GetUserByToken(Request))"
+          : "await authController.GetUserByToken(Request)";
 
   NsgGenController(
       {required this.apiPrefix,
@@ -41,6 +55,7 @@ class NsgGenController {
       this.loginRequired = true,
       this.writeOnClient = true,
       this.useGetUserByTokenSync = false,
+      this.ensureUser = false,
       this.methods = const [],
       this.functions = const [],
       this.hasGetStreamFunction = false});
@@ -79,6 +94,7 @@ class NsgGenController {
         writeOnClient: Misc.parseBoolOrTrue(parsedJson['writeOnClient']),
         useGetUserByTokenSync:
             Misc.parseBool(parsedJson['useGetUserByTokenSync']),
+        ensureUser: Misc.parseBool(parsedJson['ensureUser']),
         methods: parsedJson.containsKey('method')
             ? (parsedJson['method'] as List)
                 .map((i) => NsgGenMethod.fromJson(i))
