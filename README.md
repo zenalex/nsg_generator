@@ -465,6 +465,11 @@ Uri сервера
 "authorize": "user",
 ```
 
+Использовать аттрбут `[AllowAnonymous]` вместо `[Authorize]` на серверном эндпоинте
+```json
+"allowAnonymous": "true",
+```
+
 Префикс для вызова web-api. По умолчанию равен name  
 ```json
 "apiPrefix": "GetUserData",

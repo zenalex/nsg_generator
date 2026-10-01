@@ -11,6 +11,7 @@ class NsgGenFunction {
   final String description;
   final String apiPrefix;
   final String authorize;
+  final bool allowAnonymous;
   final String type;
   final String referenceType;
   final bool isReference;
@@ -31,6 +32,7 @@ class NsgGenFunction {
       this.description = '',
       this.apiPrefix = '',
       required this.authorize,
+      this.allowAnonymous = false,
       required this.type,
       this.referenceType = '',
       this.isReference = false,
@@ -108,6 +110,7 @@ class NsgGenFunction {
               ? parsedJson['apiPrefix']
               : parsedJson['name'],
           authorize: parsedJson['authorize'] ?? 'none',
+          allowAnonymous: Misc.parseBool(parsedJson['allowAnonymous']),
           type: parsedJson['type'] ?? '',
           referenceType: referenceType,
           isReference: isReference,
@@ -225,6 +228,8 @@ class NsgGenFunction {
     codeList.add('[Route("$apiPrefix")]');
     //Authorization
     if (!controller.useAuthorization) {
+    } else if (allowAnonymous) {
+      codeList.add('[AllowAnonymous]');
     } else if (authorize == 'anonymous') {
       codeList.add('[Authorize]');
     } else if (authorize == 'user') {
@@ -270,7 +275,10 @@ class NsgGenFunction {
     }
     codeList.add('{');
     if (controller.useAuthorization && authorize != 'none') {
-      codeList.add('var user = ${controller.callGetUserByToken};');
+      var callGetUserByToken = controller.ensureUser && allowAnonymous
+          ? 'await authController.GetUserByToken(Request)'
+          : controller.callGetUserByToken;
+      codeList.add('var user = $callGetUserByToken;');
     }
     if (params.isNotEmpty && !(['Image', 'Binary'].contains(type))) {
       params.forEach((p) {
