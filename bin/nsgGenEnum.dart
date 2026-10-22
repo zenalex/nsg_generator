@@ -233,7 +233,7 @@ class NsgGenEnum {
   Future generateEnumDart(NsgGenerator nsgGenerator) async {
     var codeList = <String>[];
     Misc.writeThisFileIsGeneratedClient(codeList);
-    if (useLocalization || nsgGenerator.useLocalization) {
+    if (useLocalization) {
       // Локализованное имя берётся через аксессор, а не через
       // AppLocalizations.of(Get.context!): геттеры перечислений вызываются
       // и вне дерева виджетов, где Get.context == null. Сам аксессор
@@ -246,7 +246,7 @@ class NsgGenEnum {
       Misc.writeDescription(codeList, description, false);
     }
     codeList.add('class $className extends NsgEnum {');
-    if (useLocalization || nsgGenerator.useLocalization) {
+    if (useLocalization) {
       var lowerCaseClassName = Misc.getDartName(className);
       values!.forEach((i) {
         var iCodeName = Misc.getDartName(i.codeName);
