@@ -283,38 +283,86 @@ class NsgGenFunction {
     if (params.isNotEmpty && !(['Image', 'Binary'].contains(type))) {
       params.forEach((p) {
         if (p.type == 'DateTime') {
-          codeList
-              .add('if (!findParams.Parameters.ContainsKey("${p.name}") ||');
-          codeList.add(
-              '    !DateTime.TryParse(findParams.Parameters["${p.name}"].ToString(), out DateTime ${p.name}))');
-          codeList.add('    ${p.name} = DateTime.Now;');
+          if (p.isRequired) {
+            codeList
+                .add('if (!findParams.Parameters.ContainsKey("${p.name}") ||');
+            codeList.add(
+                '    !DateTime.TryParse(findParams.Parameters["${p.name}"].ToString(), out DateTime ${p.name}))');
+            codeList.add('    ${p.name} = DateTime.Now;');
+          } else {
+            codeList.add(
+                'if (!findParams.Parameters.TryGetValue("${p.name}", out object ${p.name}Obj) ||');
+            codeList.add(
+                '    !DateTime.TryParse(${p.name}Obj?.ToString(), out DateTime ${p.name}))');
+            codeList.add('    ${p.name} = DateTime.Now;');
+          }
           return;
         }
         //if (!body.ContainsKey("date") || !DateTime.TryParse(body["date"].ToString(), out DateTime date)) date = DateTime.Now;
         var pStr = ['${p.returnType} ${p.name} = '];
         if (p.type == 'String') {
-          pStr[0] += 'findParams.Parameters["${p.name}"].ToString();';
+          if (p.isRequired) {
+            pStr[0] += 'findParams.Parameters["${p.name}"].ToString();';
+          } else {
+            pStr[0] +=
+                'findParams.Parameters.TryGetValue("${p.name}", out object ${p.name}Obj) ?';
+            pStr.add(
+                '    ${p.name}Obj as String ?? string.Empty : string.Empty;');
+          }
         } else if (['int', 'double'].contains(p.type)) {
-          pStr[0] +=
-              'findParams.Parameters["${p.name}"] is ${p.type} _${p.name}_ ? _${p.name}_ :';
-          pStr.add(
-              '    ${p.type}.Parse(findParams.Parameters["${p.name}"].ToString(), System.Globalization.CultureInfo.InvariantCulture);');
+          if (p.isRequired) {
+            pStr[0] +=
+                'findParams.Parameters["${p.name}"] is ${p.type} _${p.name}_ ? _${p.name}_ :';
+            pStr.add(
+                '    ${p.type}.Parse(findParams.Parameters["${p.name}"].ToString(), System.Globalization.CultureInfo.InvariantCulture);');
+          } else {
+            pStr[0] +=
+                'findParams.Parameters.TryGetValue("${p.name}", out object ${p.name}Obj) ?';
+            pStr.add(
+                '    ${p.name}Obj is int _${p.name}_ ? _${p.name}_ : int.Parse(${p.name}Obj?.ToString(), System.Globalization.CultureInfo.InvariantCulture) : 0;');
+          }
         } else if (p.type == 'bool') {
-          pStr[0] +=
-              '${p.type}.Parse(findParams.Parameters["${p.name}"].ToString());';
+          if (p.isRequired) {
+            pStr[0] +=
+                'bool.Parse(findParams.Parameters["${p.name}"].ToString());';
+          } else {
+            pStr[0] +=
+                'findParams.Parameters.TryGetValue("${p.name}", out object ${p.name}Obj) ? bool.Parse(${p.name}Obj?.ToString()) : false;';
+          }
         } else if (p.type.startsWith('List')) {
-          pStr[0] +=
-              '(findParams.Parameters["${p.name}"] as Newtonsoft.Json.Linq.JArray)?.ToObject<${p.returnType}>() ?? new ${p.returnType}();';
+          if (p.isRequired) {
+            pStr[0] +=
+                '(findParams.Parameters["${p.name}"] as Newtonsoft.Json.Linq.JArray)?.ToObject<${p.returnType}>() ?? new ${p.returnType}();';
+          } else {
+            pStr[0] +=
+                'findParams.Parameters.TryGetValue("${p.name}", out object ${p.name}Obj) ?';
+            pStr.add(
+                '    (${p.name}Obj as Newtonsoft.Json.Linq.JArray)?.ToObject<List<${p.returnType}>>() ?? new List<${p.returnType}>() : new List<${p.returnType}>();');
+          }
         } else if (p.type.startsWith('Enum')) {
-          pStr[0] +=
-              '(${p.returnType})(findParams.Parameters["${p.name}"] is int _${p.name}_ ? _${p.name}_ :';
-          pStr.add(
-              '    int.Parse(findParams.Parameters["${p.name}"].ToString(), System.Globalization.CultureInfo.InvariantCulture));');
-          // pStr[0] +=
-          //     '(findParams.Parameters["${p.name}"] as Newtonsoft.Json.Linq.JObject)?.ToObject<${p.returnType}>() ?? (${p.returnType})0;';
+          if (p.isRequired) {
+            pStr[0] +=
+                '(${p.returnType})(findParams.Parameters["${p.name}"] is int _${p.name}_ ? _${p.name}_ :';
+            pStr.add(
+                '    int.Parse(findParams.Parameters["${p.name}"].ToString(), System.Globalization.CultureInfo.InvariantCulture));');
+            // pStr[0] +=
+            //     '(findParams.Parameters["${p.name}"] as Newtonsoft.Json.Linq.JObject)?.ToObject<${p.returnType}>() ?? (${p.returnType})0;';
+          } else {
+            pStr[0] +=
+                '(${p.returnType})(findParams.Parameters.TryGetValue("${p.name}", out object ${p.name}Obj) ? ${p.name}Obj is int _${p.name}_ ? _${p.name}_ :';
+            pStr.add(
+                '    int.Parse(${p.name}Obj?.ToString(), System.Globalization.CultureInfo.InvariantCulture) : 0);');
+          }
         } else {
-          pStr[0] +=
-              '(findParams.Parameters["${p.name}"] as Newtonsoft.Json.Linq.JObject)?.ToObject<${p.returnType}>() ?? new ${p.returnType}();';
+          if (p.isRequired) {
+            pStr[0] +=
+                '(findParams.Parameters["${p.name}"] as Newtonsoft.Json.Linq.JObject)?.ToObject<${p.returnType}>() ?? new ${p.returnType}();';
+          } else {
+            pStr[0] +=
+                'findParams.Parameters.TryGetValue("${p.name}", out object ${p.name}Obj) ?';
+            pStr.add(
+                '    (${p.name}Obj as Newtonsoft.Json.Linq.JObject)?.ToObject<${p.returnType}>() ?? new ${p.returnType}() : new ${p.returnType}();');
+          }
         }
         codeList.addAll(pStr);
       });
@@ -652,12 +700,14 @@ class NsgGenMethodParam {
   final String type;
   final String referenceType;
   final bool isReference;
+  final bool isRequired;
 
   NsgGenMethodParam(
       {required this.name,
       required this.type,
       this.referenceType = '',
-      this.isReference = false});
+      this.isReference = false,
+      this.isRequired = true});
 
   factory NsgGenMethodParam.fromJson(Map<String, dynamic> parsedJson) {
     var name = parsedJson['name'];
@@ -684,11 +734,13 @@ class NsgGenMethodParam {
         }
       }
       isReference = !Misc.isPrimitiveType(type);
+
       return NsgGenMethodParam(
           name: parsedJson['name'],
           type: type,
           referenceType: referenceType,
-          isReference: isReference);
+          isReference: isReference,
+          isRequired: Misc.parseBoolOrTrue(parsedJson['isRequired']));
     } catch (e) {
       print('--- ERROR parsing function param \'$name\' ---');
       rethrow;
