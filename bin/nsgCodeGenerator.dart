@@ -17,10 +17,12 @@ void main(List<String> args) async {
       nsgArgs.doCSharp = doCSharp;
       nsgArgs.doDart = doDart;
     }
+    nsgArgs.writeLocalization &= !args.contains('-no-localization');
     if (args.contains('-force') ||
         args.contains('-overwrite') ||
-        args.contains('-forceoverwrite')) {
-      if (args.contains('-dontAsk')) {
+        args.contains('-forceoverwrite') ||
+        args.contains('-force-overwrite')) {
+      if (args.contains('-dontAsk') || args.contains('-no-input')) {
         nsgArgs.forceOverwrite = true;
       } else {
         print('Overwrite all files? (y/n/cancel)');
@@ -29,9 +31,9 @@ void main(List<String> args) async {
         nsgArgs.forceOverwrite = yn == 'y';
       }
     }
-    nsgArgs.copyCsproj = args.contains('-copyCsproj');
-    nsgArgs.copyProgramCs = args.contains('-copyProgramCs');
-    nsgArgs.copyStartupCs = args.contains('-copyStartupCs');
+    nsgArgs.copyCsproj = args.contains('-copyCsproj') || args.contains('-copy-csproj');
+    nsgArgs.copyProgramCs = args.contains('-copyProgramCs') || args.contains('-copy-program-cs');
+    nsgArgs.copyStartupCs = args.contains('-copyStartupCs') || args.contains('-copy-startup-cs');
     for (var i in args) {
       if (i.startsWith('csharp:')) {
         nsgArgs.cSharpPath = i.substring(i.indexOf(':') + 1).trim();

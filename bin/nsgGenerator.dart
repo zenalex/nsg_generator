@@ -33,6 +33,7 @@ class NsgGenerator {
   bool doCSharp = true;
   bool doDart = true;
   bool forceOverwrite = false;
+  bool writeLocalization = true;
   bool copyCsproj = false;
   bool copyProgramCs = false;
   bool copyStartupCs = false;
@@ -52,6 +53,7 @@ class NsgGenerator {
       required this.newTableLogic,
       this.doCSharp = true,
       this.doDart = true,
+      this.writeLocalization = true,
       this.useStaticDatabaseNames = false,
       this.controllers = const [],
       this.enums = const []});
@@ -72,6 +74,11 @@ class NsgGenerator {
     'targetFramework',
     'useLocalization',
     'useStaticDatabaseNames',
+    // + ключи NsgLocalization
+    'jsonIndentationLength',
+    'serializeBooleanAsString',
+    'metadataNamespace',
+    // - ключи NsgLocalization
   };
 
   /// Сказать вслух про ключи, которых генератор не знает.
@@ -154,6 +161,7 @@ class NsgGenerator {
           dartPath: parsedJson['dartPath'] ?? '',
           doCSharp: doCSharp,
           doDart: Misc.parseBoolOrTrue(parsedJson['doDart']),
+          writeLocalization: Misc.parseBoolOrTrue(parsedJson['writeLocalization']),
           applicationName: parsedJson['applicationName'] ?? 'application',
           useLocalization: Misc.parseBool(parsedJson['useLocalization']),
           defaultLocale: parsedJson['defaultLocale'] ?? 'ru',
@@ -257,6 +265,8 @@ class NsgGenerator {
       await NsgGenController.generateControllerOptions(this, controllers);
     }
     await NsgGenEnum.generateEnums(this, enums);
-    await NsgGenLocalization.writeLocalization(this);
+    if (writeLocalization) {
+      await NsgGenLocalization.writeLocalization(this);
+    }
   }
 }
