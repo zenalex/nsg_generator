@@ -1179,11 +1179,11 @@ public static class NsgDatabaseMigrator
       if (hasTables) {
         sb.writeln('        // Табличные части едут строками внутри объекта; пути через них');
         sb.writeln('        // («files.authorId») сводятся к самой части — ссылки строк клиент дочитывает сам.');
-        sb.writeln('        var (tables, references) = NsgTableParts.SplitReadReferences(typeof($t), req.ReadReferences);');
+        sb.writeln('        var (tables, references) = NsgTableParts.SplitReadReferences(typeof($t), NsgReadHooks.WithoutTransient<$t>(req.ReadReferences));');
         sb.writeln('        query = NsgReadReferencesApplier.Apply(query, references, _db.Model);');
         sb.writeln('        query = NsgTableParts.Include(query, tables);');
       } else {
-        sb.writeln('        query = NsgReadReferencesApplier.Apply(query, req.ReadReferences, _db.Model);');
+        sb.writeln('        query = NsgReadReferencesApplier.Apply(query, NsgReadHooks.WithoutTransient<$t>(req.ReadReferences), _db.Model);');
       }
       // Сортировку по полю вне базы SQL не выполнит: тогда она и Top — в памяти,
       // после того как обработчики чтения заполнили поля.
@@ -1857,6 +1857,21 @@ public static class NsgReadHooks
         var ctx = new NsgReadContext(http, parameters);
         foreach (var hook in hooks) query = hook.Filter(query, ctx);
         return query;
+    }
+
+    /// <summary>`ReadReferences` без путей через поля вне базы: `nsg_data`
+    /// просит дочитать все ссылки типа, а у ссылки вне базы (`inviteProjectId`)
+    /// навигации нет — дочитывать нечего.</summary>
+    public static string[]? WithoutTransient<T>(string[]? readReferences) where T : class
+    {
+        if (readReferences is null || readReferences.Length == 0 ||
+            !TypeFieldMapRegistry.ByType.TryGetValue(typeof(T), out var maps)) return readReferences;
+        return readReferences.Where(path =>
+        {
+            var head = path.Split('.')[0].Trim();
+            return !(maps.WireToCSharp.TryGetValue(head, out var cs) &&
+                     typeof(T).GetProperty(cs)?.GetCustomAttribute<NotMappedAttribute>() is not null);
+        }).ToArray();
     }
 
     /// <summary>Есть ли в сортировке поле вне базы (`[NotMapped]`): такую
@@ -3799,6 +3814,9 @@ public class NsgCodeAuthController : ControllerBase
         '    /// <summary>Wire JsonElement → C# value of <paramref name="targetType"/>.\n'
         '    /// Handles null, DateTime (ISO8601 UTC), Guid (string form; empty→null if isFk),\n'
         '    /// enum (int), byte[] (base64), primitives.</summary>\n'
+        '    /// <summary>Пустая дата nsg_data (NsgDateHelper.minDate).</summary>\n'
+        '    public static readonly DateTime NsgEmptyDate = new(1754, 1, 1, 0, 0, 0, DateTimeKind.Utc);\n'
+        '\n'
         '    public static object? ConvertFromWire(JsonElement v, Type targetType, bool isFk = false)\n'
         '    {\n'
         '        if (v.ValueKind == JsonValueKind.Null) return null;\n'
@@ -3813,10 +3831,15 @@ public class NsgCodeAuthController : ControllerBase
         '            // указывали в пустоту.\n'
         '            if (v.ValueKind != JsonValueKind.String)\n'
         '                throw new NsgWireFormatException(\$"ожидался идентификатор строкой, получено {v.ValueKind}");\n'
+        '            // Пустая ссылка nsg_data — пустая строка (очищенный исполнитель).\n'
+        '            // Для необязательного идентификатора это null; первичный ключ\n'
+        '            // (не nullable) по-прежнему обязан быть идентификатором.\n'
+        '            var optional = isFk || Nullable.GetUnderlyingType(targetType) is not null;\n'
+        '            if (optional && string.IsNullOrEmpty(v.GetString())) return null;\n'
         '            if (!Guid.TryParse(v.GetString(), out var g))\n'
         '                throw new NsgWireFormatException(\$"«{v.GetString()}» не является идентификатором");\n'
         '            // F1.a: Guid.Empty in FK column → null (avoid FK-constraint violation)\n'
-        '            if (isFk && g == Guid.Empty) return null;\n'
+        '            if (optional && g == Guid.Empty) return null;\n'
         '            return g;\n'
         '        }\n'
         '        if (underlying == typeof(DateTime))\n'
@@ -3824,8 +3847,11 @@ public class NsgCodeAuthController : ControllerBase
         '            if (v.ValueKind != JsonValueKind.String) return null;\n'
         '            var s = v.GetString();\n'
         '            if (string.IsNullOrEmpty(s)) return null;\n'
-        '            return DateTime.Parse(s, System.Globalization.CultureInfo.InvariantCulture,\n'
+        '            var d = DateTime.Parse(s, System.Globalization.CultureInfo.InvariantCulture,\n'
         '                System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal);\n'
+        '            // Пустая дата nsg_data — NsgDateHelper.minDate (1754-01-01 UTC) и раньше:\n'
+        '            // хранится как null, иначе она сошла бы за настоящую (просроченный срок).\n'
+        '            return d <= NsgEmptyDate ? null : d;\n'
         '        }\n'
         '        if (underlying.IsEnum)\n'
         '        {\n'

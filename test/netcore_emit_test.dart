@@ -1276,7 +1276,7 @@ void main() {
     test('контроллер владельца читает и пишет строки через NsgTableParts', () {
       final src = NsgGenNetcore.emitControllerGenerated(
           gen, controller, methodFor(owner), 'Tasks');
-      expect(src, contains('NsgTableParts.SplitReadReferences(typeof(TaskDoc), req.ReadReferences)'));
+      expect(src, contains('NsgTableParts.SplitReadReferences(typeof(TaskDoc), NsgReadHooks.WithoutTransient<TaskDoc>(req.ReadReferences))'));
       expect(src, contains('NsgReadReferencesApplier.Apply(query, references, _db.Model)'));
       expect(src, contains('NsgTableParts.Include(query, tables)'));
       expect(src, contains('NsgTableParts.IncludeAll(_db.Tasks).FirstOrDefaultAsync(x => x.Id == fresh.Id)'));
@@ -1290,7 +1290,7 @@ void main() {
           gen, controller, methodFor(plain), 'Projects');
       expect(src, isNot(contains('NsgTableParts')));
       expect(src, contains('await _db.Projects.FindAsync(fresh.Id)'));
-      expect(src, contains('NsgReadReferencesApplier.Apply(query, req.ReadReferences, _db.Model)'));
+      expect(src, contains('NsgReadReferencesApplier.Apply(query, NsgReadHooks.WithoutTransient<'));
     });
   });
   group('Функции контроллера', () {
@@ -1640,6 +1640,24 @@ void main() {
       expect(src, contains('NsgReadHooks.SortInMemory(items, req.Sorting);'));
       expect(src, contains('await NsgReadHooks.AfterReadAsync(HttpContext, req.Parameters, items);'));
       expect(src, contains('catch (NsgRejectedException rejected) { return BadRequest(new { error = "rejected", message = rejected.Message }); }'));
+    });
+
+    test('ReadReferences без полей вне базы: nsg_data просит дочитать все ссылки', () {
+      final controller = NsgGenController.fromJson(
+          {'apiPrefix': 'Data', 'className': 'DataController'});
+      final method = NsgGenMethod.fromJson(
+          {'name': 'Project', 'authorize': 'user', 'dataTypeFile': 'x.json'})
+        ..genDataItem = gen.dataItems['ProjectItem']!;
+      final src = NsgGenNetcore.emitControllerGenerated(gen, controller, method, 'Projects');
+      expect(src, contains('NsgReadHooks.WithoutTransient<ProjectItem>(req.ReadReferences)'));
+      expect(NsgGenNetcore.emitSaveHooks(gen), contains('public static string[]? WithoutTransient<T>'));
+    });
+
+    test('маппер: пустая ссылка и пустая дата nsg_data — null', () {
+      final mapper = NsgGenNetcore.emitNsgEntityMapper(gen);
+      expect(mapper, contains('if (optional && string.IsNullOrEmpty(v.GetString())) return null;'));
+      expect(mapper, contains('new(1754, 1, 1, 0, 0, 0, DateTimeKind.Utc)'));
+      expect(mapper, contains('return d <= NsgEmptyDate ? null : d;'));
     });
 
     test('отказ бизнес-правила: 400 с message через общий фильтр', () {
