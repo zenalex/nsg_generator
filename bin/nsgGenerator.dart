@@ -274,6 +274,34 @@ class NsgGenerator {
     // сущностях/полях — до начала эмита.
     if (serverEmitKind == NsgServerEmitKind.netcore) {
       validateForNetcoreEmit();
+      // Клиентские типы (без databaseType) живут только в приложении: таблицы,
+      // EF-конфигурации и DbSet у них нет. На время эмита они откладываются,
+      // а их методы получают контроллер с пустым ответом.
+      final clientOnly = <String, NsgGenDataItem>{
+        for (final e in dataItems.entries)
+          if (NsgGenNetcore.isClientOnly(e.value)) e.key: e.value
+      };
+      dataItems.removeWhere((k, _) => clientOnly.containsKey(k));
+      try {
+        await _emitNetcore(clientOnly.values.map((d) => d.typeName).toSet());
+      } finally {
+        dataItems.addAll(clientOnly);
+      }
+    }
+    await Future.forEach<NsgGenController>(controllers, (element) async {
+      print('generating ${element.className}');
+      await element.generateCode(this);
+    });
+    if (doDart) {
+      await NsgGenController.generateControllerOptions(this, controllers);
+      await _writeSchemaMeta();
+    }
+    await NsgGenEnum.generateEnums(this, enums);
+    await NsgGenLocalization.writeLocalization(this);
+  }
+
+  Future<void> _emitNetcore(Set<String> clientOnlyTypes) async {
+    {
       // Состав схемы нужен до эмита: имена коллекций DbSet зависят от того,
       // есть ли в схеме тип, с которым совпадёт отбрасывание суффикса `Item`.
       NsgGenNetcore.rememberTypeNames(dataItems.values.map((di) => di.typeName));
@@ -311,38 +339,36 @@ class NsgGenerator {
       // Per-method emission: takes apiPrefix + allowGetter/Post/Delete flags into account.
       for (final controller in controllers) {
         for (final method in controller.methods) {
-          await NsgGenNetcore.emitControllerForMethod(this, controller, method);
+          if (clientOnlyTypes.contains(method.genDataItem.typeName)) {
+            await NsgGenNetcore.emitClientOnlyController(this, controller, method);
+          } else {
+            await NsgGenNetcore.emitControllerForMethod(this, controller, method);
+          }
         }
         // Функции контроллера: <Ctrl>FunctionsController.cs (перезапись)
         // + .Custom.cs с обработчиками (один раз).
         await NsgGenNetcore.emitFunctionsForController(this, controller);
       }
       await NsgGenNetcore.emitFunctionRuntimeFile(this);
+      await NsgGenNetcore.emitModelAliasesFile(this);
+      await NsgGenNetcore.emitSaveHooksFile(this);
       // TASK05 §5.2.4: test-project skeleton (one-shot, sibling dir).
       await NsgGenNetcore.emitTestProject(this);
       // Раунд 3.Б: csproj + Program.cs + appsettings.json + launchSettings.json
       // (всё one-shot).
       await NsgGenNetcore.emitHostingFiles(this);
     }
-    await Future.forEach<NsgGenController>(controllers, (element) async {
-      print('generating ${element.className}');
-      await element.generateCode(this);
-    });
-    if (doDart) {
-      await NsgGenController.generateControllerOptions(this, controllers);
-      await _writeSchemaMeta();
-    }
-    await NsgGenEnum.generateEnums(this, enums);
-    await NsgGenLocalization.writeLocalization(this);
   }
 
   /// Проверяет, что все сущности и поля размечены `pgTableName`/`pgColumnName`,
   /// требуемыми для netcore-эмита (TASK02 §«Архитектурные решения» №2).
   /// Поля без `databaseName` (write-only/derived) пропускаются — у них нет
-  /// SQL-маппинга и в БД они не попадают.
+  /// SQL-маппинга и в БД они не попадают. Клиентские типы (без
+  /// `databaseType`) в базе не хранятся и тоже пропускаются.
   void validateForNetcoreEmit() {
     final errors = <String>[];
     for (final di in dataItems.values) {
+      if (NsgGenNetcore.isClientOnly(di)) continue;
       if (di.pgTableName.isEmpty) {
         errors.add(
             'pgTableName is required on type "${di.typeName}".');

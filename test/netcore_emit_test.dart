@@ -353,7 +353,7 @@ void main() {
       expect(actual, equals(expected));
     });
 
-    test('fields without databaseName are skipped (UserItem.IsCurrentUser)', () {
+    test('поле без databaseName — вне базы: [NotMapped], без колонки (UserItem.IsCurrentUser)', () {
       final gen = makeGenerator();
       // Минимальный кейс: одно поле с databaseName, одно без.
       final di = NsgGenDataItem.fromJson({
@@ -375,7 +375,7 @@ void main() {
             'type': 'String',
           },
           {
-            // Поле БЕЗ databaseName — должно быть пропущено.
+            // Поле БЕЗ databaseName — вычисляет сервер, в базе его нет.
             'name': 'IsCurrentUser',
             'type': 'bool',
             'allowPost': false,
@@ -386,7 +386,7 @@ void main() {
       final model = NsgGenNetcore.emitModel(gen, di);
       expect(model, contains('public Guid Id'));
       expect(model, contains('public string? Name'));
-      expect(model, isNot(contains('IsCurrentUser')));
+      expect(model, contains('[NotMapped]\n    public bool? IsCurrentUser { get; set; }'));
 
       final config = NsgGenNetcore.emitConfiguration(gen, di);
       expect(config, contains('builder.HasKey(x => x.Id);'));
@@ -835,7 +835,7 @@ void main() {
       expect(out, contains('public static class ShopItemFieldMap'));
     });
 
-    test('FieldMap skips fields without databaseName and List<> nav-collections', () {
+    test('FieldMap: поле вне базы в обмене, List<> nav-коллекция — нет', () {
       final gen = NsgGenerator.fromJson({
         'targetFramework': 'net10.0',
         'cSharpNamespace': 'X',
@@ -858,7 +858,8 @@ void main() {
       final out = NsgGenNetcore.emitFieldMap(gen, di);
       expect(out, contains('"id"] = "Id"'));
       expect(out, isNot(contains('Players')),  reason: 'List<> nav-collection has no wire-key in NsgCompare');
-      expect(out, isNot(contains('Internal')), reason: 'fields without databaseName are skipped');
+      expect(out, contains('["internal"] = "Internal", // вне базы'),
+          reason: 'поле без databaseName идёт в обмене, колонки у него нет');
     });
 
     test('TypeNameMap: wire typeName ↔ pgTableName for all entities, sorted by typeName', () {
@@ -1332,6 +1333,12 @@ void main() {
           className: 'TaskPriority', dataTypeFile: 'p.json', useLocalization: false));
     });
 
+    test('псевдонимы моделей: имя модели сильнее одноимённого типа .NET', () {
+      final src = NsgGenNetcore.emitModelAliases(gen);
+      expect(src, contains('global using ProjectItem = Tt.Models.ProjectItem;'));
+      expect(src, contains('global using TaskPriority = Tt.Models.TaskPriority;'));
+    });
+
     test('класс функций отдельно от контроллеров типов', () {
       expect(NsgGenNetcore.functionsClassName(ctrl([])), 'DataFunctionsController');
     });
@@ -1520,6 +1527,135 @@ void main() {
       expect(store, contains('useSsl = uri.Scheme == "https"'));
       expect(store, contains('.WithEndpoint(endpoint)'));
       expect(store, contains('.WithSSL(useSsl)'));
+    });
+  });
+
+  group('Схема TaskTuner: поля вне базы, клиентские типы, ссылки строки', () {
+    late NsgGenerator gen;
+
+    Map<String, dynamic> field(String name, String type,
+            {String db = 'Поле', String pg = '', String ref = ''}) =>
+        {
+          'name': name,
+          'type': type,
+          if (db.isNotEmpty) 'databaseName': db,
+          if (pg.isNotEmpty) 'pgColumnName': pg,
+          if (ref.isNotEmpty) 'referenceType': ref,
+        };
+
+    setUp(() {
+      gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'Tt',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      gen.dataItems['ProjectItem'] = NsgGenDataItem.fromJson({
+        'typeName': 'ProjectItem',
+        'databaseType': 'Проекты',
+        'pgTableName': 'project_item',
+        'fields': [
+          {...field('Id', 'String', pg: 'id'), 'isPrimary': 'true'},
+          field('PhotoPath', 'String', pg: 'photo_path'),
+          field('PhotoFile', 'Binary', db: ''),
+          field('NumberOfTasksOpen', 'int', db: ''),
+        ],
+      });
+      gen.dataItems['TaskStatus'] = NsgGenDataItem.fromJson({
+        'typeName': 'TaskStatus',
+        'databaseType': 'Статусы',
+        'pgTableName': 'task_status',
+        'fields': [
+          {...field('Id', 'String', pg: 'id'), 'isPrimary': 'true'},
+          field('TransitionTable', 'List<Reference>', ref: 'TaskStatusTransitionTable'),
+        ],
+      });
+      gen.dataItems['TaskStatusTransitionTable'] = NsgGenDataItem.fromJson({
+        'typeName': 'TaskStatusTransitionTable',
+        'databaseType': 'Статусы.ТаблицаПереходы.Строка',
+        'pgTableName': 'task_status_transition_table',
+        'fields': [
+          {...field('Id', 'String', pg: 'id'), 'isPrimary': 'true'},
+          field('Status', 'Reference', pg: 'status', ref: 'TaskStatus'),
+          field('OwnerId', 'Reference', pg: 'owner', ref: 'TaskStatus'),
+        ],
+      });
+      gen.dataItems['ServiceObject'] = NsgGenDataItem.fromJson({
+        'typeName': 'ServiceObject',
+        'fields': [
+          {...field('Id', 'String', db: ''), 'isPrimary': 'true'},
+        ],
+      });
+    });
+
+    test('поле вне базы: [NotMapped] в модели, в обмене в обе стороны', () {
+      final di = gen.dataItems['ProjectItem']!;
+      final model = NsgGenNetcore.emitModel(gen, di);
+      expect(model, contains('using System.ComponentModel.DataAnnotations.Schema;'));
+      expect(model, contains('[NotMapped]\n    public byte[]? PhotoFile { get; set; }'));
+      expect(model, contains('[NotMapped]\n    public int? NumberOfTasksOpen { get; set; }'));
+      final map = NsgGenNetcore.emitFieldMap(gen, di);
+      expect(map, contains('["photoFile"] = "PhotoFile", // вне базы'));
+      expect(map, contains('["PhotoFile"] = "photoFile", // вне базы'));
+      final config = NsgGenNetcore.emitConfiguration(gen, di);
+      expect(config, isNot(contains('PhotoFile')), reason: 'колонки в базе нет');
+      expect(NsgGenNetcore.hasTransientFields(di), isTrue);
+    });
+
+    test('обработчики сохранения: из DI, до записи; поля вне базы переносятся', () {
+      final src = NsgGenNetcore.emitSaveHooks(gen);
+      expect(src, contains('public interface INsgSaveHook<T> where T : class'));
+      expect(src, contains('GetServices<INsgSaveHook<T>>()'));
+      expect(src, contains('GetCustomAttribute<NotMappedAttribute>()'));
+    });
+
+    test('ссылка на владельца — OwnerId, вторая ссылка на тот же тип обычная', () {
+      final row = gen.dataItems['TaskStatusTransitionTable']!;
+      expect(NsgGenNetcore.ownerFkFieldOf(row, 'TaskStatus')!.name, 'OwnerId');
+      final config = NsgGenNetcore.emitConfiguration(gen, row);
+      expect(config, contains('HasOne(x => x.Owner)\n            .WithMany(o => o.TransitionTable)'));
+      expect(config, contains('HasOne(x => x.Status)\n            .WithMany()'));
+    });
+
+    test('заготовка тестов: ключ подписи задан, без открытых методов — проверка 401', () {
+      final controller = NsgGenController.fromJson(
+          {'apiPrefix': 'Data', 'className': 'DataController'});
+      controller.methods.add(NsgGenMethod.fromJson(
+          {'name': 'Project', 'authorize': 'user', 'dataTypeFile': 'x.json'})
+        ..genDataItem = gen.dataItems['ProjectItem']!);
+      gen.controllers.add(controller);
+      final src = NsgGenNetcore.emitTestBasicSmoke(gen);
+      expect(src, contains('builder.UseSetting("Jwt:Secret"'));
+      expect(src, contains('Read_without_token_returns_401'));
+      expect(src, contains('PostAsync("/Data/Project"'));
+      controller.methods.add(NsgGenMethod.fromJson(
+          {'name': 'ServiceObject', 'authorize': 'none', 'dataTypeFile': 'x.json'})
+        ..genDataItem = gen.dataItems['ServiceObject']!);
+      final open = NsgGenNetcore.emitTestBasicSmoke(gen);
+      expect(open, contains('PostAsync("/Data/ServiceObject"'));
+      expect(open, contains('Read_empty_collection_returns_200_and_array'));
+    });
+
+    test('клиентский тип: без проверки разметки, контроллер с пустым ответом', () {
+      final di = gen.dataItems['ServiceObject']!;
+      expect(NsgGenNetcore.isClientOnly(di), isTrue);
+      expect(NsgGenNetcore.isClientOnly(gen.dataItems['ProjectItem']!), isFalse);
+      gen.dataItems.remove('TaskStatusTransitionTable');
+      gen.dataItems.remove('TaskStatus');
+      expect(() => gen.validateForNetcoreEmit(), returnsNormally,
+          reason: 'у клиентского типа нет pgTableName — это не ошибка');
+      final controller = NsgGenController.fromJson(
+          {'apiPrefix': 'Data', 'className': 'DataController'});
+      final method = NsgGenMethod.fromJson(
+          {'name': 'ServiceObject', 'authorize': 'none', 'dataTypeFile': 'x.json'})
+        ..genDataItem = di;
+      final src = NsgGenNetcore.emitClientOnlyControllerCs(gen, controller, method);
+      expect(src, contains('[Route("Data/ServiceObject")]'));
+      expect(src, contains('Ok(new List<Dictionary<string, object?>>())'));
+      expect(src, isNot(contains('AppDbContext')));
     });
   });
 }
