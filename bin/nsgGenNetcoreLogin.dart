@@ -885,7 +885,9 @@ public sealed class NsgAuthController : ControllerBase
     public ActionResult<NsgAuthResponse> CheckVersion() => Ok(new NsgAuthResponse());
 
     [HttpGet("SetLocale")]
-    public ActionResult<int> SetLocale([FromQuery] string? locale) => Ok(0);
+    // nsg_data разбирает ответ как NsgLoginResponse (setLocale): голое число
+    // давало на клиенте ошибку приведения при каждом запуске.
+    public ActionResult<NsgAuthResponse> SetLocale([FromQuery] string? locale) => Ok(new NsgAuthResponse());
 
     [HttpGet("GetCaptcha")]
     public ActionResult GetCaptcha() => StatusCode(501, "captcha is not supported");

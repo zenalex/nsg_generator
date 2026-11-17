@@ -1276,7 +1276,7 @@ void main() {
     test('контроллер владельца читает и пишет строки через NsgTableParts', () {
       final src = NsgGenNetcore.emitControllerGenerated(
           gen, controller, methodFor(owner), 'Tasks');
-      expect(src, contains('NsgTableParts.SplitReadReferences(typeof(TaskDoc), NsgReadHooks.WithoutTransient<TaskDoc>(req.ReadReferences))'));
+      expect(src, contains('NsgTableParts.SplitReadReferences(typeof(TaskDoc), NsgReadHooks.TablePartReferences<TaskDoc>(req.ReadReferences))'));
       expect(src, contains('NsgReadReferencesApplier.Apply(query, references, _db.Model)'));
       expect(src, contains('NsgTableParts.Include(query, tables)'));
       expect(src, contains('NsgTableParts.IncludeAll(_db.Tasks).FirstOrDefaultAsync(x => x.Id == fresh.Id)'));
@@ -1290,7 +1290,7 @@ void main() {
           gen, controller, methodFor(plain), 'Projects');
       expect(src, isNot(contains('NsgTableParts')));
       expect(src, contains('await _db.Projects.FindAsync(fresh.Id)'));
-      expect(src, contains('NsgReadReferencesApplier.Apply(query, NsgReadHooks.WithoutTransient<'));
+      expect(src, contains('NsgReadReferencesApplier.Apply(query, NsgReadHooks.TablePartReferences<'));
     });
   });
   group('Функции контроллера', () {
@@ -1649,8 +1649,8 @@ void main() {
           {'name': 'Project', 'authorize': 'user', 'dataTypeFile': 'x.json'})
         ..genDataItem = gen.dataItems['ProjectItem']!;
       final src = NsgGenNetcore.emitControllerGenerated(gen, controller, method, 'Projects');
-      expect(src, contains('NsgReadHooks.WithoutTransient<ProjectItem>(req.ReadReferences)'));
-      expect(NsgGenNetcore.emitSaveHooks(gen), contains('public static string[]? WithoutTransient<T>'));
+      expect(src, contains('NsgReadHooks.TablePartReferences<ProjectItem>(req.ReadReferences)'));
+      expect(NsgGenNetcore.emitSaveHooks(gen), contains('public static string[]? TablePartReferences<T>'));
     });
 
     test('маппер: пустая ссылка и пустая дата nsg_data — null', () {
@@ -1658,6 +1658,41 @@ void main() {
       expect(mapper, contains('if (optional && string.IsNullOrEmpty(v.GetString())) return null;'));
       expect(mapper, contains('new(1754, 1, 1, 0, 0, 0, DateTimeKind.Utc)'));
       expect(mapper, contains('return d <= NsgEmptyDate ? null : d;'));
+    });
+
+    test('совместимость с nsg_data, найденная на живом клиенте', () {
+      final controller = NsgGenController.fromJson(
+          {'apiPrefix': 'Data', 'className': 'DataController'});
+      final method = NsgGenMethod.fromJson({
+        'name': 'Organization', 'authorize': 'user', 'allowPost': 'true',
+        'allowCreate': 'true', 'dataTypeFile': 'x.json'
+      })..genDataItem = gen.dataItems['ProjectItem']!;
+      final src = NsgGenNetcore.emitControllerGenerated(gen, controller, method, 'Projects');
+      // Ответ на запись — {"results": [...]}: NsgDataPost разбирает Map.
+      expect(src, contains('return Ok(NsgPostResults('));
+      expect(src, contains('new() { ["results"] = items.ToList() }'));
+      // Create — новый объект с новым идентификатором, не записывается.
+      expect(src, contains('[HttpPost("Create")]'));
+      expect(src, contains('var item = new ProjectItem { Id = Guid.NewGuid() };'));
+      expect(src, contains('partial void OnCreate(ProjectItem item);'));
+      // ReadReferences — только табличные части.
+      expect(NsgGenNetcore.emitSaveHooks(gen), contains('public static string[]? TablePartReferences<T>'));
+
+      // Вложенная группа условий узнаётся по значению, оператор «равно» не мешает.
+      final deser = NsgGenNetcore.emitNsgWireDeserializer(gen);
+      expect(deser, contains('(op == 26 || val.TryGetProperty("ParamList", out _))'));
+      // Sorting приходит упакованным jsonEncode.
+      expect(deser, contains('Sorting:               TryGetEncodedString(root, "Sorting")'));
+      // In по необязательной ссылке: поле приводится к типу элемента списка.
+      expect(NsgGenNetcore.emitNsgCompareTranslator(gen),
+          contains('member.Type == elementType ? member : Expression.Convert(member, elementType)'));
+      // Пустые поля в ответе — значения по умолчанию, как у прежнего сервера.
+      final ser = NsgGenNetcore.emitNsgWireSerializer(gen);
+      expect(ser, contains('ConvertForWire(raw) ?? WireDefault(prop.PropertyType)'));
+      expect(ser, contains('if (t == typeof(Guid)) return Guid.Empty.ToString("D");'));
+      // SetLocale отвечает объектом входа.
+      expect(NsgGenNetcoreLogin.emitController(gen),
+          contains('ActionResult<NsgAuthResponse> SetLocale([FromQuery] string? locale) => Ok(new NsgAuthResponse());'));
     });
 
     test('отказ бизнес-правила: 400 с message через общий фильтр', () {

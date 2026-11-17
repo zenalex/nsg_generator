@@ -1179,11 +1179,11 @@ public static class NsgDatabaseMigrator
       if (hasTables) {
         sb.writeln('        // Табличные части едут строками внутри объекта; пути через них');
         sb.writeln('        // («files.authorId») сводятся к самой части — ссылки строк клиент дочитывает сам.');
-        sb.writeln('        var (tables, references) = NsgTableParts.SplitReadReferences(typeof($t), NsgReadHooks.WithoutTransient<$t>(req.ReadReferences));');
+        sb.writeln('        var (tables, references) = NsgTableParts.SplitReadReferences(typeof($t), NsgReadHooks.TablePartReferences<$t>(req.ReadReferences));');
         sb.writeln('        query = NsgReadReferencesApplier.Apply(query, references, _db.Model);');
         sb.writeln('        query = NsgTableParts.Include(query, tables);');
       } else {
-        sb.writeln('        query = NsgReadReferencesApplier.Apply(query, NsgReadHooks.WithoutTransient<$t>(req.ReadReferences), _db.Model);');
+        sb.writeln('        query = NsgReadReferencesApplier.Apply(query, NsgReadHooks.TablePartReferences<$t>(req.ReadReferences), _db.Model);');
       }
       // Сортировку по полю вне базы SQL не выполнит: тогда она и Top — в памяти,
       // после того как обработчики чтения заполнили поля.
@@ -1215,7 +1215,7 @@ public static class NsgDatabaseMigrator
       if (attr != null) sb.writeln('    $attr');
       sb.writeln('    [HttpPost("Post")]');
       sb.writeln(
-          '    public async Task<ActionResult<List<Dictionary<string, object?>>>> PostItems([FromBody] JsonElement body)');
+          '    public async Task<ActionResult<Dictionary<string, List<Dictionary<string, object?>>>>> PostItems([FromBody] JsonElement body)');
       sb.writeln('    {');
       sb.writeln(
           '        if (body.ValueKind != JsonValueKind.Array) return BadRequest("expected array");');
@@ -1276,10 +1276,27 @@ public static class NsgDatabaseMigrator
         // Клиент заменяет объект ответом: без строк в ответе табличная часть
         // на экране опустела бы сразу после сохранения.
         sb.writeln('        var tables = NsgTableParts.AllWireNames(typeof($t));');
-        sb.writeln('        return Ok(saved.Select(x => NsgTableParts.ToWireDict(x, tables)).ToList());');
+        sb.writeln('        return Ok(NsgPostResults(saved.Select(x => NsgTableParts.ToWireDict(x, tables))));');
       } else {
-        sb.writeln('        return Ok(saved.Select(NsgWireSerializer.ToWireDict).ToList());');
+        sb.writeln('        return Ok(NsgPostResults(saved.Select(NsgWireSerializer.ToWireDict)));');
       }
+      sb.writeln('    }');
+      sb.writeln();
+    }
+
+    // Create: nsg_data (createOnServer) запрашивает новый объект у сервера —
+    // POST <route>/Create. Ответ — объект с новым идентификатором и значениями
+    // по умолчанию; в базу ничего не пишется (это делает Post).
+    if (method.allowCreate) {
+      sb.writeln('    /// <summary>POST $route/Create — новый объект для заполнения (не записывается).</summary>');
+      final attr = authAttr(effPost);
+      if (attr != null) sb.writeln('    $attr');
+      sb.writeln('    [HttpPost("Create")]');
+      sb.writeln('    public ActionResult<Dictionary<string, List<Dictionary<string, object?>>>> CreateItem()');
+      sb.writeln('    {');
+      sb.writeln('        var item = new $t { Id = Guid.NewGuid() };');
+      sb.writeln('        OnCreate(item);');
+      sb.writeln('        return Ok(new Dictionary<string, List<Dictionary<string, object?>>> { ["results"] = [NsgWireSerializer.ToWireDict(item)] });');
       sb.writeln('    }');
       sb.writeln();
     }
@@ -1316,11 +1333,20 @@ public static class NsgDatabaseMigrator
     // 5.6.3: ApplySorting helper удалён из контроллера, заменён на
     // NsgSortingApplier (Wire-helper, разделяемый между всеми контроллерами).
 
+    if (method.allowPost) {
+      // Ответ на запись — `{"results": [...]}`: nsg_data (NsgDataPost) разбирает его
+      // через loadDataAndReferences(Map), простой список ронял клиент после записи.
+      sb.writeln('    private static Dictionary<string, List<Dictionary<string, object?>>> NsgPostResults(');
+      sb.writeln('        IEnumerable<Dictionary<string, object?>> items) => new() { ["results"] = items.ToList() };');
+      sb.writeln();
+    }
+
     // Partial hooks
     sb.writeln('    // ---- Hooks for $t' 'Controller.Custom.cs (one-shot partial) ----');
     sb.writeln('    partial void CustomizeReadQuery(ref IQueryable<$t> query);');
     sb.writeln('    partial void OnBeforeSave(List<$t> items);');
     sb.writeln('    partial void OnBeforeDelete(List<$t> items);');
+    if (method.allowCreate) sb.writeln('    partial void OnCreate($t item);');
     if (method.postMode == 'insert-only') {
       sb.writeln('    partial void OnPostConflict($t incoming, $t existing);');
     }
@@ -1859,18 +1885,24 @@ public static class NsgReadHooks
         return query;
     }
 
-    /// <summary>`ReadReferences` без путей через поля вне базы: `nsg_data`
-    /// просит дочитать все ссылки типа, а у ссылки вне базы (`inviteProjectId`)
-    /// навигации нет — дочитывать нечего.</summary>
-    public static string[]? WithoutTransient<T>(string[]? readReferences) where T : class
+    /// <summary>`ReadReferences`, которые сервер выполняет: только табличные части
+    /// типа (и пути внутри них — `files.authorId`). В ответ идут поля объекта и
+    /// его табличные части; ссылочные объекты nsg_data догружает сам отдельными
+    /// запросами (`loadAllReferents`), так что Include по ссылкам ничего не давал.
+    /// А пути, которые nsg_data и экраны кладут в запрос, — ссылки вне базы
+    /// (`inviteProjectId`), обычные поля (`id`), табличные части ссылочного
+    /// объекта (`organizationId.tableUsers`) — роняли чтение с 500. Прежний
+    /// сервер такие пути пропускал.</summary>
+    public static string[]? TablePartReferences<T>(string[]? readReferences) where T : class
     {
-        if (readReferences is null || readReferences.Length == 0 ||
-            !TypeFieldMapRegistry.ByType.TryGetValue(typeof(T), out var maps)) return readReferences;
+        if (readReferences is null || readReferences.Length == 0) return readReferences;
         return readReferences.Where(path =>
         {
             var head = path.Split('.')[0].Trim();
-            return !(maps.WireToCSharp.TryGetValue(head, out var cs) &&
-                     typeof(T).GetProperty(cs)?.GetCustomAttribute<NotMappedAttribute>() is not null);
+            var part = typeof(T).GetProperties().FirstOrDefault(p => string.Equals(p.Name, head, System.StringComparison.OrdinalIgnoreCase));
+            return part is not null && part.PropertyType != typeof(string) &&
+                   part.GetCustomAttribute<NotMappedAttribute>() is null &&
+                   typeof(System.Collections.IEnumerable).IsAssignableFrom(part.PropertyType);
         }).ToArray();
     }
 
@@ -3514,9 +3546,13 @@ public class NsgCodeAuthController : ControllerBase
         '    private static Expression InOp(Expression member, JsonElement v, Type csType, OpCtx _)\n'
         '    {\n'
         '        var (listConst, listType) = BuildTypedList(v, csType);\n'
-        '        var contains = listType.GetMethod("Contains", new[] { Nullable.GetUnderlyingType(csType) ?? csType })\n'
+        '        var elementType = Nullable.GetUnderlyingType(csType) ?? csType;\n'
+        '        var contains = listType.GetMethod("Contains", new[] { elementType })\n'
         '            ?? throw new InvalidOperationException(\$"Contains not found on {listType}");\n'
-        '        return Expression.Call(listConst, contains, member);\n'
+        '        // Ссылка — Guid?, список — Guid: поле приводится к типу элемента\n'
+        '        // (EF переводит это в обычное сравнение колонки; null в список не входит).\n'
+        '        var arg = member.Type == elementType ? member : Expression.Convert(member, elementType);\n'
+        '        return Expression.Call(listConst, contains, arg);\n'
         '    }\n'
         '\n'
         '    private static Expression NotInOp(Expression member, JsonElement v, Type csType, OpCtx ctx)\n'
@@ -3727,6 +3763,12 @@ public class NsgCodeAuthController : ControllerBase
         '        var list = (IList)Activator.CreateInstance(listType)!;\n'
         '        foreach (var item in v.EnumerateArray())\n'
         '        {\n'
+        '            // Пустой идентификатор в списке (nsg_data шлёт "", "null" или нулевой\n'
+        '            // Guid для незаполненной ссылки) ни с чем не совпадёт — пропускается.\n'
+        '            if (elementType == typeof(Guid) && item.ValueKind == JsonValueKind.String &&\n'
+        '                (string.IsNullOrEmpty(item.GetString()) || item.GetString() == "null" ||\n'
+        '                 (Guid.TryParse(item.GetString(), out var gid) && gid == Guid.Empty)))\n'
+        '                continue;\n'
         '            // For element conversion, pass non-nullable form — list of T, not T?\n'
         '            var converted = NsgEntityMapper.ConvertFromWire(item, elementType);\n'
         '            if (converted is not null) list.Add(converted);\n'
@@ -3970,7 +4012,7 @@ public class NsgCodeAuthController : ControllerBase
         '        return new NsgRequestDto(\n'
         '            Top:                   TryGetInt(root, "Top"),\n'
         '            Count:                 TryGetInt(root, "Count"),\n'
-        '            Sorting:               TryGetString(root, "Sorting"),\n'
+        '            Sorting:               TryGetEncodedString(root, "Sorting"),\n'
         '            ReadReferences:        TryGetStringArray(root, "ReadReferences"),\n'
         '            NeededFields:          TryGetStringArray(root, "NeededFields"),\n'
         '            GroupBy:               TryGetStringArray(root, "GroupBy"),\n'
@@ -4014,9 +4056,13 @@ public class NsgCodeAuthController : ControllerBase
         '                // рекурсивно парсим в Nested. Защита от depth-overflow — в\n'
         '                // NsgCompareTranslator.BuildExpression через MaxCompareDepth.\n'
         '                NsgCompareDto? nested = null;\n'
-        '                if (op == 26 && val.ValueKind == JsonValueKind.Object)\n'
+        '                // nsg_data шлёт вложенную группу (Name "", Value — NsgCompare) с\n'
+        '                // оператором «равно»: строка, ставившая 26, в nsg_data_compare.dart\n'
+        '                // закомментирована. Группа узнаётся по самому значению — как у прежнего сервера.\n'
+        '                if (val.ValueKind == JsonValueKind.Object && (op == 26 || val.TryGetProperty("ParamList", out _)))\n'
         '                {\n'
         '                    nested = ParseCompare(val);\n'
+        '                    op = 26;\n'
         '                }\n'
         '                list.Add(new NsgCompareParamDto(name, op, val, nested));\n'
         '            }\n'
@@ -4035,6 +4081,19 @@ public class NsgCodeAuthController : ControllerBase
         '            JsonValueKind.String => int.TryParse(v.GetString(), out var i) ? i : (int?)null,\n'
         '            _ => null,\n'
         '        };\n'
+        '    }\n'
+        '\n'
+        '    /// <summary>Строка, которую nsg_data упаковал jsonEncode: `Sorting` приходит\n'
+        '    /// как "\\"date-\\"". Без раскрытия поле сортировки искалось вместе с кавычками.</summary>\n'
+        '    private static string? TryGetEncodedString(JsonElement parent, string key)\n'
+        '    {\n'
+        '        var s = TryGetString(parent, key);\n'
+        '        if (s is { Length: >= 2 } && s[0] == \'"\' && s[^1] == \'"\')\n'
+        '        {\n'
+        '            try { return JsonSerializer.Deserialize<string>(s); }\n'
+        '            catch (JsonException) { return s.Trim(\'"\'); }\n'
+        '        }\n'
+        '        return s;\n'
         '    }\n'
         '\n'
         '    private static string? TryGetString(JsonElement parent, string key)\n'
@@ -4130,9 +4189,25 @@ public class NsgCodeAuthController : ControllerBase
         '            var prop = type.GetProperty(csName)\n'
         '                ?? throw new InvalidOperationException(\$"C# property {csName} not found on {type.Name}");\n'
         '            var raw = prop.GetValue(entity);\n'
-        '            dict[wireName] = ConvertForWire(raw);\n'
+        '            dict[wireName] = ConvertForWire(raw) ?? WireDefault(prop.PropertyType);\n'
         '        }\n'
         '        return dict;\n'
+        '    }\n'
+        '\n'
+        '    /// <summary>Значение пустого поля в обмене — как у прежнего сервера, null он\n'
+        '    /// не отдавал: клиент приводит `isFilled` к bool и сравнивает пустую ссылку\n'
+        '    /// с нулевым Guid. Обратно маппер принимает эти значения как null.</summary>\n'
+        '    private static object? WireDefault(Type type)\n'
+        '    {\n'
+        '        var t = Nullable.GetUnderlyingType(type) ?? type;\n'
+        '        if (t == typeof(string)) return "";\n'
+        '        if (t == typeof(Guid)) return Guid.Empty.ToString("D");\n'
+        '        if (t == typeof(bool)) return false;\n'
+        '        if (t == typeof(DateTime)) return NsgEntityMapper.NsgEmptyDate;\n'
+        '        if (t == typeof(byte[])) return "";\n'
+        '        if (t.IsEnum || t == typeof(int) || t == typeof(long) || t == typeof(short)) return 0;\n'
+        '        if (t == typeof(double) || t == typeof(decimal) || t == typeof(float)) return 0.0;\n'
+        '        return null;\n'
         '    }\n'
         '\n'
         '    public static string ToWireJson(object entity, JsonSerializerOptions? opts = null)\n'
