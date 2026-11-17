@@ -6,6 +6,7 @@ import '../bin/nsgGenDataItem.dart';
 import '../bin/nsgGenDataItemField.dart';
 import '../bin/nsgGenerator.dart';
 import '../bin/nsgGenNetcore.dart';
+import '../bin/nsgGenController.dart';
 import '../bin/nsgGenMethod.dart';
 
 // 2.1.1/2.1.2: проверка загрузки additive-полей pgTableName/pgColumnName
@@ -1178,5 +1179,115 @@ void main() {
       expect(src, contains('StatusCodes.Status429TooManyRequests'));
     });
 
+  });
+
+  group('Табличные части', () {
+    late NsgGenerator gen;
+    late NsgGenDataItem owner;
+    late NsgGenDataItem row;
+    late NsgGenDataItem plain;
+    late NsgGenController controller;
+
+    NsgGenMethod methodFor(NsgGenDataItem di) {
+      final m = NsgGenMethod.fromJson(
+          {'name': di.typeName, 'dataTypeFile': 'x.json', 'allowPost': 'true', 'allowDelete': 'true'});
+      m.genDataItem = di;
+      return m;
+    }
+
+    setUp(() {
+      gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'Tt',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      owner = NsgGenDataItem.fromJson({
+        'typeName': 'TaskDoc',
+        'databaseType': 'Задача',
+        'pgTableName': 'tasks',
+        'fields': [
+          {'name': 'Id', 'databaseName': 'Идентификатор', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true'},
+          {'name': 'Name', 'databaseName': 'Наименование', 'pgColumnName': 'name', 'type': 'String'},
+          {'name': 'CheckList', 'databaseName': 'ЧекЛист', 'type': 'List<TaskDocCheckListTable>'},
+        ],
+      });
+      row = NsgGenDataItem.fromJson({
+        'typeName': 'TaskDocCheckListTable',
+        'databaseType': 'ДокументыЗадачаЧекЛист.Строка',
+        'pgTableName': 'task_check_list',
+        'fields': [
+          {'name': 'Id', 'databaseName': 'Идентификатор', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true'},
+          {'name': 'OwnerId', 'databaseName': 'Владелец', 'pgColumnName': 'owner', 'type': 'Reference', 'referenceType': 'TaskDoc'},
+          {'name': 'Text', 'databaseName': 'Сделать', 'pgColumnName': 'text', 'type': 'String'},
+        ],
+      });
+      plain = NsgGenDataItem.fromJson({
+        'typeName': 'ProjectItem',
+        'databaseType': 'Проекты',
+        'pgTableName': 'projects',
+        'fields': [
+          {'name': 'Id', 'databaseName': 'Идентификатор', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true'},
+        ],
+      });
+      gen.dataItems
+        ..['TaskDoc'] = owner
+        ..['TaskDocCheckListTable'] = row
+        ..['ProjectItem'] = plain;
+      controller = NsgGenController.fromJson(
+          {'apiPrefix': 'Data', 'className': 'DataController'});
+    });
+
+    test('строка хранит место в таблице, вне обмена', () {
+      expect(NsgGenNetcore.emitModel(gen, row),
+          contains('public int RowNumber { get; set; }'));
+      expect(NsgGenNetcore.emitConfiguration(gen, row),
+          contains('.HasColumnName("row_number")'));
+      expect(NsgGenNetcore.emitFieldMap(gen, row), isNot(contains('RowNumber')),
+          reason: 'порядок передаётся порядком массива, а не полем');
+      expect(NsgGenNetcore.emitModel(gen, owner), isNot(contains('RowNumber')));
+      expect(NsgGenNetcore.emitModel(gen, plain), isNot(contains('RowNumber')));
+    });
+
+    test('поле описания с именем RowNumber отклоняется', () {
+      row.fields.add(NsgGenDataItemField.fromJson(
+          {'name': 'RowNumber', 'databaseName': 'НомерСтроки', 'pgColumnName': 'n', 'type': 'int'}));
+      expect(() => NsgGenNetcore.emitModel(gen, row), throwsException);
+    });
+
+    test('реестр называет часть, тип строки и ссылку на владельца', () {
+      final src = NsgGenNetcore.emitTableParts(gen);
+      expect(src, contains('[typeof(TaskDoc)] = new NsgTablePart[]'));
+      expect(src, contains(
+          'new("checkList", "CheckList", typeof(TaskDocCheckListTable), "OwnerId"),'));
+      expect(src, isNot(contains('[typeof(ProjectItem)]')));
+      // Семантика записи прежнего сервера.
+      expect(src, contains('if (!newTableLogic)'));
+      expect(src, contains('DeletedDocState = 2'));
+      expect(src, contains('прислана дважды'));
+    });
+
+    test('контроллер владельца читает и пишет строки через NsgTableParts', () {
+      final src = NsgGenNetcore.emitControllerGenerated(
+          gen, controller, methodFor(owner), 'Tasks');
+      expect(src, contains('NsgTableParts.SplitReadReferences(typeof(TaskDoc), req.ReadReferences)'));
+      expect(src, contains('NsgReadReferencesApplier.Apply(query, references, _db.Model)'));
+      expect(src, contains('NsgTableParts.Include(query, tables)'));
+      expect(src, contains('NsgTableParts.IncludeAll(_db.Tasks).FirstOrDefaultAsync(x => x.Id == fresh.Id)'));
+      expect('NsgTableParts.Apply(_db, '.allMatches(src).length, equals(2),
+          reason: 'и для нового, и для существующего владельца');
+      expect(src, contains('NsgTableParts.ToWireDict(x, tables)'));
+    });
+
+    test('контроллер типа без табличных частей не меняется', () {
+      final src = NsgGenNetcore.emitControllerGenerated(
+          gen, controller, methodFor(plain), 'Projects');
+      expect(src, isNot(contains('NsgTableParts')));
+      expect(src, contains('await _db.Projects.FindAsync(fresh.Id)'));
+      expect(src, contains('NsgReadReferencesApplier.Apply(query, req.ReadReferences, _db.Model)'));
+    });
   });
 }

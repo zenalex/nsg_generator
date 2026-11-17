@@ -286,6 +286,8 @@ class NsgGenerator {
       await NsgGenNetcore.emitTypeNameMapFile(this);
       // TASK05 §5.1.gen continuation: TypeFieldMapRegistry (Type → FieldMaps).
       await NsgGenNetcore.emitTypeFieldMapRegistryFile(this);
+      // Табличные части: реестр и чтение/запись строк внутри владельца.
+      await NsgGenNetcore.emitTablePartsFile(this);
       // TASK05 §5.2.2: NsgGeneratedServicesExtensions (extension methods, в-2).
       await NsgGenNetcore.emitGeneratedServicesExtensionsFile(this);
       await NsgGenNetcore.emitDatabaseMigratorFile(this);
