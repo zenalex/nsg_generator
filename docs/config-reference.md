@@ -24,6 +24,7 @@
 | `useStaticDatabaseNames` | статические имена полей БД |
 | `supportChat` | генерация интеграции чата поддержки |
 | **`anonymousCodeAuth`** | вход участника по одноразовому непредсказуемому коду вместо учётной записи (см. [netcore-emit.md](netcore-emit.md)) |
+| **`loginAuth`** | netcore: вход по телефону или почте (код, пароль), сессии в базе — контракт `Api/Auth/*` (см. [netcore-emit.md](netcore-emit.md)) |
 | **`emitSchemaHash`** | передавать ли хеш схемы в `NsgDataProvider(schemaHash:)`; требует `nsg_data` с поддержкой параметра, умолчание — `false` (см. ниже) |
 | **`netcoreGeneratedSubdir`** | подкаталог для перезаписываемых файлов netcore-эмита; пусто — прежнее поведение, всё в один каталог (см. ниже) |
 

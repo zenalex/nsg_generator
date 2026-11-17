@@ -7,6 +7,7 @@ import 'nsgGenDataItem.dart';
 import 'nsgGenEnum.dart';
 import 'nsgGenLocalization.dart';
 import 'nsgGenNetcore.dart';
+import 'nsgGenNetcoreLogin.dart';
 import 'nsgGenSupportChat.dart';
 import 'schema_hash.dart';
 
@@ -71,6 +72,10 @@ class NsgGenerator {
   /// записи. Код выдаётся сервером при подключении и служит единственным
   /// ключом доступа к собственным данным.
   final bool anonymousCodeAuth;
+
+  /// Вход по телефону или почте (код, пароль), сессии в базе —
+  /// контракт `Api/Auth/*` клиента nsg_data/nsg_login. Только netcore.
+  final bool loginAuth;
   final List<NsgGenController> controllers;
   final List<NsgGenEnum> enums;
 
@@ -105,6 +110,7 @@ class NsgGenerator {
       this.emitSchemaHash = false,
       this.netcoreGeneratedSubdir = '',
       this.anonymousCodeAuth = false,
+      this.loginAuth = false,
       this.serverEmitKind = NsgServerEmitKind.nsgframework,
       this.netcoreOutputPath = '',
       this.doCSharp = true,
@@ -137,6 +143,8 @@ class NsgGenerator {
       // Вход по одноразовому непредсказуемому коду вместо учётной записи:
       // код выдаётся сервером при подключении и служит единственным ключом.
       var anonymousCodeAuth = Misc.parseBool(parsedJson['anonymousCodeAuth']);
+      currentProperty = 'loginAuth';
+      var loginAuth = Misc.parseBool(parsedJson['loginAuth']);
       currentProperty = 'cSharpNamespace';
       var doCSharp = Misc.parseBoolOrTrue(parsedJson['doCSharp']);
       var cSharpNamespace = parsedJson['cSharpNamespace'] ?? '';
@@ -201,6 +209,7 @@ class NsgGenerator {
           netcoreGeneratedSubdir:
               parsedJson['netcoreGeneratedSubdir']?.toString() ?? '',
           anonymousCodeAuth: anonymousCodeAuth,
+          loginAuth: loginAuth,
           useStaticDatabaseNames:
               Misc.parseBool(parsedJson['useStaticDatabaseNames']),
           controllers: controllers,
@@ -296,6 +305,8 @@ class NsgGenerator {
       // TASK06 §6.3: Auth/*.cs (one-shot) + Configurations/UserRoles.cs (overwrite)
       // + Controllers/AuthController.cs (one-shot — NsgDiscounts-pilot assumptions).
       await NsgGenNetcore.emitAuthFiles(this);
+      // Вход по логину и файлы MinIO (loginAuth / функция GetStream).
+      await NsgGenNetcoreLogin.emitFiles(this);
       // TASK05 §5.2.1: Controllers/<T>Controller.cs (overwrite) + .Custom.cs (one-shot).
       // Per-method emission: takes apiPrefix + allowGetter/Post/Delete flags into account.
       for (final controller in controllers) {

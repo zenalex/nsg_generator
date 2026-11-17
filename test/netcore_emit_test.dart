@@ -6,6 +6,7 @@ import '../bin/nsgGenDataItem.dart';
 import '../bin/nsgGenDataItemField.dart';
 import '../bin/nsgGenerator.dart';
 import '../bin/nsgGenNetcore.dart';
+import '../bin/nsgGenNetcoreLogin.dart';
 import '../bin/nsgGenController.dart';
 import '../bin/nsgGenMethod.dart';
 import '../bin/nsgGenEnum.dart';
@@ -1372,16 +1373,27 @@ void main() {
         {'name': 'One', 'type': 'Reference<ProjectItem>'},
         {'name': 'Many', 'type': 'List<ProjectItem>'},
         {'name': 'Statuses', 'type': 'List<TaskPriority>'},
-        {'name': 'GetStream', 'type': 'Binary', 'apiType': 'get, post'},
+        {'name': 'Report', 'type': 'Binary', 'apiType': 'get, post'},
       ]));
       expect(src, contains('Task<ProjectItem?> OnOne('));
       expect(src, contains('Ok(NsgFunctionResults.Object(result))'));
       expect(src, contains('Task<IEnumerable<ProjectItem>> OnMany('));
       expect(src, contains('Ok(NsgFunctionResults.Objects(result))'));
       expect(src, contains('Task<IEnumerable<TaskPriority>> OnStatuses('));
-      expect(src, contains('[HttpGet("GetStream")]'));
-      expect(src, contains('Task<IActionResult> OnGetStream(NsgFunctionArgs args)'));
+      expect(src, contains('[HttpGet("Report")]'));
+      expect(src, contains('Task<IActionResult> OnReport(NsgFunctionArgs args)'));
       expect(src, contains('return result;'));
+    });
+
+    test('GetStream обслуживает хранилище, своего обработчика нет', () {
+      final c = ctrl([
+        {'name': 'GetStream', 'type': 'Binary', 'apiType': 'get, post', 'params': [{'name': 'x', 'type': 'Reference<Nope>'}]},
+      ]);
+      final src = NsgGenNetcore.emitFunctionsGenerated(gen, c);
+      expect(src, contains('[HttpGet("GetStream")]'));
+      expect(src, contains('GetRequiredService<NsgFileStore>().ServeAsync(path)'));
+      expect(src, isNot(contains('OnGetStream')));
+      expect(NsgGenNetcore.emitFunctionsCustom(gen, c), isNot(contains('OnGetStream')));
     });
 
     test('заготовка обработчиков совпадает с объявлениями', () {
@@ -1407,6 +1419,100 @@ void main() {
                 {'name': 'Bad', 'type': 'bool', 'params': [{'name': 'p', 'type': 'Reference<Nope>'}]},
               ])),
           throwsA(predicate((e) => e.toString().contains('«Bad»'))));
+    });
+  });
+  group('Вход по логину и файлы', () {
+    NsgGenerator make({bool login = true, bool getStream = true}) {
+      final g = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'Tt',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'applicationName': 'TaskTuner',
+        'loginAuth': login ? 'true' : 'false',
+        'controller': <dynamic>[
+          {
+            'apiPrefix': 'Data',
+            'className': 'DataController',
+            'functions': [
+              if (getStream) {'name': 'GetStream', 'type': 'Binary', 'apiType': 'get, post'},
+            ],
+          }
+        ],
+      });
+      return g;
+    }
+
+    test('флаг loginAuth читается из конфигурации', () {
+      expect(make().loginAuth, isTrue);
+      expect(make(login: false).loginAuth, isFalse);
+    });
+
+    test('службы: сессии вместо заглушки, канал отправки обязателен вне Development', () {
+      final src = NsgGenNetcore.emitGeneratedServicesExtensions(make());
+      expect(src, contains('AddScheme<NsgSessionTokenOptions, NsgSessionTokenHandler>'));
+      expect(src, isNot(contains('NsgRawTokenAuthHandler')));
+      expect(src, isNot(contains('Stub PhoneLogin')),
+          reason: 'при настоящем входе запрет заглушки в Production не нужен');
+      expect(src, contains('Auth: не настроен ни один канал отправки кода'));
+      expect(src, contains('o.AddPolicy("nsg-login"'));
+      expect(src, isNot(contains('nsg-code-exchange')));
+      expect(src, contains('services.AddSingleton<NsgFileStore>()'));
+    });
+
+    test('без loginAuth службы прежние', () {
+      final src = NsgGenNetcore.emitGeneratedServicesExtensions(make(login: false, getStream: false));
+      expect(src, contains('NsgRawTokenAuthHandler'));
+      expect(src, contains('Stub PhoneLogin'));
+      expect(src, isNot(contains('NsgAuthService')));
+      expect(src, isNot(contains('AddRateLimiter')));
+      expect(src, isNot(contains('NsgFileStore')));
+    });
+
+    test('контекст: таблицы входа', () {
+      final src = NsgGenNetcore.emitDbContextDesigner(make());
+      expect(src, contains('public DbSet<NsgAuthSession> NsgAuthSessions'));
+      expect(src, contains('NsgAuthModel.Configure(modelBuilder);'));
+      expect(NsgGenNetcore.emitDbContextDesigner(make(login: false)), isNot(contains('NsgAuth')));
+    });
+
+    test('Program.cs включает ограничитель частоты', () {
+      expect(NsgGenNetcore.emitProgramCs(make()), contains('app.UseRateLimiter();'));
+      expect(NsgGenNetcore.emitProgramCs(make(login: false)), isNot(contains('UseRateLimiter')));
+    });
+
+    test('appsettings и csproj: Auth, Files, Minio', () {
+      final settings = NsgGenNetcore.emitAppsettings(make());
+      expect(settings, contains('"Auth": {'));
+      expect(settings, contains('"AppName": "TaskTuner"'));
+      expect(settings, contains('"Prefix": "tt"'));
+      expect(NsgGenNetcore.emitCsproj(make()), contains('<PackageReference Include="Minio" Version="7.0.0" />'));
+      expect(NsgGenNetcore.emitCsproj(make(getStream: false)), isNot(contains('Minio')));
+    });
+
+    test('вход: контракт клиента и защита кода', () {
+      final g = make();
+      final ctrl = NsgGenNetcoreLogin.emitController(g);
+      for (final route in ['AnonymousLogin', 'CheckToken', 'PhoneLoginRequestSMS', 'PhoneLoginRequestEmail', 'PhoneLogin', 'Logout', 'CheckVersion', 'SetLocale']) {
+        expect(ctrl, contains('("$route")'), reason: route);
+      }
+      final service = NsgGenNetcoreLogin.emitService(g);
+      expect(service, contains('JsonConverter(typeof(NsgFractionalDoubleConverter))'),
+          reason: 'клиент читает секунды как double');
+      expect(service, contains('FindUserAsync(code.Login, code.IsEmail, ct)'),
+          reason: 'вход — на адрес, куда ушёл код, а не на присланный при вводе');
+      expect(service, contains('Rfc2898DeriveBytes.Pbkdf2'));
+      expect(service, isNot(contains('999999')), reason: 'отладочного входа в коде нет');
+    });
+
+    test('хранилище: ключ не выходит за префикс, выдача — подписанной ссылкой', () {
+      final store = NsgGenNetcoreLogin.emitFileStore(make());
+      expect(store, contains('s == ".."'));
+      expect(store, contains('PresignedGetObjectAsync'));
+      expect(store, contains('new RedirectResult(url, permanent: false)'));
+      expect(store, isNot(contains('PhysicalFile')), reason: 'файлы с диска сервера не отдаются');
     });
   });
 }
