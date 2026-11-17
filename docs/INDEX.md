@@ -12,11 +12,12 @@ Flutter-клиента на Dart.
 | `feat/netcore-wire` | предшествующее имя той же линии | влита в `feat/netcore-emit`, самостоятельного развития не имеет |
 | `feat/schema-hash` | хеш схемы конфигурации | влита в netcore-линию |
 | `feat/netcore-table-parts` | табличные части в netcore-эмите (`NsgTableParts`) | от `feat/netcore-emit`, проверяется на TaskTuner |
+| `feat/netcore-functions` | функции контроллера в netcore-эмите (`<Ctrl>FunctionsController`) | от `feat/netcore-table-parts`, проверяется на TaskTuner |
 
 `feat/netcore-emit` 19.08.2026 перемотана на `feat/netcore-wire` (та содержала её целиком) и в неё
 влит `master`. Дальнейшая работа по netcore ведётся в `feat/netcore-emit`.
 
-Проверка: `dart analyze` без замечаний, `dart test` — 74 теста проходят.
+Проверка: `dart analyze` без замечаний, `dart test` — 80 тестов проходят.
 
 Netcore-линия проверена на настоящем PostgreSQL и на первом порождённом клиенте: схема
 разворачивается миграциями, вход по коду и режим «только вставка» отвечают по контракту, Dart-модели

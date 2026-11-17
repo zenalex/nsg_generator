@@ -302,7 +302,11 @@ class NsgGenerator {
         for (final method in controller.methods) {
           await NsgGenNetcore.emitControllerForMethod(this, controller, method);
         }
+        // Функции контроллера: <Ctrl>FunctionsController.cs (перезапись)
+        // + .Custom.cs с обработчиками (один раз).
+        await NsgGenNetcore.emitFunctionsForController(this, controller);
       }
+      await NsgGenNetcore.emitFunctionRuntimeFile(this);
       // TASK05 §5.2.4: test-project skeleton (one-shot, sibling dir).
       await NsgGenNetcore.emitTestProject(this);
       // Раунд 3.Б: csproj + Program.cs + appsettings.json + launchSettings.json

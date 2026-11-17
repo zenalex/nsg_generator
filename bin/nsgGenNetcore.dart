@@ -5,6 +5,7 @@ import 'nsgGenController.dart';
 import 'nsgGenDataItem.dart';
 import 'nsgGenDataItemField.dart';
 import 'nsgGenEnum.dart';
+import 'nsgGenFunction.dart';
 import 'nsgGenMethod.dart';
 import 'nsgGenerator.dart';
 
@@ -1232,6 +1233,546 @@ public static class NsgDatabaseMigrator
         '    // partial void OnPostConflict($t incoming, $t existing) { }\n'
         '}\n';
   }
+
+  // -------------------------------------------------------------------------
+  // Функции контроллера (`functions`): свои эндпоинты рядом с CRUD.
+  // -------------------------------------------------------------------------
+
+  /// Имя класса, в котором живут функции контроллера: `DataController` →
+  /// `DataFunctionsController`. Отдельный класс, чтобы не пересекаться с
+  /// `<T>Controller` типов данных.
+  static String functionsClassName(NsgGenController controller) {
+    final base = controller.className.endsWith('Controller')
+        ? controller.className
+            .substring(0, controller.className.length - 'Controller'.length)
+        : controller.className;
+    return '${base}FunctionsController';
+  }
+
+  static const _csKeywords = {
+    'abstract', 'as', 'base', 'bool', 'break', 'byte', 'case', 'catch', 'char',
+    'checked', 'class', 'const', 'continue', 'decimal', 'default', 'delegate',
+    'do', 'double', 'else', 'enum', 'event', 'explicit', 'extern', 'false',
+    'finally', 'fixed', 'float', 'for', 'foreach', 'goto', 'if', 'implicit',
+    'in', 'int', 'interface', 'internal', 'is', 'lock', 'long', 'namespace',
+    'new', 'null', 'object', 'operator', 'out', 'override', 'params',
+    'private', 'protected', 'public', 'readonly', 'ref', 'return', 'sbyte',
+    'sealed', 'short', 'sizeof', 'stackalloc', 'static', 'string', 'struct',
+    'switch', 'this', 'throw', 'true', 'try', 'typeof', 'uint', 'ulong',
+    'unchecked', 'unsafe', 'ushort', 'using', 'virtual', 'void', 'volatile',
+    'while',
+  };
+
+  static String _csIdent(String name) =>
+      _csKeywords.contains(name) ? '@$name' : name;
+
+  /// Простой тип параметра или результата функции → C#; `null`, если тип не
+  /// простой.
+  static String? _csFunctionScalar(NsgGenerator gen, String type) {
+    switch (type) {
+      case 'String':
+        return 'string';
+      case 'int':
+        return 'int';
+      case 'double':
+        return 'double';
+      case 'bool':
+        return 'bool';
+      case 'DateTime':
+      case 'Date':
+        return 'DateTime';
+      case 'Guid':
+        return 'Guid';
+    }
+    if (type.startsWith('String<')) return 'string';
+    return null;
+  }
+
+  static bool _isDataItemType(NsgGenerator gen, String name) =>
+      gen.dataItems.values.any((d) => d.typeName == name);
+
+  static bool _isEnumType(NsgGenerator gen, String name) =>
+      gen.enums.any((e) => e.className == name);
+
+  static String _innerType(String type) =>
+      type.substring(type.indexOf('<') + 1, type.lastIndexOf('>'));
+
+  /// Как функция разбирает параметр: C#-тип и выражение чтения из `args`.
+  static ({String csType, String read}) _functionParam(
+      NsgGenerator gen, NsgGenFunction f, NsgGenMethodParam p) {
+    final where = 'функция «${f.name}», параметр «${p.name}»';
+    final scalar = _csFunctionScalar(gen, p.type);
+    if (scalar != null) {
+      return (csType: scalar, read: 'args.Get<$scalar>("${p.name}")');
+    }
+    if (p.type.startsWith('Enum<') || p.type == 'Enum') {
+      final e = p.referenceType;
+      if (!_isEnumType(gen, e)) {
+        throw Exception('netcore: $where — неизвестное перечисление «$e»');
+      }
+      return (csType: e, read: 'args.Get<$e>("${p.name}")');
+    }
+    if (p.type.startsWith('Reference<')) {
+      final r = p.referenceType;
+      if (!_isDataItemType(gen, r)) {
+        throw Exception('netcore: $where — неизвестный тип «$r»');
+      }
+      return (csType: r, read: 'args.GetObject<$r>("${p.name}", _db.Model)');
+    }
+    if (p.type.startsWith('List<')) {
+      final inner = _innerType(p.type);
+      final innerScalar = _csFunctionScalar(gen, inner);
+      if (innerScalar != null) {
+        return (
+          csType: 'List<$innerScalar>',
+          read: 'args.GetList<$innerScalar>("${p.name}")'
+        );
+      }
+      final r = p.referenceType;
+      if (_isDataItemType(gen, r)) {
+        return (
+          csType: 'List<$r>',
+          read: 'args.GetObjects<$r>("${p.name}", _db.Model)'
+        );
+      }
+      if (_isEnumType(gen, r)) {
+        return (csType: 'List<$r>', read: 'args.GetList<$r>("${p.name}")');
+      }
+    }
+    throw Exception('netcore: $where — тип «${p.type}» не поддержан');
+  }
+
+  /// Результат функции: C#-тип обработчика и выражение ответа клиенту.
+  ///
+  /// Простые значения едут в `{"results": [...]}` — так их ждёт
+  /// `NsgSimpleRequest`; объекты — массивом, как ответ чтения
+  /// (`NsgDataRequest` принимает оба вида).
+  static ({String csType, String response}) _functionResult(
+      NsgGenerator gen, NsgGenFunction f) {
+    final where = 'функция «${f.name}»';
+    final type = f.type;
+    if (type == 'Binary' || type == 'Image') {
+      return (csType: 'IActionResult', response: 'result');
+    }
+    final scalar = _csFunctionScalar(gen, type);
+    if (scalar != null) {
+      return (csType: scalar, response: 'Ok(NsgFunctionResults.Value(result))');
+    }
+    if (type.startsWith('Enum<') || type == 'Enum') {
+      final e = f.referenceType;
+      if (!_isEnumType(gen, e)) {
+        throw Exception('netcore: $where — неизвестное перечисление «$e»');
+      }
+      return (csType: e, response: 'Ok(NsgFunctionResults.Value(result))');
+    }
+    if (type.startsWith('Reference<')) {
+      final r = f.referenceType;
+      if (!_isDataItemType(gen, r)) {
+        throw Exception('netcore: $where — неизвестный тип «$r»');
+      }
+      return (csType: '$r?', response: 'Ok(NsgFunctionResults.Object(result))');
+    }
+    if (type.startsWith('List<')) {
+      final inner = _innerType(type);
+      final innerScalar = _csFunctionScalar(gen, inner);
+      if (innerScalar != null) {
+        return (
+          csType: 'IEnumerable<$innerScalar>',
+          response: 'Ok(NsgFunctionResults.Values(result))'
+        );
+      }
+      final r = f.referenceType;
+      if (_isDataItemType(gen, r)) {
+        return (
+          csType: 'IEnumerable<$r>',
+          response: 'Ok(NsgFunctionResults.Objects(result))'
+        );
+      }
+      if (_isEnumType(gen, r)) {
+        return (
+          csType: 'IEnumerable<$r>',
+          response: 'Ok(NsgFunctionResults.Values(result))'
+        );
+      }
+    }
+    throw Exception('netcore: $where — тип результата «$type» не поддержан');
+  }
+
+  /// Маршрут функции не должен совпасть с маршрутом типа данных того же
+  /// контроллера: ASP.NET Core отказал бы во время запроса, а не сборки.
+  static void _checkFunctionRoutes(NsgGenController controller) {
+    final taken = <String, String>{};
+    for (final m in controller.methods) {
+      taken[m.apiPrefix.toLowerCase()] = 'тип «${m.genDataItem.typeName}»';
+    }
+    for (final f in controller.functions) {
+      final key = f.apiPrefix.toLowerCase();
+      final other = taken[key];
+      if (other != null) {
+        throw Exception(
+            'netcore: маршрут ${controller.apiPrefix}/${f.apiPrefix} функции «${f.name}» уже занят: $other');
+      }
+      taken[key] = 'функция «${f.name}»';
+    }
+  }
+
+  /// Сгенерированная половина класса функций (перезаписывается).
+  static String emitFunctionsGenerated(
+      NsgGenerator gen, NsgGenController controller) {
+    _checkFunctionRoutes(controller);
+    final ns = gen.cSharpNamespace;
+    final cls = functionsClassName(controller);
+    final sb = StringBuffer();
+    sb.writeln('// <auto-generated>');
+    sb.writeln(
+        '//   This file is generated by nsg_generator. Manual edits will be overwritten.');
+    sb.writeln('//   Implement the handlers in $cls.Custom.cs.');
+    sb.writeln('// </auto-generated>');
+    sb.writeln('#nullable enable');
+    sb.writeln('using System;');
+    sb.writeln('using System.Collections.Generic;');
+    sb.writeln('using System.Threading.Tasks;');
+    sb.writeln('using Microsoft.AspNetCore.Authorization;');
+    sb.writeln('using Microsoft.AspNetCore.Mvc;');
+    sb.writeln('using $ns.Configurations;');
+    sb.writeln('using $ns.Models;');
+    sb.writeln('using $ns.Wire;');
+    sb.writeln();
+    sb.writeln('namespace $ns.Controllers;');
+    sb.writeln();
+    sb.writeln('/// <summary>Функции контроллера ${controller.className}.</summary>');
+    sb.writeln('[ApiController]');
+    sb.writeln('[Route("${controller.apiPrefix}")]');
+    sb.writeln('public partial class $cls : ControllerBase');
+    sb.writeln('{');
+    sb.writeln('    private readonly AppDbContext _db;');
+    sb.writeln('    public $cls(AppDbContext db) { _db = db; }');
+    final handlers = <String>[];
+    for (final f in controller.functions) {
+      final params = f.params.map((p) => (p, _functionParam(gen, f, p))).toList();
+      final result = _functionResult(gen, f);
+      sb.writeln();
+      if (f.description.isNotEmpty) {
+        sb.writeln('    /// <summary>${_xmlEscape(f.description)}</summary>');
+      }
+      final attr = switch (f.authorize) {
+        'anonymous' => '[Authorize]',
+        'user' => '[Authorize(Roles = UserRoles.User)]',
+        'admin' => '[Authorize(Roles = UserRoles.Admin)]',
+        'none' => null,
+        _ => throw Exception(
+            'netcore: функция «${f.name}» — неизвестный уровень доступа «${f.authorize}»'),
+      };
+      if (attr != null) sb.writeln('    $attr');
+      if (f.httpGet) sb.writeln('    [HttpGet("${f.apiPrefix}")]');
+      if (f.httpPost) sb.writeln('    [HttpPost("${f.apiPrefix}")]');
+      sb.writeln('    public async Task<IActionResult> ${f.name}()');
+      sb.writeln('    {');
+      sb.writeln('        NsgFunctionArgs args;');
+      for (final (p, d) in params) {
+        sb.writeln('        ${d.csType} ${_csIdent(p.name)};');
+      }
+      sb.writeln('        try');
+      sb.writeln('        {');
+      sb.writeln('            args = await NsgFunctionArgs.ReadAsync(Request);');
+      for (final (p, d) in params) {
+        sb.writeln('            ${_csIdent(p.name)} = ${d.read};');
+      }
+      sb.writeln('        }');
+      sb.writeln('        catch (NsgWireFormatException error)');
+      sb.writeln('        {');
+      sb.writeln(
+          '            return BadRequest(new { error = "wire_format", reason = error.Message });');
+      sb.writeln('        }');
+      final callArgs =
+          ['args', ...params.map((e) => _csIdent(e.$1.name))].join(', ');
+      sb.writeln('        var result = await On${f.name}($callArgs);');
+      sb.writeln('        return ${result.response};');
+      sb.writeln('    }');
+      final sig = [
+        'NsgFunctionArgs args',
+        ...params.map((e) => '${e.$2.csType} ${_csIdent(e.$1.name)}')
+      ].join(', ');
+      handlers.add('private partial Task<${result.csType}> On${f.name}($sig)');
+    }
+    sb.writeln();
+    sb.writeln('    // ---- Обработчики: реализуются в $cls.Custom.cs ----');
+    for (final h in handlers) {
+      sb.writeln('    $h;');
+    }
+    sb.writeln('}');
+    return sb.toString();
+  }
+
+  /// Одноразовая рукописная половина: заготовки обработчиков. Новая функция,
+  /// добавленная после первого прогона, сюда сама не попадёт — сборка
+  /// откажет «partial method must have an implementation», и обработчик
+  /// дописывается руками по объявлению из сгенерированной половины.
+  static String emitFunctionsCustom(
+      NsgGenerator gen, NsgGenController controller) {
+    final ns = gen.cSharpNamespace;
+    final cls = functionsClassName(controller);
+    final sb = StringBuffer();
+    sb.writeln('// One-shot stub — generator does NOT overwrite this file on regen.');
+    sb.writeln('// Handlers of the controller functions live here.');
+    sb.writeln('#nullable enable');
+    sb.writeln('using System;');
+    sb.writeln('using System.Collections.Generic;');
+    sb.writeln('using System.Linq;');
+    sb.writeln('using System.Threading.Tasks;');
+    sb.writeln('using Microsoft.AspNetCore.Mvc;');
+    sb.writeln('using Microsoft.EntityFrameworkCore;');
+    sb.writeln('using $ns.Configurations;');
+    sb.writeln('using $ns.Models;');
+    sb.writeln();
+    sb.writeln('namespace $ns.Controllers;');
+    sb.writeln();
+    sb.writeln('public partial class $cls');
+    sb.writeln('{');
+    var first = true;
+    for (final f in controller.functions) {
+      final params = f.params.map((p) => (p, _functionParam(gen, f, p))).toList();
+      final result = _functionResult(gen, f);
+      final sig = [
+        'NsgFunctionArgs args',
+        ...params.map((e) => '${e.$2.csType} ${_csIdent(e.$1.name)}')
+      ].join(', ');
+      if (!first) sb.writeln();
+      first = false;
+      sb.writeln('    private partial Task<${result.csType}> On${f.name}($sig)');
+      sb.writeln('        => throw new NotImplementedException("${f.name}");');
+    }
+    sb.writeln('}');
+    return sb.toString();
+  }
+
+  static String _xmlEscape(String s) => s
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('\n', ' ');
+
+  /// Функции одного контроллера: сгенерированная половина (перезапись) и
+  /// заготовка обработчиков (один раз).
+  static Future<void> emitFunctionsForController(
+      NsgGenerator gen, NsgGenController controller) async {
+    if (controller.functions.isEmpty) return;
+    final cls = functionsClassName(controller);
+    final controllersDir = '${gen.netcoreGeneratedPath}/Controllers';
+    await Directory(controllersDir).create(recursive: true);
+    await Misc.writeFileIfChanged(
+        '$controllersDir/$cls.cs', emitFunctionsGenerated(gen, controller));
+    final customDir = '${gen.netcoreOutputPath}/Controllers';
+    await Directory(customDir).create(recursive: true);
+    await _writeOneShot(gen,
+        path: '$customDir/$cls.Custom.cs',
+        content: emitFunctionsCustom(gen, controller));
+  }
+
+  /// `Configurations/NsgFunctionArgs.cs` (перезапись) — разбор аргументов и
+  /// упаковка результата функций. Пишется, только если функции есть.
+  static Future<void> emitFunctionRuntimeFile(NsgGenerator gen) async {
+    if (!gen.controllers.any((c) => c.functions.isNotEmpty)) return;
+    final configsDir = '${gen.netcoreGeneratedPath}/Configurations';
+    await Directory(configsDir).create(recursive: true);
+    await Misc.writeFileIfChanged(
+        '$configsDir/NsgFunctionArgs.cs', emitFunctionRuntime(gen));
+  }
+
+  static String emitFunctionRuntime(NsgGenerator gen) {
+    final ns = gen.cSharpNamespace;
+    return '// <auto-generated>\n'
+        '//   This file is generated by nsg_generator. Manual edits will be overwritten.\n'
+        '// </auto-generated>\n'
+        '#nullable enable\n'
+        'using System;\n'
+        'using System.Collections.Generic;\n'
+        'using System.IO;\n'
+        'using System.Linq;\n'
+        'using System.Text.Json;\n'
+        'using System.Threading.Tasks;\n'
+        'using Microsoft.AspNetCore.Http;\n'
+        'using Microsoft.EntityFrameworkCore.Metadata;\n'
+        'using $ns.Wire;\n'
+        '\n'
+        'namespace $ns.Configurations;\n'
+        '$_functionRuntime';
+  }
+
+  /// Неизменная часть разбора аргументов функций.
+  static const String _functionRuntime = r'''
+
+/// <summary>Аргументы вызова функции.</summary>
+///
+/// Клиент (nsg_data) шлёт параметры в `Parameters` тела запроса
+/// (`NsgDataRequestParams`); ссылки на файлы и картинки приходят без тела —
+/// параметрами адреса. Ищется сначала тело, потом адрес. Отсутствующий или
+/// негодный параметр — отказ с именем параметра, а не значение по умолчанию:
+/// подставленная «сейчас» дата или пустая строка молча меняли бы смысл вызова.
+public sealed class NsgFunctionArgs
+{
+    private static readonly IReadOnlyDictionary<string, JsonElement> NoParameters =
+        new Dictionary<string, JsonElement>();
+
+    private readonly IReadOnlyDictionary<string, JsonElement> _parameters;
+    private readonly IQueryCollection _query;
+
+    /// <summary>Весь запрос: Compare, ReadReferences, Top и прочее.</summary>
+    public NsgRequestDto Request { get; }
+
+    private NsgFunctionArgs(NsgRequestDto request, IQueryCollection query)
+    {
+        Request = request;
+        _parameters = request.Parameters ?? NoParameters;
+        _query = query;
+    }
+
+    public static async Task<NsgFunctionArgs> ReadAsync(HttpRequest http)
+    {
+        var request = new NsgRequestDto(null, null, null, null, null, null, null, false, null, null, null);
+        using var reader = new StreamReader(http.Body);
+        var text = await reader.ReadToEndAsync();
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+            JsonElement root;
+            try
+            {
+                using var doc = JsonDocument.Parse(text);
+                root = doc.RootElement.Clone();
+            }
+            catch (JsonException)
+            {
+                throw new NsgWireFormatException("тело запроса не является JSON");
+            }
+            if (root.ValueKind == JsonValueKind.Object)
+                request = NsgWireDeserializer.ParseRequest(root);
+        }
+        return new NsgFunctionArgs(request, http.Query);
+    }
+
+    public bool Has(string name) => _parameters.ContainsKey(name) || _query.ContainsKey(name);
+
+    public T Get<T>(string name)
+    {
+        var el = Raw(name);
+        var value = Convert(el, typeof(T));
+        if (value is null)
+            throw new NsgWireFormatException($"параметр «{name}»: значение {Show(el)} не подходит к типу {TypeName(typeof(T))}");
+        return (T)value;
+    }
+
+    public List<T> GetList<T>(string name)
+    {
+        var el = Raw(name);
+        if (el.ValueKind != JsonValueKind.Array)
+            throw new NsgWireFormatException($"параметр «{name}»: ожидался массив, получено {el.ValueKind}");
+        var list = new List<T>();
+        var i = 0;
+        foreach (var item in el.EnumerateArray())
+        {
+            var value = Convert(item, typeof(T));
+            if (value is null)
+                throw new NsgWireFormatException($"параметр «{name}»[{i}]: значение {Show(item)} не подходит к типу {TypeName(typeof(T))}");
+            list.Add((T)value);
+            i++;
+        }
+        return list;
+    }
+
+    public T GetObject<T>(string name, IModel model) where T : class, new() =>
+        MapObject<T>(Raw(name), name, model);
+
+    public List<T> GetObjects<T>(string name, IModel model) where T : class, new()
+    {
+        var el = Raw(name);
+        if (el.ValueKind != JsonValueKind.Array)
+            throw new NsgWireFormatException($"параметр «{name}»: ожидался массив, получено {el.ValueKind}");
+        var list = new List<T>();
+        var i = 0;
+        foreach (var item in el.EnumerateArray())
+            list.Add(MapObject<T>(item, $"{name}[{i++}]", model));
+        return list;
+    }
+
+    private JsonElement Raw(string name)
+    {
+        if (_parameters.TryGetValue(name, out var el)) return el;
+        if (_query.TryGetValue(name, out var q)) return JsonSerializer.SerializeToElement(q.ToString());
+        throw new NsgWireFormatException($"не передан параметр «{name}»");
+    }
+
+    private static T MapObject<T>(JsonElement el, string name, IModel model) where T : class, new()
+    {
+        if (el.ValueKind != JsonValueKind.Object)
+            throw new NsgWireFormatException($"параметр «{name}»: ожидался объект, получено {el.ValueKind}");
+        try { return NsgEntityMapper.MapFromWire<T>(el, model); }
+        catch (NsgWireFormatException error)
+        {
+            throw new NsgWireFormatException($"параметр «{name}»: {error.Message}");
+        }
+    }
+
+    private static object? Convert(JsonElement el, Type type)
+    {
+        if (type == typeof(string))
+        {
+            return el.ValueKind switch
+            {
+                JsonValueKind.String => el.GetString(),
+                JsonValueKind.Number or JsonValueKind.True or JsonValueKind.False => el.GetRawText(),
+                _ => null,
+            };
+        }
+        try
+        {
+            var value = NsgEntityMapper.ConvertFromWire(el, type);
+            return value is not null && type.IsInstanceOfType(value) ? value : null;
+        }
+        catch (Exception error) when (error is NsgWireFormatException or FormatException or InvalidOperationException or OverflowException)
+        {
+            return null;
+        }
+    }
+
+    private static string Show(JsonElement el)
+    {
+        var raw = el.GetRawText();
+        return raw.Length > 60 ? raw[..60] + "…" : raw;
+    }
+
+    private static string TypeName(Type type) => type.IsEnum ? $"перечисление {type.Name}" : type.Name;
+}
+
+/// <summary>Упаковка результата функции в формат обмена.</summary>
+public static class NsgFunctionResults
+{
+    /// <summary>Ключ, под которым `NsgSimpleRequest` ищет значения.</summary>
+    public const string ResultsKey = "results";
+
+    public static Dictionary<string, object?> Value(object? value) =>
+        new() { [ResultsKey] = new[] { ForWire(value) } };
+
+    public static Dictionary<string, object?> Values<T>(IEnumerable<T>? values) =>
+        new() { [ResultsKey] = values?.Select(v => ForWire(v)).ToList() ?? new List<object?>() };
+
+    /// <summary>Объект — массивом из одного элемента, как ответ чтения;
+    /// отсутствие объекта — пустым массивом. Табличные части не входят.</summary>
+    public static List<Dictionary<string, object?>> Object<T>(T? item) where T : class =>
+        item is null ? new() : new() { NsgWireSerializer.ToWireDict(item) };
+
+    public static List<Dictionary<string, object?>> Objects<T>(IEnumerable<T>? items) where T : class =>
+        items?.Select(x => NsgWireSerializer.ToWireDict(x)).ToList() ?? new();
+
+    private static object? ForWire(object? raw) => raw switch
+    {
+        null => null,
+        DateTime dt => dt.Kind == DateTimeKind.Utc ? dt : dt.ToUniversalTime(),
+        Guid g => g.ToString("D"),
+        Enum e => System.Convert.ToInt32(e),
+        _ => raw,
+    };
+}
+''';
 
   // -------------------------------------------------------------------------
   // 5.1.runtime: Wire/*.cs — one-shot DTO + (de)serializer infrastructure.

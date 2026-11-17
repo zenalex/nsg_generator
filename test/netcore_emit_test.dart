@@ -8,6 +8,7 @@ import '../bin/nsgGenerator.dart';
 import '../bin/nsgGenNetcore.dart';
 import '../bin/nsgGenController.dart';
 import '../bin/nsgGenMethod.dart';
+import '../bin/nsgGenEnum.dart';
 
 // 2.1.1/2.1.2: проверка загрузки additive-полей pgTableName/pgColumnName
 // и валидации, что pgColumnName для Reference-полей не оканчивается на _id.
@@ -1288,6 +1289,124 @@ void main() {
       expect(src, isNot(contains('NsgTableParts')));
       expect(src, contains('await _db.Projects.FindAsync(fresh.Id)'));
       expect(src, contains('NsgReadReferencesApplier.Apply(query, req.ReadReferences, _db.Model)'));
+    });
+  });
+  group('Функции контроллера', () {
+    late NsgGenerator gen;
+
+    NsgGenController ctrl(List<Map<String, dynamic>> functions,
+        {List<String> methods = const []}) {
+      final c = NsgGenController.fromJson({
+        'apiPrefix': 'Data',
+        'className': 'DataController',
+        'functions': functions,
+      });
+      for (final m in methods) {
+        final method = NsgGenMethod.fromJson({'name': m, 'dataTypeFile': 'x.json'});
+        method.genDataItem = gen.dataItems[m]!;
+        c.methods.add(method);
+      }
+      return c;
+    }
+
+    setUp(() {
+      gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'Tt',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      gen.dataItems['ProjectItem'] = NsgGenDataItem.fromJson({
+        'typeName': 'ProjectItem',
+        'databaseType': 'Проекты',
+        'pgTableName': 'projects',
+        'fields': [
+          {'name': 'Id', 'databaseName': 'Идентификатор', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true'},
+        ],
+      });
+      gen.enums.add(NsgGenEnum(
+          className: 'TaskPriority', dataTypeFile: 'p.json', useLocalization: false));
+    });
+
+    test('класс функций отдельно от контроллеров типов', () {
+      expect(NsgGenNetcore.functionsClassName(ctrl([])), 'DataFunctionsController');
+    });
+
+    test('параметры разбираются по типам, обработчик — partial', () {
+      final src = NsgGenNetcore.emitFunctionsGenerated(gen, ctrl([
+        {
+          'name': 'RemoveUser',
+          'type': 'bool',
+          'authorize': 'user',
+          'params': [
+            {'name': 'projectId', 'type': 'String'},
+            {'name': 'when', 'type': 'DateTime'},
+            {'name': 'prio', 'type': 'Enum<TaskPriority>'},
+            {'name': 'project', 'type': 'Reference<ProjectItem>'},
+            {'name': 'ids', 'type': 'List<String>'},
+            {'name': 'params', 'type': 'int'},
+          ],
+        }
+      ]));
+      expect(src, contains('[Route("Data")]'));
+      expect(src, contains('[Authorize(Roles = UserRoles.User)]'));
+      expect(src, contains('[HttpPost("RemoveUser")]'));
+      expect(src, isNot(contains('[HttpGet("RemoveUser")]')));
+      expect(src, contains('projectId = args.Get<string>("projectId");'));
+      expect(src, contains('when = args.Get<DateTime>("when");'));
+      expect(src, contains('prio = args.Get<TaskPriority>("prio");'));
+      expect(src, contains('project = args.GetObject<ProjectItem>("project", _db.Model);'));
+      expect(src, contains('ids = args.GetList<string>("ids");'));
+      expect(src, contains('@params = args.Get<int>("params");'),
+          reason: 'ключевое слово C# экранируется');
+      expect(src, contains('return Ok(NsgFunctionResults.Value(result));'));
+      expect(src, contains(
+          'private partial Task<bool> OnRemoveUser(NsgFunctionArgs args, string projectId, DateTime when, TaskPriority prio, ProjectItem project, List<string> ids, int @params);'));
+    });
+
+    test('вид ответа зависит от типа результата', () {
+      final src = NsgGenNetcore.emitFunctionsGenerated(gen, ctrl([
+        {'name': 'One', 'type': 'Reference<ProjectItem>'},
+        {'name': 'Many', 'type': 'List<ProjectItem>'},
+        {'name': 'Statuses', 'type': 'List<TaskPriority>'},
+        {'name': 'GetStream', 'type': 'Binary', 'apiType': 'get, post'},
+      ]));
+      expect(src, contains('Task<ProjectItem?> OnOne('));
+      expect(src, contains('Ok(NsgFunctionResults.Object(result))'));
+      expect(src, contains('Task<IEnumerable<ProjectItem>> OnMany('));
+      expect(src, contains('Ok(NsgFunctionResults.Objects(result))'));
+      expect(src, contains('Task<IEnumerable<TaskPriority>> OnStatuses('));
+      expect(src, contains('[HttpGet("GetStream")]'));
+      expect(src, contains('Task<IActionResult> OnGetStream(NsgFunctionArgs args)'));
+      expect(src, contains('return result;'));
+    });
+
+    test('заготовка обработчиков совпадает с объявлениями', () {
+      final c = ctrl([
+        {'name': 'Ping', 'type': 'String', 'params': [{'name': 'x', 'type': 'double'}]},
+      ]);
+      final custom = NsgGenNetcore.emitFunctionsCustom(gen, c);
+      expect(custom, contains('public partial class DataFunctionsController'));
+      expect(custom, contains('private partial Task<string> OnPing(NsgFunctionArgs args, double x)'));
+      expect(custom, contains('throw new NotImplementedException("Ping")'));
+    });
+
+    test('маршрут функции не должен совпасть с типом данных', () {
+      expect(
+          () => NsgGenNetcore.emitFunctionsGenerated(gen,
+              ctrl([{'name': 'ProjectItem', 'type': 'bool'}], methods: ['ProjectItem'])),
+          throwsA(predicate((e) => e.toString().contains('уже занят'))));
+    });
+
+    test('неподдержанный тип — отказ генерации с именем функции', () {
+      expect(
+          () => NsgGenNetcore.emitFunctionsGenerated(gen, ctrl([
+                {'name': 'Bad', 'type': 'bool', 'params': [{'name': 'p', 'type': 'Reference<Nope>'}]},
+              ])),
+          throwsA(predicate((e) => e.toString().contains('«Bad»'))));
     });
   });
 }
