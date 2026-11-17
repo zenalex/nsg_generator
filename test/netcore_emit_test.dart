@@ -1514,5 +1514,12 @@ void main() {
       expect(store, contains('new RedirectResult(url, permanent: false)'));
       expect(store, isNot(contains('PhysicalFile')), reason: 'файлы с диска сервера не отдаются');
     });
+
+    test('хранилище: адрес со схемой, как в Infisical, задаёт SSL', () {
+      final store = NsgGenNetcoreLogin.emitFileStore(make());
+      expect(store, contains('useSsl = uri.Scheme == "https"'));
+      expect(store, contains('.WithEndpoint(endpoint)'));
+      expect(store, contains('.WithSSL(useSsl)'));
+    });
   });
 }

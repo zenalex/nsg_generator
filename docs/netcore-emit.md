@@ -264,6 +264,9 @@ wire-формату `nsg_data`.
 
 Вне Development без `Files:Endpoint`, `Bucket`, `AccessKey`, `SecretKey` сервер не запускается.
 
+`Files:Endpoint` принимает `host:port` или `https://host:port`; схема в адресе задаёт `UseSsl`.
+Так адрес переносится из Infisical (`MinioEndpoint`) без правки.
+
 ## Вход по одноразовому коду
 
 Включается ключом `anonymousCodeAuth: true`. Предназначен сценариям, где у участника нет и не должно

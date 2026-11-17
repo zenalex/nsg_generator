@@ -918,8 +918,9 @@ namespace @@NS@@.Configurations;
 public sealed class NsgFileStoreOptions
 {
     public const string SectionName = "Files";
-    /// <summary>Адрес MinIO без схемы: `host:port`. Подписанная ссылка
-    /// действительна только для этого адреса — клиент должен видеть его же.</summary>
+    /// <summary>Адрес MinIO: `host:port` или `https://host:port` (схема тогда
+    /// задаёт `UseSsl`). Подписанная ссылка действительна только для этого
+    /// адреса — клиент должен видеть его же.</summary>
     public string Endpoint { get; set; } = "";
     public bool UseSsl { get; set; } = true;
     public string AccessKey { get; set; } = "";
@@ -958,10 +959,20 @@ public sealed class NsgFileStore
         _options = options.Value;
         if (!_options.IsConfigured)
             throw new InvalidOperationException("Files: не настроено хранилище MinIO (Endpoint, Bucket, AccessKey, SecretKey).");
+        var endpoint = _options.Endpoint.Trim().TrimEnd('/');
+        var useSsl = _options.UseSsl;
+        if (endpoint.Contains("://"))
+        {
+            var uri = new Uri(endpoint);
+            if ((uri.Scheme != "https" && uri.Scheme != "http") || uri.AbsolutePath != "/")
+                throw new InvalidOperationException("Files:Endpoint: ожидается host:port или http(s)://host:port без пути.");
+            useSsl = uri.Scheme == "https";
+            endpoint = uri.Authority;
+        }
         _minio = new MinioClient()
-            .WithEndpoint(_options.Endpoint)
+            .WithEndpoint(endpoint)
             .WithCredentials(_options.AccessKey, _options.SecretKey)
-            .WithSSL(_options.UseSsl)
+            .WithSSL(useSsl)
             .WithRegion(_options.Region)
             .Build();
     }
