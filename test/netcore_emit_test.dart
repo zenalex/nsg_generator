@@ -1605,6 +1605,52 @@ void main() {
       expect(NsgGenNetcore.hasTransientFields(di), isTrue);
     });
 
+    test('ссылка вне базы — Guid? без навигации (inviteProjectId)', () {
+      gen.dataItems['UserAccount'] = NsgGenDataItem.fromJson({
+        'typeName': 'UserAccount',
+        'databaseType': 'Аккаунты',
+        'pgTableName': 'user_account',
+        'fields': [
+          {...field('Id', 'String', pg: 'id'), 'isPrimary': 'true'},
+          field('InviteProjectId', 'Reference', db: '', ref: 'ProjectItem'),
+        ],
+      });
+      final di = gen.dataItems['UserAccount']!;
+      final model = NsgGenNetcore.emitModel(gen, di);
+      expect(model, contains('[NotMapped]\n    public Guid? InviteProjectId { get; set; }'));
+      expect(model, isNot(contains('public ProjectItem? InviteProject')));
+      expect(NsgGenNetcore.emitFieldMap(gen, di), contains('["inviteProjectId"] = "InviteProjectId", // вне базы'));
+    });
+
+    test('чтение: видимость до фильтра клиента и Top, сортировка вне базы — в памяти', () {
+      final controller = NsgGenController.fromJson(
+          {'apiPrefix': 'Data', 'className': 'DataController'});
+      final method = NsgGenMethod.fromJson(
+          {'name': 'Project', 'authorize': 'user', 'allowPost': 'true', 'dataTypeFile': 'x.json'})
+        ..genDataItem = gen.dataItems['ProjectItem']!;
+      final src = NsgGenNetcore.emitControllerGenerated(gen, controller, method, 'Projects');
+      final filter = src.indexOf('NsgReadHooks.Filter(HttpContext, req.Parameters, query)');
+      final compare = src.indexOf('query = NsgCompareTranslator.Apply');
+      final custom = src.indexOf('CustomizeReadQuery(ref query);');
+      expect(filter, greaterThan(0));
+      expect(filter, lessThan(compare), reason: 'видимость — до фильтра клиента');
+      expect(custom, lessThan(compare));
+      expect(src, contains('var sortInMemory = NsgReadHooks.SortsByTransient<ProjectItem>(req.Sorting);'));
+      expect(src, contains('if (!sortInMemory && req.Top is int top && top > 0)'));
+      expect(src, contains('NsgReadHooks.SortInMemory(items, req.Sorting);'));
+      expect(src, contains('await NsgReadHooks.AfterReadAsync(HttpContext, req.Parameters, items);'));
+      expect(src, contains('catch (NsgRejectedException rejected) { return BadRequest(new { error = "rejected", message = rejected.Message }); }'));
+    });
+
+    test('отказ бизнес-правила: 400 с message через общий фильтр', () {
+      final hooks = NsgGenNetcore.emitSaveHooks(gen);
+      expect(hooks, contains('public sealed class NsgRejectedException'));
+      expect(hooks, contains('new { error = "rejected", message = rejected.Message }'));
+      expect(hooks, contains('public interface INsgReadHook<T>'));
+      final services = NsgGenNetcore.emitGeneratedServicesExtensions(gen);
+      expect(services, contains('services.AddControllers(o => o.Filters.Add<NsgRejectedFilter>());'));
+    });
+
     test('обработчики сохранения: из DI, до записи; поля вне базы переносятся', () {
       final src = NsgGenNetcore.emitSaveHooks(gen);
       expect(src, contains('public interface INsgSaveHook<T> where T : class'));

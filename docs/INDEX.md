@@ -14,12 +14,12 @@ Flutter-клиента на Dart.
 | `feat/netcore-table-parts` | табличные части в netcore-эмите (`NsgTableParts`) | от `feat/netcore-emit`, проверяется на TaskTuner |
 | `feat/netcore-functions` | функции контроллера в netcore-эмите (`<Ctrl>FunctionsController`) | от `feat/netcore-table-parts`, проверяется на TaskTuner |
 | `feat/netcore-login` | вход по логину (`loginAuth`), файлы в MinIO (`GetStream`) | от `feat/netcore-functions`, проверяется на TaskTuner |
-| `feat/netcore-tasktuner` | схема TaskTuner: поля вне базы, `INsgSaveHook<T>`, клиентские типы, псевдонимы моделей, ссылка строки на владельца, заготовка тестов с ключом подписи | от `feat/netcore-login` |
+| `feat/netcore-tasktuner` | схема TaskTuner: поля вне базы, `INsgSaveHook<T>`/`INsgReadHook<T>`, отказ с текстом, сортировка по полям вне базы, клиентские типы, псевдонимы моделей, ссылка строки на владельца, заготовка тестов с ключом подписи | от `feat/netcore-login` |
 
 `feat/netcore-emit` 19.08.2026 перемотана на `feat/netcore-wire` (та содержала её целиком) и в неё
 влит `master`. Дальнейшая работа по netcore ведётся в `feat/netcore-emit`.
 
-Проверка: `dart analyze` без замечаний, `dart test` — 96 тестов проходят.
+Проверка: `dart analyze` без замечаний, `dart test` — 99 тестов проходят.
 
 Netcore-линия проверена на настоящем PostgreSQL и на первом порождённом клиенте: схема
 разворачивается миграциями, вход по коду и режим «только вставка» отвечают по контракту, Dart-модели

@@ -641,7 +641,9 @@ class NsgGenNetcore {
         '                "before deploying to production. (TASK06 §6.5 S2)");\n'
         '\n'
         '@@S2_END@@'
-        '        services.AddControllers();\n'
+        '        // Отказ бизнес-правила (NsgRejectedException) из любого действия —\n'
+        '        // 400 с текстом в `message`, его показывает клиент.\n'
+        '        services.AddControllers(o => o.Filters.Add<NsgRejectedFilter>());\n'
         '\n'
         '        // TASK06 §6.6.1 — CORS для web-flutter (cross-origin POST с localhost:NNNN\n'
         '        // dev-server на наш origin). Pilot — AllowAnyOrigin (хвост AG: до prod\n'
@@ -1167,6 +1169,10 @@ public static class NsgDatabaseMigrator
       sb.writeln(
           '        var req = body.ValueKind == JsonValueKind.Object ? NsgWireDeserializer.ParseRequest(body) : new NsgRequestDto(null, null, null, null, null, null, null, false, null, null, null);');
       sb.writeln('        IQueryable<$t> query = _db.$dsName.AsNoTracking();');
+      // Видимость — первой: до фильтра клиента, сортировки и Top, иначе
+      // страница из Top объектов после фильтра оказалась бы неполной.
+      sb.writeln('        query = NsgReadHooks.Filter(HttpContext, req.Parameters, query);');
+      sb.writeln('        CustomizeReadQuery(ref query);');
       sb.writeln('        // TASK05 §5.3-5.6: apply NsgCompare (+ dot-path 5.6.1), ReadReferences');
       sb.writeln('        // (Include via 5.6.2), Sorting (with dot-path 5.6.3), Top.');
       sb.writeln('        query = NsgCompareTranslator.Apply(query, req.Compare, _db.Model);');
@@ -1179,10 +1185,18 @@ public static class NsgDatabaseMigrator
       } else {
         sb.writeln('        query = NsgReadReferencesApplier.Apply(query, req.ReadReferences, _db.Model);');
       }
-      sb.writeln('        query = NsgSortingApplier.Apply(query, req.Sorting, _db.Model);');
-      sb.writeln('        if (req.Top is int top && top > 0) query = query.Take(top);');
-      sb.writeln('        CustomizeReadQuery(ref query);');
+      // Сортировку по полю вне базы SQL не выполнит: тогда она и Top — в памяти,
+      // после того как обработчики чтения заполнили поля.
+      sb.writeln('        var sortInMemory = NsgReadHooks.SortsByTransient<$t>(req.Sorting);');
+      sb.writeln('        if (!sortInMemory) query = NsgSortingApplier.Apply(query, req.Sorting, _db.Model);');
+      sb.writeln('        if (!sortInMemory && req.Top is int top && top > 0) query = query.Take(top);');
       sb.writeln('        var items = await query.ToListAsync();');
+      sb.writeln('        await NsgReadHooks.AfterReadAsync(HttpContext, req.Parameters, items);');
+      sb.writeln('        if (sortInMemory)');
+      sb.writeln('        {');
+      sb.writeln('            NsgReadHooks.SortInMemory(items, req.Sorting);');
+      sb.writeln('            if (req.Top is int memTop && memTop > 0 && items.Count > memTop) items.RemoveRange(memTop, items.Count - memTop);');
+      sb.writeln('        }');
       if (hasTables) {
         sb.writeln('        return Ok(items.Select(x => NsgTableParts.ToWireDict(x, tables)).ToList());');
       } else {
@@ -1255,7 +1269,8 @@ public static class NsgDatabaseMigrator
       sb.writeln('            }');
       sb.writeln('        }');
       sb.writeln('        OnBeforeSave(saved);');
-      sb.writeln('        await NsgSaveHooks.BeforeSaveAsync(HttpContext, saved);');
+      sb.writeln('        try { await NsgSaveHooks.BeforeSaveAsync(HttpContext, saved); }');
+      sb.writeln('        catch (NsgRejectedException rejected) { return BadRequest(new { error = "rejected", message = rejected.Message }); }');
       sb.writeln('        await _db.SaveChangesAsync();');
       if (hasTables) {
         // Клиент заменяет объект ответом: без строк в ответе табличная часть
@@ -1289,7 +1304,8 @@ public static class NsgDatabaseMigrator
       sb.writeln('        if (ids.Count == 0) return Ok();');
       sb.writeln('        var entities = await _db.$dsName.Where(x => ids.Contains(x.Id)).ToListAsync();');
       sb.writeln('        OnBeforeDelete(entities);');
-      sb.writeln('        await NsgSaveHooks.BeforeDeleteAsync(HttpContext, entities);');
+      sb.writeln('        try { await NsgSaveHooks.BeforeDeleteAsync(HttpContext, entities); }');
+      sb.writeln('        catch (NsgRejectedException rejected) { return BadRequest(new { error = "rejected", message = rejected.Message }); }');
       sb.writeln('        _db.$dsName.RemoveRange(entities);');
       sb.writeln('        await _db.SaveChangesAsync();');
       sb.writeln('        return Ok();');
@@ -1783,6 +1799,112 @@ public interface INsgSaveHook<T> where T : class
     Task OnBeforeSaveAsync(IReadOnlyList<T> items, CancellationToken ct) => Task.CompletedTask;
 
     Task OnBeforeDeleteAsync(IReadOnlyList<T> items, CancellationToken ct) => Task.CompletedTask;
+}
+
+/// <summary>Обработчик чтения объектов типа <typeparamref name="T"/>.</summary>
+///
+/// `Filter` накладывается первым — до фильтра клиента, сортировки и `Top`:
+/// здесь ограничивается видимость (только свои проекты). `OnAfterReadAsync`
+/// получает прочитанные объекты до сериализации — здесь заполняются поля вне
+/// базы (счётчики). Регистрируется в DI, как и <see cref="INsgSaveHook{T}"/>.
+public interface INsgReadHook<T> where T : class
+{
+    IQueryable<T> Filter(IQueryable<T> query, NsgReadContext ctx) => query;
+
+    Task OnAfterReadAsync(IReadOnlyList<T> items, NsgReadContext ctx) => Task.CompletedTask;
+}
+
+/// <summary>Запрос чтения: пользователь, параметры клиента (`Parameters`).</summary>
+public sealed class NsgReadContext
+{
+    public NsgReadContext(HttpContext http, IReadOnlyDictionary<string, System.Text.Json.JsonElement>? parameters)
+    {
+        Http = http;
+        Parameters = parameters ?? new Dictionary<string, System.Text.Json.JsonElement>();
+    }
+
+    public HttpContext Http { get; }
+    public System.Security.Claims.ClaimsPrincipal User => Http.User;
+    public CancellationToken Aborted => Http.RequestAborted;
+    public IReadOnlyDictionary<string, System.Text.Json.JsonElement> Parameters { get; }
+}
+
+/// <summary>Отказ бизнес-правила: клиент получает 400 и текст в `message`
+/// (`nsg_data` показывает его пользователю). Бросается из обработчиков.</summary>
+public sealed class NsgRejectedException : System.Exception
+{
+    public NsgRejectedException(string message) : base(message) { }
+}
+
+/// <summary>Фильтр MVC: <see cref="NsgRejectedException"/> → 400 `{ error, message }`.</summary>
+public sealed class NsgRejectedFilter : Microsoft.AspNetCore.Mvc.Filters.IExceptionFilter
+{
+    public void OnException(Microsoft.AspNetCore.Mvc.Filters.ExceptionContext context)
+    {
+        if (context.Exception is not NsgRejectedException rejected) return;
+        context.Result = new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(
+            new { error = "rejected", message = rejected.Message });
+        context.ExceptionHandled = true;
+    }
+}
+
+public static class NsgReadHooks
+{
+    public static IQueryable<T> Filter<T>(HttpContext http, IReadOnlyDictionary<string, System.Text.Json.JsonElement>? parameters, IQueryable<T> query) where T : class
+    {
+        var hooks = http.RequestServices.GetServices<INsgReadHook<T>>().ToList();
+        if (hooks.Count == 0) return query;
+        var ctx = new NsgReadContext(http, parameters);
+        foreach (var hook in hooks) query = hook.Filter(query, ctx);
+        return query;
+    }
+
+    /// <summary>Есть ли в сортировке поле вне базы (`[NotMapped]`): такую
+    /// сортировку SQL не выполнит — она делается в памяти после обработчиков.</summary>
+    public static bool SortsByTransient<T>(string? sorting) where T : class
+    {
+        foreach (var (prop, _) in SortKeys<T>(sorting))
+            if (prop.GetCustomAttribute<NotMappedAttribute>() is not null) return true;
+        return false;
+    }
+
+    /// <summary>Сортировка в памяти по всему ключу сортировки клиента.</summary>
+    public static void SortInMemory<T>(List<T> items, string? sorting) where T : class
+    {
+        var keys = SortKeys<T>(sorting).ToList();
+        if (keys.Count == 0) return;
+        items.Sort((a, b) =>
+        {
+            foreach (var (prop, asc) in keys)
+            {
+                var c = System.Collections.Generic.Comparer<object?>.Default.Compare(prop.GetValue(a), prop.GetValue(b));
+                if (c != 0) return asc ? c : -c;
+            }
+            return 0;
+        });
+    }
+
+    private static IEnumerable<(PropertyInfo prop, bool asc)> SortKeys<T>(string? sorting)
+    {
+        if (string.IsNullOrWhiteSpace(sorting) || !TypeFieldMapRegistry.ByType.TryGetValue(typeof(T), out var maps)) yield break;
+        foreach (var part in sorting.Split(','))
+        {
+            var token = part.Trim();
+            if (token.Length == 0) continue;
+            var dir = token[^1];
+            var wire = dir is '+' or '-' ? token[..^1].Trim() : token;
+            if (wire.Contains('.') || !maps.WireToCSharp.TryGetValue(wire, out var cs)) continue;
+            if (typeof(T).GetProperty(cs) is { } prop) yield return (prop, dir != '-');
+        }
+    }
+
+    public static async Task AfterReadAsync<T>(HttpContext http, IReadOnlyDictionary<string, System.Text.Json.JsonElement>? parameters, List<T> items) where T : class
+    {
+        var hooks = http.RequestServices.GetServices<INsgReadHook<T>>().ToList();
+        if (hooks.Count == 0) return;
+        var ctx = new NsgReadContext(http, parameters);
+        foreach (var hook in hooks) await hook.OnAfterReadAsync(items, ctx);
+    }
 }
 
 public static class NsgSaveHooks
@@ -4395,7 +4517,10 @@ public class NsgCodeAuthController : ControllerBase
       groups.add([
         '    /// <summary>Вне базы: читается из запроса и отдаётся в ответе.</summary>',
         '    [NotMapped]',
-        '    public ${_csScalarType(f)}? ${f.name} { get; set; }',
+        // Ссылка вне базы — только идентификатор (`inviteProjectId`), без навигации.
+        _isReference(f)
+            ? '    public Guid? ${f.name} { get; set; }'
+            : '    public ${_csScalarType(f)}? ${f.name} { get; set; }',
       ]);
     }
 
@@ -4666,13 +4791,11 @@ public class NsgCodeAuthController : ControllerBase
 
   /// Поле вне базы: скалярное поле без `databaseName` (картинка `PhotoFile`,
   /// счётчик `NumberOfTasksOpen`). Есть в модели как `[NotMapped]` и в обмене
-  /// в обе стороны, колонки в базе нет. Ссылки и табличные части без
-  /// `databaseName` по-прежнему пропускаются.
+  /// в обе стороны, колонки в базе нет. Ссылка без `databaseName`
+  /// (`InviteProjectId`) — `Guid?` без навигации. Табличные части и
+  /// нетипизированные ссылки без `databaseName` пропускаются.
   static bool _isTransientField(NsgGenDataItemField f) =>
-      !_isEmittedField(f) &&
-      !_isList(f) &&
-      !f.type.startsWith('Reference') &&
-      !_isUntypedReference(f);
+      !_isEmittedField(f) && !_isList(f) && !_isUntypedReference(f);
 
   /// Есть ли у типа поля вне базы (для тестов и шаблонов).
   static bool hasTransientFields(NsgGenDataItem di) =>
