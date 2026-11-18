@@ -1463,10 +1463,23 @@ void main() {
       expect(src, isNot(contains('NsgRawTokenAuthHandler')));
       expect(src, isNot(contains('Stub PhoneLogin')),
           reason: 'при настоящем входе запрет заглушки в Production не нужен');
-      expect(src, contains('Auth: не настроен ни один канал отправки кода'));
+      expect(src, contains('вход по почте включён (EmailLogin), а Auth:Smtp не настроен'));
+      expect(src, contains('вход по телефону включён (PhoneLogin), а Auth:Sms не настроен'));
+      expect(src, contains('выключены и PhoneLogin, и EmailLogin'));
       expect(src, contains('o.AddPolicy("nsg-login"'));
       expect(src, isNot(contains('nsg-code-exchange')));
       expect(src, contains('services.AddSingleton<NsgFileStore>()'));
+    });
+
+    test('виды входа: PhoneLogin/EmailLogin в настройках, выключенный отклоняется до кода и пароля', () {
+      final options = NsgGenNetcoreLogin.emitOptions(make());
+      expect(options, contains('public bool PhoneLogin { get; set; } = true;'));
+      expect(options, contains('public bool EmailLogin { get; set; } = true;'));
+      final service = NsgGenNetcoreLogin.emitService(make());
+      final guard = service.indexOf('if (!_options.Allows(login.IsEmail))');
+      expect(guard, greaterThan(0));
+      expect(guard, lessThan(service.indexOf('if (!login.Register)')),
+          reason: 'проверка до входа по паролю и до отправки кода');
     });
 
     test('без loginAuth службы прежние', () {

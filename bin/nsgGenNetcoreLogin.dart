@@ -189,6 +189,12 @@ public sealed class NsgAuthOptions
     public int MaxAttempts { get; set; } = 3;
     public int SmsResendSeconds { get; set; } = 120;
     public int EmailResendSeconds { get; set; } = 30;
+    /// <summary>Вход и регистрация по телефону. Выключен — запросы с телефоном
+    /// отклоняются, канал SMS не требуется.</summary>
+    public bool PhoneLogin { get; set; } = true;
+    /// <summary>Вход и регистрация по почте.</summary>
+    public bool EmailLogin { get; set; } = true;
+    public bool Allows(bool isEmail) => isEmail ? EmailLogin : PhoneLogin;
     /// <summary>Срок жизни сессии без входа заново.</summary>
     public int SessionLifetimeDays { get; set; } = 365;
     /// <summary>Запросов входа и кода в минуту с одного адреса.</summary>
@@ -444,6 +450,11 @@ public sealed class NsgAuthService
     public async Task<NsgAuthResponse> RequestAsync(NsgLoginRequest login, string? raw, CancellationToken ct)
     {
         if (login.Login.Length == 0) return NsgAuthResponse.Error(NsgAuthErrors.WrongLogin, "Не указан телефон или почта");
+        // Коды создаются только здесь, поэтому выключенный вид входа закрыт
+        // и для пароля, и для кода.
+        if (!_options.Allows(login.IsEmail))
+            return NsgAuthResponse.Error(NsgAuthErrors.WrongLogin,
+                login.IsEmail ? "Вход по почте отключён" : "Вход по телефону отключён");
         var info = ReadToken(raw);
         var requestToken = info?.Token ?? IssueAnonymous();
         var requestId = info?.SessionId ?? ReadToken(requestToken)!.SessionId;
@@ -1055,9 +1066,15 @@ public sealed class NsgFileStore
         var nsgAuthOptions = configuration.GetSection(NsgAuthOptions.SectionName).Get<NsgAuthOptions>() ?? new NsgAuthOptions();
         // Вне Development код обязан куда-то уходить: иначе вход невозможен,
         // а заметно это станет только у первого пользователя.
-        if (!environment.IsDevelopment() && !nsgAuthOptions.Smtp.IsConfigured && !nsgAuthOptions.Sms.IsConfigured)
-            throw new InvalidOperationException(
-                "Auth: не настроен ни один канал отправки кода (Auth:Smtp или Auth:Sms).");
+        if (!nsgAuthOptions.PhoneLogin && !nsgAuthOptions.EmailLogin)
+            throw new InvalidOperationException("Auth: выключены и PhoneLogin, и EmailLogin.");
+        if (!environment.IsDevelopment())
+        {
+            if (nsgAuthOptions.EmailLogin && !nsgAuthOptions.Smtp.IsConfigured)
+                throw new InvalidOperationException("Auth: вход по почте включён (EmailLogin), а Auth:Smtp не настроен.");
+            if (nsgAuthOptions.PhoneLogin && !nsgAuthOptions.Sms.IsConfigured)
+                throw new InvalidOperationException("Auth: вход по телефону включён (PhoneLogin), а Auth:Sms не настроен. Не нужен — PhoneLogin: false.");
+        }
         services.AddHttpClient("nsg-sms");
         services.AddSingleton<NsgCodeDispatcher>();
         services.AddScoped<NsgAuthHooks>();
@@ -1101,6 +1118,8 @@ public sealed class NsgFileStore
           '    "MaxAttempts": 3,\n'
           '    "SmsResendSeconds": 120,\n'
           '    "EmailResendSeconds": 30,\n'
+          '    "PhoneLogin": true,\n'
+          '    "EmailLogin": true,\n'
           '    "SessionLifetimeDays": 365,\n'
           '    "LoginAttemptsPerMinute": 10,\n'
           '    "ReviewLogins": [],\n'
