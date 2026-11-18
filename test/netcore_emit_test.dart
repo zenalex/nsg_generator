@@ -1330,7 +1330,7 @@ void main() {
         ],
       });
       gen.enums.add(NsgGenEnum(
-          className: 'TaskPriority', dataTypeFile: 'p.json', useLocalization: false));
+          className: 'TaskPriority', databaseType: '', description: '', dataTypeFile: 'p.json', useLocalization: false));
     });
 
     test('псевдонимы моделей: имя модели сильнее одноимённого типа .NET', () {

@@ -21,29 +21,45 @@ class NsgGenController {
   final bool loginRequired;
   final bool writeOnClient;
   final bool useGetUserByTokenSync;
+
+  /// Вызывать ли после `await GetUserByToken` синхронный
+  /// `<implAuthControllerName>.EnsureUser(user)` (futbolista-tasks#2753).
+  ///
+  /// Асинхронный `GetUserByToken` при неавторизованном запросе возвращает
+  /// `null` (а не 401), и культура, выставленная внутри него, не доживает до
+  /// экшена: `CurrentCulture` живёт в контексте исполнения, и завершившийся
+  /// async-метод восстанавливает контекст вызывающего. Синхронный шаг в самом
+  /// экшене закрывает оба пробела без `GetUserByTokenSync`, то есть без
+  /// sync-over-async. Сервер обязан объявить
+  /// `public static INsgTokenExtension EnsureUser(INsgTokenExtension user)`.
+  final bool ensureUser;
   final List<NsgGenMethod> methods;
   final List<NsgGenFunction> functions;
   bool hasGetStreamFunction;
   String get callGetUserByToken => useGetUserByTokenSync
       ? "authController.GetUserByTokenSync(Request)"
+      : ensureUser
+      ? "$implAuthControllerName.EnsureUser(await authController.GetUserByToken(Request))"
       : "await authController.GetUserByToken(Request)";
 
-  NsgGenController(
-      {required this.apiPrefix,
-      required this.className,
-      required this.implControllerName,
-      required this.implAuthControllerName,
-      required this.dataType,
-      required this.serverUri,
-      this.useAuthorization = false,
-      this.useMetrics = false,
-      this.uploadEnabled = false,
-      this.loginRequired = true,
-      this.writeOnClient = true,
-      this.useGetUserByTokenSync = false,
-      this.methods = const [],
-      this.functions = const [],
-      this.hasGetStreamFunction = false});
+  NsgGenController({
+    required this.apiPrefix,
+    required this.className,
+    required this.implControllerName,
+    required this.implAuthControllerName,
+    required this.dataType,
+    required this.serverUri,
+    this.useAuthorization = false,
+    this.useMetrics = false,
+    this.uploadEnabled = false,
+    this.loginRequired = true,
+    this.writeOnClient = true,
+    this.useGetUserByTokenSync = false,
+    this.ensureUser = false,
+    this.methods = const [],
+    this.functions = const [],
+    this.hasGetStreamFunction = false,
+  });
 
   static Map<String, String> obsoleteKeys = {
     'class_name': 'className',
@@ -53,39 +69,46 @@ class NsgGenController {
   };
 
   factory NsgGenController.fromJson(Map<String, dynamic> parsedJson) {
-    Misc.checkObsoleteKeysInJSON('controller', parsedJson, obsoleteKeys,
-        throwIfAny: true);
+    Misc.checkObsoleteKeysInJSON(
+      'controller',
+      parsedJson,
+      obsoleteKeys,
+      throwIfAny: true,
+    );
     var className = parsedJson['className'];
     var functions = parsedJson.containsKey('functions')
         ? (parsedJson['functions'] as List)
-            .map((i) => NsgGenFunction.fromJson(i))
-            .toList()
+              .map((i) => NsgGenFunction.fromJson(i))
+              .toList()
         : <NsgGenFunction>[];
     return NsgGenController(
-        apiPrefix: parsedJson['apiPrefix'],
-        className: className,
-        implControllerName: parsedJson.containsKey('implControllerName')
-            ? parsedJson['implControllerName']
-            : className + 'Implementation',
-        implAuthControllerName: parsedJson.containsKey('implAuthControllerName')
-            ? parsedJson['implAuthControllerName']
-            : 'AuthControllerImplementation',
-        dataType: parsedJson['dataType'] ?? '',
-        serverUri: parsedJson['serverUri'] ?? '',
-        useAuthorization: Misc.parseBool(parsedJson['useAuthorization']),
-        useMetrics: Misc.parseBool(parsedJson['useMetrics']),
-        uploadEnabled: Misc.parseBool(parsedJson['uploadEnabled']),
-        loginRequired: Misc.parseBoolOrTrue(parsedJson['loginRequired']),
-        writeOnClient: Misc.parseBoolOrTrue(parsedJson['writeOnClient']),
-        useGetUserByTokenSync:
-            Misc.parseBool(parsedJson['useGetUserByTokenSync']),
-        methods: parsedJson.containsKey('method')
-            ? (parsedJson['method'] as List)
+      apiPrefix: parsedJson['apiPrefix'],
+      className: className,
+      implControllerName: parsedJson.containsKey('implControllerName')
+          ? parsedJson['implControllerName']
+          : className + 'Implementation',
+      implAuthControllerName: parsedJson.containsKey('implAuthControllerName')
+          ? parsedJson['implAuthControllerName']
+          : 'AuthControllerImplementation',
+      dataType: parsedJson['dataType'] ?? '',
+      serverUri: parsedJson['serverUri'] ?? '',
+      useAuthorization: Misc.parseBool(parsedJson['useAuthorization']),
+      useMetrics: Misc.parseBool(parsedJson['useMetrics']),
+      uploadEnabled: Misc.parseBool(parsedJson['uploadEnabled']),
+      loginRequired: Misc.parseBoolOrTrue(parsedJson['loginRequired']),
+      writeOnClient: Misc.parseBoolOrTrue(parsedJson['writeOnClient']),
+      useGetUserByTokenSync: Misc.parseBool(
+        parsedJson['useGetUserByTokenSync'],
+      ),
+      ensureUser: Misc.parseBool(parsedJson['ensureUser']),
+      methods: parsedJson.containsKey('method')
+          ? (parsedJson['method'] as List)
                 .map((i) => NsgGenMethod.fromJson(i))
                 .toList()
-            : [],
-        functions: functions,
-        hasGetStreamFunction: functions.any((f) => f.name == "GetStream"));
+          : [],
+      functions: functions,
+      hasGetStreamFunction: functions.any((f) => f.name == "GetStream"),
+    );
   }
 
   Future generateCode(NsgGenerator nsgGenerator) async {
@@ -111,23 +134,32 @@ class NsgGenController {
           codeList.add('using System.Web.Http.Controllers;');
           codeList.add('using System.Web.Mvc;');
           codeList.add(
-              'using HttpGetAttribute = System.Web.Http.HttpGetAttribute;');
+            'using HttpGetAttribute = System.Web.Http.HttpGetAttribute;',
+          );
           codeList.add(
-              'using HttpPostAttribute = System.Web.Http.HttpPostAttribute;');
+            'using HttpPostAttribute = System.Web.Http.HttpPostAttribute;',
+          );
           codeList.add(
-              'using HttpDeleteAttribute = System.Web.Http.HttpDeleteAttribute;');
+            'using HttpDeleteAttribute = System.Web.Http.HttpDeleteAttribute;',
+          );
           codeList.add(
-              'using RoutePrefixAttribute = System.Web.Http.RoutePrefixAttribute;');
-          codeList
-              .add('using RouteAttribute = System.Web.Http.RouteAttribute;');
+            'using RoutePrefixAttribute = System.Web.Http.RoutePrefixAttribute;',
+          );
           codeList.add(
-              'using FromBodyAttribute = System.Web.Http.FromBodyAttribute;');
+            'using RouteAttribute = System.Web.Http.RouteAttribute;',
+          );
           codeList.add(
-              'using AuthorizeAttribute = System.Web.Http.AuthorizeAttribute;');
+            'using FromBodyAttribute = System.Web.Http.FromBodyAttribute;',
+          );
           codeList.add(
-              'using AllowAnonymousAttribute = System.Web.Http.AllowAnonymousAttribute;');
+            'using AuthorizeAttribute = System.Web.Http.AuthorizeAttribute;',
+          );
           codeList.add(
-              'using ActionNameAttribute = System.Web.Http.ActionNameAttribute;');
+            'using AllowAnonymousAttribute = System.Web.Http.AllowAnonymousAttribute;',
+          );
+          codeList.add(
+            'using ActionNameAttribute = System.Web.Http.ActionNameAttribute;',
+          );
         }
         codeList.add('using ${nsgGenerator.cSharpNamespace};');
         codeList.add('using ${nsgGenerator.cSharpNamespace}.Controllers;');
@@ -137,15 +169,20 @@ class NsgGenController {
         codeList.add('namespace ${nsgGenerator.cSharpNamespace}');
         codeList.add('{');
         Misc.writeDescription(
-            codeList, '${dataType}Interface Controller', true);
+          codeList,
+          '${dataType}Interface Controller',
+          true,
+        );
         if (nsgGenerator.isDotNetCore) {
           codeList.add('[ApiController]');
           codeList.add('[Route("$apiPrefix")]');
         } else {
           codeList.add('[RoutePrefix("$apiPrefix")]');
         }
-        codeList.add('public class $className : ' +
-            (nsgGenerator.isDotNetCore ? 'ControllerBase' : 'ApiController'));
+        codeList.add(
+          'public class $className : ' +
+              (nsgGenerator.isDotNetCore ? 'ControllerBase' : 'ApiController'),
+        );
         codeList.add('{');
 
         codeList.add('${className}Interface controller;');
@@ -179,7 +216,8 @@ class NsgGenController {
         codeList.add('');
         if (!nsgGenerator.isDotNetCore) {
           codeList.add(
-              'public $className() : this(Program.LoggerFactory.CreateLogger<$className>()) { }');
+            'public $className() : this(Program.LoggerFactory.CreateLogger<$className>()) { }',
+          );
           codeList.add('');
         }
         codeList.add('private static $className currentController;');
@@ -189,10 +227,12 @@ class NsgGenController {
         codeList.add('{');
         if (nsgGenerator.isDotNetCore) {
           codeList.add(
-              'if (currentController == null) currentController = new $className(null);');
+            'if (currentController == null) currentController = new $className(null);',
+          );
         } else {
           codeList.add(
-              'if (currentController == null) currentController = new $className();');
+            'if (currentController == null) currentController = new $className();',
+          );
         }
         codeList.add('return currentController;');
         codeList.add('}');
@@ -210,11 +250,13 @@ class NsgGenController {
         codeList.add('#region types');
         methods.forEach((el) {
           codeList.add(
-              'NsgServerDataItem.Types.TryAdd("${Misc.getDartName(el.genDataItem.typeName)}", new ${el.genDataItem.typeName}());');
+            'NsgServerDataItem.Types.TryAdd("${Misc.getDartName(el.genDataItem.typeName)}", new ${el.genDataItem.typeName}());',
+          );
         });
         codeList.add('#endregion');
         codeList.add(
-            'if (NsgServerClasses.AuthController.currentController == null)');
+          'if (NsgServerClasses.AuthController.currentController == null)',
+        );
         codeList.add('{');
         if (useAuthorization) {
           codeList.add('authController = new $implAuthControllerName();');
@@ -222,7 +264,8 @@ class NsgGenController {
           codeList.add('authController = AuthController.CurrentController;');
         }
         codeList.add(
-            'NsgServerClasses.AuthController.currentController = authController;');
+          'NsgServerClasses.AuthController.currentController = authController;',
+        );
         codeList.add('}');
         codeList.add('}');
         codeList.add('');
@@ -243,7 +286,10 @@ class NsgGenController {
           await Future.forEach<NsgGenFunction>(functions, (element) async {
             currentStage = 'C# function ${element.name}';
             await element.generateControllerMethod(
-                codeList, nsgGenerator, this);
+              codeList,
+              nsgGenerator,
+              this,
+            );
           });
           codeList.add('#endregion Functions');
           codeList.add('');
@@ -297,19 +343,23 @@ class NsgGenController {
     codeList.add('public interface ${className}Interface');
     codeList.add('{');
     codeList.add(
-        'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Get<T>(INsgTokenExtension user, NsgFindParams findParams)');
+      'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Get<T>(INsgTokenExtension user, NsgFindParams findParams)',
+    );
     codeList.add('    where T : NsgServerDataItem, new();');
     codeList.add('');
     codeList.add(
-        'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Create<T>(INsgTokenExtension user, NsgFindParams findParams)');
+      'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Create<T>(INsgTokenExtension user, NsgFindParams findParams)',
+    );
     codeList.add('    where T : NsgServerDataItem, new();');
     codeList.add('');
     codeList.add(
-        'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post<T>(INsgTokenExtension user, NsgFindParams findParams, IEnumerable<T> items)');
+      'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post<T>(INsgTokenExtension user, NsgFindParams findParams, IEnumerable<T> items)',
+    );
     codeList.add('    where T : NsgServerDataItem, new();');
     codeList.add('');
     codeList.add(
-        'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Delete<T>(INsgTokenExtension user, IEnumerable<T> items)');
+      'Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Delete<T>(INsgTokenExtension user, IEnumerable<T> items)',
+    );
     codeList.add('    where T : NsgServerDataItem, new();');
     //var publicMdf = (nsgGenerator.isDotNetCore ? 'public ' : '');
     methods.forEach((it) {
@@ -326,10 +376,14 @@ class NsgGenController {
     codeList.add('');
     await Future.forEach<NsgGenFunction>(functions, (element) async {
       await element.generateControllerInterfaceMethod(
-          codeList, nsgGenerator, this);
+        codeList,
+        nsgGenerator,
+        this,
+      );
     });
     codeList.add(
-        'void ApplyServerFilter<T>(INsgTokenExtension user, ref NsgFindParams findParams) where T : NsgServerDataItem, new();');
+      'void ApplyServerFilter<T>(INsgTokenExtension user, ref NsgFindParams findParams) where T : NsgServerDataItem, new();',
+    );
 
     codeList.add('}');
     codeList.add('}');
@@ -363,31 +417,36 @@ class NsgGenController {
     codeList.add('namespace ${nsgGenerator.cSharpNamespace}.Controllers');
     codeList.add('{');
     codeList.add(
-        'public partial class $implControllerName : ${className}Interface');
+      'public partial class $implControllerName : ${className}Interface',
+    );
     codeList.add('{');
     codeList.add(
-        'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Get<T>(INsgTokenExtension user, NsgFindParams findParams) where T : NsgServerDataItem, new()');
+      'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Get<T>(INsgTokenExtension user, NsgFindParams findParams) where T : NsgServerDataItem, new()',
+    );
     codeList.add('{');
     codeList.add('ApplyServerFilter<T>(user, ref findParams);');
     codeList.add('return new T().Get(user, findParams);');
     codeList.add('}');
     codeList.add('');
     codeList.add(
-        'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Create<T>(INsgTokenExtension user, NsgFindParams findParams) where T : NsgServerDataItem, new()');
+      'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Create<T>(INsgTokenExtension user, NsgFindParams findParams) where T : NsgServerDataItem, new()',
+    );
     codeList.add('{');
     codeList.add('ApplyServerFilter<T>(user, ref findParams);');
     codeList.add('return new T().Create(user, findParams);');
     codeList.add('}');
     codeList.add('');
     codeList.add(
-        'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post<T>(INsgTokenExtension user, NsgFindParams findParams, IEnumerable<T> items) where T : NsgServerDataItem, new()');
+      'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Post<T>(INsgTokenExtension user, NsgFindParams findParams, IEnumerable<T> items) where T : NsgServerDataItem, new()',
+    );
     codeList.add('{');
     codeList.add('OnBeforePost(user, items);');
     codeList.add('return new T().Post(user, findParams, items);');
     codeList.add('}');
     codeList.add('');
     codeList.add(
-        'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Delete<T>(INsgTokenExtension user, IEnumerable<T> items) where T : NsgServerDataItem, new()');
+      'public Task<Dictionary<string, IEnumerable<NsgServerDataItem>>> Delete<T>(INsgTokenExtension user, IEnumerable<T> items) where T : NsgServerDataItem, new()',
+    );
     codeList.add('{');
     codeList.add('return new T().Delete(user, items);');
     codeList.add('}');
@@ -414,12 +473,16 @@ class NsgGenController {
     });
     await Future.forEach<NsgGenFunction>(functions, (element) async {
       element.generateControllerImplDesignerMethod(
-          codeList, nsgGenerator, this);
+        codeList,
+        nsgGenerator,
+        this,
+      );
       codeList.add('');
     });
 
     codeList.add(
-        'public void ApplyServerFilter<T>(INsgTokenExtension user, ref NsgFindParams findParams) where T : NsgServerDataItem, new()');
+      'public void ApplyServerFilter<T>(INsgTokenExtension user, ref NsgFindParams findParams) where T : NsgServerDataItem, new()',
+    );
     codeList.add('{');
     codeList.add('T obj = new T();');
     codeList.add('if (findParams == null) findParams = new NsgFindParams();');
@@ -509,13 +572,16 @@ class NsgGenController {
     });
     codeList.add('#region Common');
     codeList.add(
-        'public void OnGetControllerCompare(INsgTokenExtension user, NsgServerDataItem obj, NsgFindParams findParams) { }');
+      'public void OnGetControllerCompare(INsgTokenExtension user, NsgServerDataItem obj, NsgFindParams findParams) { }',
+    );
     codeList.add('');
     codeList.add(
-        'private void OnBeforePost(INsgTokenExtension user, IEnumerable<NsgServerDataItem> items) { }');
+      'private void OnBeforePost(INsgTokenExtension user, IEnumerable<NsgServerDataItem> items) { }',
+    );
     codeList.add('');
     codeList.add(
-        'public void OnApplyServerFilter(INsgTokenExtension user, NsgServerDataItem obj, NsgFindParams findParams) { }');
+      'public void OnApplyServerFilter(INsgTokenExtension user, NsgServerDataItem obj, NsgFindParams findParams) { }',
+    );
     codeList.add('#endregion');
     codeList.add('}');
     codeList.add('}');
@@ -527,13 +593,18 @@ class NsgGenController {
   }
 
   static void generateImplMetadataGetMethodBody(
-      NsgGenerator nsgGenerator, List<String> codeList, NsgGenMethod m) async {
+    NsgGenerator nsgGenerator,
+    List<String> codeList,
+    NsgGenMethod m,
+  ) async {
     if (m.genDataItem.entityType != NsgGenDataItemEntityType.dataItem) {
       codeList.add(
-          'return await Get<${m.genDataItem.typeName}>(user, findParams);');
+        'return await Get<${m.genDataItem.typeName}>(user, findParams);',
+      );
     } else {
       codeList.add(
-          'var RES = GetResultDictionary<${m.genDataItem.typeName}>(findParams);');
+        'var RES = GetResultDictionary<${m.genDataItem.typeName}>(findParams);',
+      );
       codeList.add('');
       codeList.add('return RES;');
     }
@@ -607,10 +678,12 @@ class NsgGenController {
     codeList.add('public class ServerTokenItem : NsgTokenItem');
     codeList.add('{');
     codeList.add('// TODO: уточнить тип');
-    codeList
-        .add('public /*ПользователиСервисов*/NsgDataDictionary Пользователь;');
-    codeList
-        .add('//public override string DbUser => Пользователь?.ToString();');
+    codeList.add(
+      'public /*ПользователиСервисов*/NsgDataDictionary Пользователь;',
+    );
+    codeList.add(
+      '//public override string DbUser => Пользователь?.ToString();',
+    );
     codeList.add('}');
     codeList.add('}');
     Misc.indentCSharpCode(codeList);
@@ -646,7 +719,7 @@ class NsgGenController {
     methods.forEach((it) {
       [
         "export '${Misc.getDartUnderscoreName(it.genDataItem.typeName)}.dart';",
-        "export '${nsgGenerator.genPathName}/${Misc.getDartUnderscoreName(it.genDataItem.typeName)}.g.dart';"
+        "export '${nsgGenerator.genPathName}/${Misc.getDartUnderscoreName(it.genDataItem.typeName)}.g.dart';",
       ].forEach((exportStr) {
         if (!codeList.contains(exportStr)) {
           codeList.add(exportStr);
@@ -655,8 +728,36 @@ class NsgGenController {
     });
 
     await Misc.writeFileIfChanged(
-        '${nsgGenerator.dartPath}/${Misc.getDartUnderscoreName(className)}_model.dart',
-        codeList.join('\r\n'));
+      '${nsgGenerator.dartPath}/${Misc.getDartUnderscoreName(className)}_model.dart',
+      codeList.join('\r\n'),
+    );
+  }
+
+  /// Имена типов, которые попадут в порождённый dart-код контроллера:
+  /// возвращаемые значения функций, типы их параметров и объекты,
+  /// подгружаемые по `readReferences`.
+  Set<String> functionTypeNames() {
+    var names = <String>{};
+    void addType(String type, String referenceType) {
+      if (Misc.needToSpecifyType(type)) {
+        if (referenceType.isNotEmpty) names.add(referenceType);
+      } else if (!Misc.isPrimitiveType(type)) {
+        names.add(type);
+      }
+    }
+
+    for (var function in functions.where((it) => it.writeOnClient)) {
+      addType(function.type, function.referenceType);
+      for (var param in function.params) {
+        addType(param.type, param.referenceType);
+      }
+      for (var reference in function.readReferences) {
+        if (reference.contains('\$')) continue;
+        var typeName = reference.split('.').first.trim();
+        if (typeName.isNotEmpty) names.add(typeName);
+      }
+    }
+    return names;
   }
 
   Future generateInitController(NsgGenerator nsgGenerator) async {
@@ -680,13 +781,17 @@ class NsgGenController {
       codeList.add("import '../enums.dart';");
     }
     codeList.add(
-        "import '../${Misc.getDartUnderscoreName(className)}_model.dart';");
+      "import '../${Misc.getDartUnderscoreName(className)}_model.dart';",
+    );
     // Хеш схемы GeneratorConfig — генерируется в той же папке (_schema_meta.dart).
     // Импортируется только вместе с передачей в провайдер: неиспользованный
     // импорт — предупреждение анализатора в каждом порождённом проекте.
     if (nsgGenerator.emitSchemaHash) {
       codeList.add("import '_schema_meta.dart';");
     }
+    codeList.addAll(
+      nsgGenerator.crossControllerModelImports(this, functionTypeNames()),
+    );
     codeList.add('');
     codeList.add('class ${className}Generated extends NsgBaseController {');
     codeList.add('  NsgDataProvider? provider;');
@@ -718,8 +823,9 @@ class NsgGenController {
     }
     codeList.add('');
     addRegisterDataItems(nsgGenerator, codeList);
-    codeList
-        .add('    await NsgLocalDb.instance.init(provider!.applicationName);');
+    codeList.add(
+      '    await NsgLocalDb.instance.init(provider!.applicationName);',
+    );
     codeList.add('    provider!.useNsgAuthorization = $useAuthorization;');
     codeList.add('    var db = NsgLocalDb.instance;');
     codeList.add('    await db.init(\'${nsgGenerator.applicationName}\');');
@@ -738,7 +844,8 @@ class NsgGenController {
     codeList.add('  @override');
     codeList.add('  Future loadProviderData() async {');
     codeList.add(
-        '    currentStatus = GetStatus.success(NsgBaseController.emptyData);');
+      '    currentStatus = GetStatus.success(NsgBaseController.emptyData);',
+    );
     codeList.add('    sendNotify();');
     codeList.add('  }');
 
@@ -752,8 +859,9 @@ class NsgGenController {
     codeList.add('');
 
     await Misc.writeFileIfChanged(
-        '${nsgGenerator.dartPathGen}/${Misc.getDartUnderscoreName(className)}.g.dart',
-        codeList.join('\r\n'));
+      '${nsgGenerator.dartPathGen}/${Misc.getDartUnderscoreName(className)}.g.dart',
+      codeList.join('\r\n'),
+    );
 
     //----------------------------------------------------------
     //generate main class ControllerName.dart
@@ -761,7 +869,8 @@ class NsgGenController {
     codeList = <String>[];
     //codeList.add("import '${nsgGenerator.getDartName(className)}Model.dart';");
     codeList.add(
-        "import '${nsgGenerator.genPathName}/${Misc.getDartUnderscoreName(className)}.g.dart';");
+      "import '${nsgGenerator.genPathName}/${Misc.getDartUnderscoreName(className)}.g.dart';",
+    );
     codeList.add('');
     codeList.add('class $className extends ${className}Generated {');
     codeList.add('  $className() : super();');
@@ -775,16 +884,20 @@ class NsgGenController {
   }
 
   static Future generateControllerOptions(
-      NsgGenerator nsgGenerator, List<NsgGenController> controllers) async {
+    NsgGenerator nsgGenerator,
+    List<NsgGenController> controllers,
+  ) async {
     var codeList = <String>[];
     codeList.add('import \'package:nsg_data/nsg_data.dart\';');
     codeList.add('');
     codeList.add('class NsgServerOptions {');
     controllers.forEach((c) {
       codeList.add(
-          '  static const String serverUri${c.className} = \'${c.serverUri}\';');
+        '  static const String serverUri${c.className} = \'${c.serverUri}\';',
+      );
       codeList.add(
-          '  static NsgServerParams availableServers = NsgServerParams({\'${c.serverUri}\': \'main\'}, \'${c.serverUri}\');');
+        '  static NsgServerParams availableServers = NsgServerParams({\'${c.serverUri}\': \'main\'}, \'${c.serverUri}\');',
+      );
     });
     codeList.add('}');
 

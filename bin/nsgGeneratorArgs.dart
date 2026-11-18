@@ -18,6 +18,9 @@ class NsgGeneratorArgs {
   /// генерировать dart
   bool doDart = true;
 
+  /// генерировать файлы локализации
+  bool writeLocalization = true;
+
   /// если в папке найден файл .csproj, копировать
   bool copyCsproj = false;
 

@@ -82,14 +82,16 @@ class NsgGenerator {
   /// Чат поддержки Chatista Connect (см. NsgGenSupportChat).
   /// По умолчанию выключен — на существующие конфиги не влияет.
   NsgGenSupportChat supportChat = NsgGenSupportChat(
-      enabled: false,
-      productExternalKey: '',
-      typeName: NsgGenSupportChat.defaultTypeName);
+    enabled: false,
+    productExternalKey: '',
+    typeName: NsgGenSupportChat.defaultTypeName,
+  );
   final Map<String, NsgGenDataItem> dataItems = Map();
   final Map<String, String> localizationDict = Map();
   bool doCSharp = true;
   bool doDart = true;
   bool forceOverwrite = false;
+  bool writeLocalization = true;
   bool copyCsproj = false;
   bool copyProgramCs = false;
   bool copyStartupCs = false;
@@ -97,31 +99,85 @@ class NsgGenerator {
 
   String? jsonPath;
 
-  NsgGenerator(
-      {required this.targetFramework,
-      required this.isDotNetCore,
-      required this.cSharpPath,
-      required this.cSharpNamespace,
-      required this.dartPath,
-      required this.applicationName,
-      required this.useLocalization,
-      required this.defaultLocale,
-      required this.newTableLogic,
-      this.emitSchemaHash = false,
-      this.netcoreGeneratedSubdir = '',
-      this.anonymousCodeAuth = false,
-      this.loginAuth = false,
-      this.serverEmitKind = NsgServerEmitKind.nsgframework,
-      this.netcoreOutputPath = '',
-      this.doCSharp = true,
-      this.doDart = true,
-      this.useStaticDatabaseNames = false,
-      this.controllers = const [],
-      this.enums = const []});
+  NsgGenerator({
+    required this.targetFramework,
+    required this.isDotNetCore,
+    required this.cSharpPath,
+    required this.cSharpNamespace,
+    required this.dartPath,
+    required this.applicationName,
+    required this.useLocalization,
+    required this.defaultLocale,
+    required this.newTableLogic,
+    this.emitSchemaHash = false,
+    this.netcoreGeneratedSubdir = '',
+    this.anonymousCodeAuth = false,
+    this.loginAuth = false,
+    this.serverEmitKind = NsgServerEmitKind.nsgframework,
+    this.netcoreOutputPath = '',
+    this.doCSharp = true,
+    this.doDart = true,
+    this.writeLocalization = true,
+    this.useStaticDatabaseNames = false,
+    this.controllers = const [],
+    this.enums = const [],
+  });
+
+  /// Ключи верхнего уровня, которые генератор умеет читать.
+  static const knownProperties = <String>{
+    'applicationName',
+    'cSharpNamespace',
+    'cSharpPath',
+    'controller',
+    'dartPath',
+    'defaultLocale',
+    'doCSharp',
+    'doDart',
+    'enums',
+    'newTableLogic',
+    'supportChat',
+    'targetFramework',
+    'useLocalization',
+    'useStaticDatabaseNames',
+    // + ключи NsgLocalization
+    'jsonIndentationLength',
+    'serializeBooleanAsString',
+    'metadataNamespace',
+    // - ключи NsgLocalization
+  };
+
+  /// Сказать вслух про ключи, которых генератор не знает.
+  ///
+  /// **Зачем.** Незнакомый ключ раньше пропускался совершенно молча, и это
+  /// оборачивалось не пропущенной настройкой, а сломанным чужим
+  /// репозиторием: 23.08.2026 конфиг titan_lk был переведён на `supportChat`,
+  /// а генерация выполнена сборкой, где этого ключа ещё не было. Флаг
+  /// проигнорировали, обвязка чата поддержки в вывод не попала, и приложение
+  /// перестало компилироваться — притом что генерация отработала «успешно».
+  ///
+  /// **Почему предупреждение, а не отказ.** Отказ ломал бы конфиги, где
+  /// лишние ключи лежат осознанно — комментарии, поля под будущие версии,
+  /// настройки чужих инструментов. Расхождение версий надо показать, а не
+  /// наказать за него.
+  static void warnAboutUnknownProperties(Map<String, dynamic> parsedJson) {
+    final unknown =
+        parsedJson.keys.where((k) => !knownProperties.contains(k)).toList()
+          ..sort();
+    if (unknown.isEmpty) return;
+    print(
+      'ВНИМАНИЕ: в generation_config.json есть ключи, которых этот '
+      'генератор не знает: ${unknown.join(', ')}.',
+    );
+    print(
+      'Они НЕ применены. Если ключ должен работать — обновите генератор: '
+      'скорее всего, ваша сборка старее конфига.',
+    );
+  }
 
   factory NsgGenerator.fromJson(Map<String, dynamic> parsedJson) {
     String currentProperty = 'targetFramework';
     try {
+      warnAboutUnknownProperties(parsedJson);
       var targetFramework = parsedJson['targetFramework'] ?? 'net10.0';
       if (targetFramework.isEmpty) targetFramework = 'net10.0';
       var isDotNetCore = [
@@ -137,7 +193,7 @@ class NsgGenerator {
         'net7.0',
         'net8.0',
         'net9.0',
-        'net10.0'
+        'net10.0',
       ].contains(targetFramework);
       currentProperty = 'anonymousCodeAuth';
       // Вход по одноразовому непредсказуемому коду вместо учётной записи:
@@ -150,7 +206,8 @@ class NsgGenerator {
       var cSharpNamespace = parsedJson['cSharpNamespace'] ?? '';
       if (doCSharp && cSharpNamespace.toString().isEmpty) {
         throw Exception(
-            'Missing property $currentProperty while doCSharp == true');
+          'Missing property $currentProperty while doCSharp == true',
+        );
       }
       var enums = <NsgGenEnum>[];
       if (parsedJson.containsKey('enums')) {
@@ -165,25 +222,29 @@ class NsgGenerator {
               .toString();
       if (!NsgServerEmitKind.values.contains(serverEmitKind)) {
         throw Exception(
-            'serverEmitKind="$serverEmitKind" is not valid. '
-            'Allowed: ${NsgServerEmitKind.values.join(", ")}.');
+          'serverEmitKind="$serverEmitKind" is not valid. '
+          'Allowed: ${NsgServerEmitKind.values.join(", ")}.',
+        );
       }
       currentProperty = 'netcoreOutputPath';
-      var netcoreOutputPath =
-          (parsedJson['netcoreOutputPath'] ?? '').toString();
+      var netcoreOutputPath = (parsedJson['netcoreOutputPath'] ?? '')
+          .toString();
       // Ранняя статическая валидация: netcore требует netcoreOutputPath.
       // Семантическая валидация pg*-полей (`validateForNetcoreEmit`) идёт
       // позже — после загрузки controllers и dataItems.
       if (serverEmitKind == NsgServerEmitKind.netcore &&
           netcoreOutputPath.isEmpty) {
         throw Exception(
-            'netcoreOutputPath is required when serverEmitKind="netcore".');
+          'netcoreOutputPath is required when serverEmitKind="netcore".',
+        );
       }
       // Чат поддержки: разворачиваем флаг в обычные метаданные (тип + функция)
       // ДО разбора контроллеров, чтобы дальше работал штатный конвейер.
       currentProperty = 'supportChat';
       var supportChat = NsgGenSupportChat.fromJson(
-          parsedJson['supportChat'], parsedJson['applicationName'] ?? '');
+        parsedJson['supportChat'],
+        parsedJson['applicationName'] ?? '',
+      );
       supportChat.injectInto(parsedJson);
 
       currentProperty = 'controller';
@@ -192,32 +253,37 @@ class NsgGenerator {
           .toList();
       currentProperty = '';
       return NsgGenerator(
-          targetFramework: targetFramework,
-          isDotNetCore: isDotNetCore,
-          serverEmitKind: serverEmitKind,
-          netcoreOutputPath: netcoreOutputPath,
-          cSharpPath: parsedJson['cSharpPath'] ?? '',
-          cSharpNamespace: parsedJson['cSharpNamespace'] ?? '',
-          dartPath: parsedJson['dartPath'] ?? '',
-          doCSharp: doCSharp,
-          doDart: Misc.parseBoolOrTrue(parsedJson['doDart']),
-          applicationName: parsedJson['applicationName'] ?? 'application',
-          useLocalization: Misc.parseBool(parsedJson['useLocalization']),
-          defaultLocale: parsedJson['defaultLocale'] ?? 'ru',
-          newTableLogic: Misc.parseBool(parsedJson['newTableLogic']),
-          emitSchemaHash: Misc.parseBool(parsedJson['emitSchemaHash']),
-          netcoreGeneratedSubdir:
-              parsedJson['netcoreGeneratedSubdir']?.toString() ?? '',
-          anonymousCodeAuth: anonymousCodeAuth,
-          loginAuth: loginAuth,
-          useStaticDatabaseNames:
-              Misc.parseBool(parsedJson['useStaticDatabaseNames']),
-          controllers: controllers,
-          enums: enums)
-        ..supportChat = supportChat;
+        targetFramework: targetFramework,
+        isDotNetCore: isDotNetCore,
+        serverEmitKind: serverEmitKind,
+        netcoreOutputPath: netcoreOutputPath,
+        cSharpPath: parsedJson['cSharpPath'] ?? '',
+        cSharpNamespace: parsedJson['cSharpNamespace'] ?? '',
+        dartPath: parsedJson['dartPath'] ?? '',
+        doCSharp: doCSharp,
+        doDart: Misc.parseBoolOrTrue(parsedJson['doDart']),
+        writeLocalization: Misc.parseBoolOrTrue(
+          parsedJson['writeLocalization'],
+        ),
+        applicationName: parsedJson['applicationName'] ?? 'application',
+        useLocalization: Misc.parseBool(parsedJson['useLocalization']),
+        defaultLocale: parsedJson['defaultLocale'] ?? 'ru',
+        newTableLogic: Misc.parseBool(parsedJson['newTableLogic']),
+        emitSchemaHash: Misc.parseBool(parsedJson['emitSchemaHash']),
+        netcoreGeneratedSubdir:
+            parsedJson['netcoreGeneratedSubdir']?.toString() ?? '',
+        anonymousCodeAuth: anonymousCodeAuth,
+        loginAuth: loginAuth,
+        useStaticDatabaseNames: Misc.parseBool(
+          parsedJson['useStaticDatabaseNames'],
+        ),
+        controllers: controllers,
+        enums: enums,
+      )..supportChat = supportChat;
     } catch (e) {
       print(
-          '--- ERROR parsing${currentProperty.isEmpty ? '' : ' property \'$currentProperty\' from'} generation_config.json ---');
+        '--- ERROR parsing${currentProperty.isEmpty ? '' : ' property \'$currentProperty\' from'} generation_config.json ---',
+      );
       rethrow;
     }
   }
@@ -225,14 +291,58 @@ class NsgGenerator {
   String get genPathName => 'generated';
   String get dartPathGen => dartPath + '/' + genPathName;
 
+  /// Типы, которые экспортирует файл-модель контроллера
+  /// (`<className>_model.dart`) — по одному на метод контроллера.
+  Set<String> exportedTypesOf(NsgGenController controller) =>
+      controller.methods.map((it) => it.genDataItem.typeName).toSet();
+
+  /// Импорты файлов-моделей соседних контроллеров.
+  ///
+  /// Порождённый файл импортирует модель только своего контроллера, но
+  /// ссылаться может и на тип соседнего: операторская витрина держит
+  /// `Reference<UserItem>` и возвращает `GenericAnswer` — типы абонентского
+  /// контура. Без этих импортов такие имена в порождённом коде не
+  /// разрешаются, и клиент не собирается.
+  ///
+  /// Тип, экспортируемый собственной моделью, не импортируется повторно:
+  /// импорт двух моделей, экспортирующих одно имя, — неоднозначность.
+  List<String> crossControllerModelImports(
+    NsgGenController owner,
+    Iterable<String> usedTypes,
+  ) {
+    var ownTypes = exportedTypesOf(owner);
+    var enumNames = enums.map((it) => it.className).toSet();
+    var otherTypes = <NsgGenController, Set<String>>{};
+    for (var controller in controllers) {
+      if (identical(controller, owner)) continue;
+      otherTypes[controller] = exportedTypesOf(controller);
+    }
+    var fileNames = <String>{};
+    for (var typeName in usedTypes) {
+      if (typeName.isEmpty ||
+          ownTypes.contains(typeName) ||
+          enumNames.contains(typeName))
+        continue;
+      for (var entry in otherTypes.entries) {
+        if (!entry.value.contains(typeName)) continue;
+        fileNames.add(Misc.getDartUnderscoreName(entry.key.className));
+        break;
+      }
+    }
+    var sorted = fileNames.toList()..sort();
+    return sorted.map((it) => "import '../${it}_model.dart';").toList();
+  }
+
   Future writeCode(String path) async {
     jsonPath = path;
     // В режиме `netcore` текущий NsgFramework C#-эмит пропускается; шаблоны
     // нового EF Core эмита реализуются отдельно — см. TASK04 §2.1.4+.
     // Dart-эмит выполняется как обычно.
     if (serverEmitKind == NsgServerEmitKind.netcore && doCSharp) {
-      print('netcore: NsgFramework C# emit skipped. '
-          'EF Core templates not yet implemented (see TASK04 §2.1.4+).');
+      print(
+        'netcore: NsgFramework C# emit skipped. '
+        'EF Core templates not yet implemented (see TASK04 §2.1.4+).',
+      );
       doCSharp = false;
     }
     Directory dir;
@@ -279,7 +389,7 @@ class NsgGenerator {
       // а их методы получают контроллер с пустым ответом.
       final clientOnly = <String, NsgGenDataItem>{
         for (final e in dataItems.entries)
-          if (NsgGenNetcore.isClientOnly(e.value)) e.key: e.value
+          if (NsgGenNetcore.isClientOnly(e.value)) e.key: e.value,
       };
       dataItems.removeWhere((k, _) => clientOnly.containsKey(k));
       try {
@@ -297,14 +407,18 @@ class NsgGenerator {
       await _writeSchemaMeta();
     }
     await NsgGenEnum.generateEnums(this, enums);
-    await NsgGenLocalization.writeLocalization(this);
+    if (writeLocalization) {
+      await NsgGenLocalization.writeLocalization(this);
+    }
   }
 
   Future<void> _emitNetcore(Set<String> clientOnlyTypes) async {
     {
       // Состав схемы нужен до эмита: имена коллекций DbSet зависят от того,
       // есть ли в схеме тип, с которым совпадёт отбрасывание суффикса `Item`.
-      NsgGenNetcore.rememberTypeNames(dataItems.values.map((di) => di.typeName));
+      NsgGenNetcore.rememberTypeNames(
+        dataItems.values.map((di) => di.typeName),
+      );
       // Эмит EF Core: Models/ + Configurations/ в netcoreOutputPath.
       // csproj / Program.cs — раунд 3.Б TASK04.
       for (final di in dataItems.values) {
@@ -340,9 +454,17 @@ class NsgGenerator {
       for (final controller in controllers) {
         for (final method in controller.methods) {
           if (clientOnlyTypes.contains(method.genDataItem.typeName)) {
-            await NsgGenNetcore.emitClientOnlyController(this, controller, method);
+            await NsgGenNetcore.emitClientOnlyController(
+              this,
+              controller,
+              method,
+            );
           } else {
-            await NsgGenNetcore.emitControllerForMethod(this, controller, method);
+            await NsgGenNetcore.emitControllerForMethod(
+              this,
+              controller,
+              method,
+            );
           }
         }
         // Функции контроллера: <Ctrl>FunctionsController.cs (перезапись)
@@ -370,8 +492,7 @@ class NsgGenerator {
     for (final di in dataItems.values) {
       if (NsgGenNetcore.isClientOnly(di)) continue;
       if (di.pgTableName.isEmpty) {
-        errors.add(
-            'pgTableName is required on type "${di.typeName}".');
+        errors.add('pgTableName is required on type "${di.typeName}".');
       }
       for (final f in di.fields) {
         if (f.databaseName.isEmpty) continue;
@@ -379,14 +500,16 @@ class NsgGenerator {
         if (f.type.startsWith('List<')) continue;
         if (f.pgColumnName.isEmpty) {
           errors.add(
-              'pgColumnName is required on field "${f.name}" of "${di.typeName}" '
-              '(databaseName="${f.databaseName}").');
+            'pgColumnName is required on field "${f.name}" of "${di.typeName}" '
+            '(databaseName="${f.databaseName}").',
+          );
         }
       }
     }
     if (errors.isNotEmpty) {
       throw Exception(
-          'netcore validation failed:\n  - ${errors.join("\n  - ")}');
+        'netcore validation failed:\n  - ${errors.join("\n  - ")}',
+      );
     }
   }
 
@@ -400,7 +523,8 @@ class NsgGenerator {
       return;
     }
     final hash = await SchemaHash.compute(root);
-    final content = '// GENERATED BY nsg_generator. DO NOT EDIT.\n'
+    final content =
+        '// GENERATED BY nsg_generator. DO NOT EDIT.\n'
         '// Hash of GeneratorConfig (see TASK01.md for canonicalization rules).\n'
         '// Semantics: informational only — server logs mismatch but does not reject.\n'
         '\n'
