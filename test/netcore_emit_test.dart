@@ -1,0 +1,1773 @@
+import 'dart:io';
+
+import 'package:test/test.dart';
+
+import '../bin/nsgGenDataItem.dart';
+import '../bin/nsgGenDataItemField.dart';
+import '../bin/nsgGenerator.dart';
+import '../bin/nsgGenNetcore.dart';
+import '../bin/nsgGenNetcoreLogin.dart';
+import '../bin/nsgGenController.dart';
+import '../bin/nsgGenMethod.dart';
+import '../bin/nsgGenEnum.dart';
+
+// 2.1.1/2.1.2: проверка загрузки additive-полей pgTableName/pgColumnName
+// и валидации, что pgColumnName для Reference-полей не оканчивается на _id.
+// Сам валидатор netcore-режима (validateForNetcoreEmit) поднимается через
+// NsgGenerator.fromJson, что требует полного controller-набора и I/O —
+// для unit-тестов проверяем парсинг и поле-уровневую валидацию напрямую.
+
+void main() {
+  group('Вход по коду (anonymousCodeAuth)', () {
+    NsgGenerator gen({bool codeAuth = true}) => NsgGenerator(
+        targetFramework: 'net10.0',
+        isDotNetCore: true,
+        cSharpPath: '',
+        cSharpNamespace: 'TestServer',
+        dartPath: '',
+        applicationName: 'test',
+        useLocalization: false,
+        defaultLocale: 'ru',
+        newTableLogic: false,
+        anonymousCodeAuth: codeAuth);
+
+    test('код имеет алфавит без неразличимых знаков и запрет коротких длин', () {
+      final code = NsgGenNetcore.emitNsgAccessCode(gen());
+      expect(code, contains('23456789ABCDEFGHJKMNPQRSTUVWXYZ'));
+      expect(code, isNot(contains('"0O1IL"')));
+      expect(code, contains('FixedTimeEquals'));
+      expect(code, contains('length < 8'));
+    });
+
+    test('контроллер: выдача, обмен, ограничение частоты, одинаковый ответ на неизвестный код', () {
+      final c = NsgGenNetcore.emitNsgCodeAuthController(gen());
+      expect(c, contains('EnableRateLimiting("nsg-code-exchange")'));
+      expect(c, contains('unknown_code'));
+      expect(c, contains('Issue'));
+      expect(c, contains('Exchange'));
+    });
+
+    test('ограничение частоты попадает в регистрацию служб только при флаге', () {
+      final withAuth = NsgGenNetcore.emitGeneratedServicesExtensions(gen());
+      expect(withAuth, contains('nsg-code-exchange'));
+      final without =
+          NsgGenNetcore.emitGeneratedServicesExtensions(gen(codeAuth: false));
+      expect(without, isNot(contains('nsg-code-exchange')));
+    });
+  });
+
+  group('NsgGenMethod.fromJson — postMode', () {
+    Map<String, dynamic> base(String? mode) => {
+          'name': 'Trial',
+          'dataTypeFile': 'trial.json',
+          if (mode != null) 'postMode': mode,
+        };
+
+    test('по умолчанию upsert', () {
+      expect(NsgGenMethod.fromJson(base(null)).postMode, equals('upsert'));
+    });
+
+    test('insert-only распознаётся', () {
+      expect(NsgGenMethod.fromJson(base('insert-only')).postMode,
+          equals('insert-only'));
+    });
+
+    test('неизвестное значение отклоняется, а не игнорируется', () {
+      // Молча принятое значение означало бы, что тип, объявленный
+      // неизменяемым, продолжает перезаписываться.
+      expect(() => NsgGenMethod.fromJson(base('append')), throwsException);
+    });
+  });
+
+  group('NsgGenDataItemField.fromJson — pgColumnName parsing', () {
+    test('default empty pgColumnName when absent', () {
+      final f = NsgGenDataItemField.fromJson({
+        'name': 'Name',
+        'type': 'String',
+      });
+      expect(f.pgColumnName, isEmpty);
+    });
+
+    test('reads pgColumnName for scalar field', () {
+      final f = NsgGenDataItemField.fromJson({
+        'name': 'Name',
+        'databaseName': 'Наименование',
+        'pgColumnName': 'name',
+        'type': 'String',
+      });
+      expect(f.pgColumnName, equals('name'));
+    });
+
+    test('reads pgColumnName for Reference<T> field (semantic, no _id)', () {
+      final f = NsgGenDataItemField.fromJson({
+        'name': 'Photo',
+        'databaseName': 'Фото',
+        'pgColumnName': 'photo',
+        'type': 'Reference<FileItem>',
+      });
+      expect(f.pgColumnName, equals('photo'));
+    });
+
+    test('rejects pgColumnName ending with _id on Reference<T>', () {
+      expect(
+        () => NsgGenDataItemField.fromJson({
+          'name': 'Photo',
+          'databaseName': 'Фото',
+          'pgColumnName': 'photo_id',
+          'type': 'Reference<FileItem>',
+        }),
+        throwsA(predicate((e) =>
+            e is Exception && e.toString().contains('must NOT end with "_id"'))),
+      );
+    });
+
+    test('rejects pgColumnName ending with _id on UntypedReference<...>', () {
+      expect(
+        () => NsgGenDataItemField.fromJson({
+          'name': 'Owner',
+          'databaseName': 'Владелец',
+          'pgColumnName': 'owner_id',
+          'type': 'UntypedReference<UserItem, TeamItem>',
+        }),
+        throwsA(predicate((e) =>
+            e is Exception && e.toString().contains('must NOT end with "_id"'))),
+      );
+    });
+
+    test('allows _id-ending pgColumnName on non-Reference fields', () {
+      // Скаляр с именем, оканчивающимся на _id — допустимо (например, legacy).
+      final f = NsgGenDataItemField.fromJson({
+        'name': 'External',
+        'databaseName': 'Внешний',
+        'pgColumnName': 'external_id',
+        'type': 'String',
+      });
+      expect(f.pgColumnName, equals('external_id'));
+    });
+  });
+
+  group('NsgGenDataItem.fromJson — pgTableName parsing', () {
+    Map<String, dynamic> shopJson({String? pgTable}) => {
+          'typeName': 'ShopItem',
+          'databaseType': 'Магазины',
+          if (pgTable != null) 'pgTableName': pgTable,
+          'fields': [
+            {
+              'name': 'Id',
+              'databaseName': 'Идентификатор',
+              'pgColumnName': 'id',
+              'type': 'String',
+              'isPrimary': 'true',
+            }
+          ],
+        };
+
+    test('default empty pgTableName when absent', () {
+      final di = NsgGenDataItem.fromJson(shopJson());
+      expect(di.pgTableName, isEmpty);
+    });
+
+    test('reads pgTableName when present', () {
+      final di = NsgGenDataItem.fromJson(shopJson(pgTable: 'shops'));
+      expect(di.pgTableName, equals('shops'));
+    });
+
+    test('field-level pgColumnName propagates through nested parsing', () {
+      final di = NsgGenDataItem.fromJson(shopJson(pgTable: 'shops'));
+      expect(di.fields.single.pgColumnName, equals('id'));
+    });
+  });
+
+  group('NsgGenerator.fromJson — netcoreOutputPath / serverEmitKind', () {
+    // Минимальный валидный generator-конфиг с пустыми controller и enums.
+    Map<String, dynamic> baseConfig({
+      String? serverEmitKind,
+      String? netcoreOutputPath,
+    }) =>
+        {
+          'targetFramework': 'net10.0',
+          'cSharpNamespace': 'TestNs',
+          'cSharpPath': 'out_cs',
+          'dartPath': 'out_dart',
+          if (serverEmitKind != null) 'serverEmitKind': serverEmitKind,
+          if (netcoreOutputPath != null) 'netcoreOutputPath': netcoreOutputPath,
+          'controller': <dynamic>[],
+        };
+
+    test('default nsgframework mode: netcoreOutputPath optional, parses empty', () {
+      final g = NsgGenerator.fromJson(baseConfig());
+      expect(g.serverEmitKind, equals(NsgServerEmitKind.nsgframework));
+      expect(g.netcoreOutputPath, isEmpty);
+    });
+
+    test('nsgframework mode: netcoreOutputPath is read but not required', () {
+      // Если автор положил netcoreOutputPath в nsgframework-конфиг — не падаем,
+      // поле просто загружается. В nsgframework-эмите оно не используется.
+      final g = NsgGenerator.fromJson(
+          baseConfig(netcoreOutputPath: 'some/path'));
+      expect(g.netcoreOutputPath, equals('some/path'));
+    });
+
+    test('netcore mode: netcoreOutputPath required (missing → throw)', () {
+      expect(
+        () => NsgGenerator.fromJson(baseConfig(serverEmitKind: 'netcore')),
+        throwsA(predicate((e) =>
+            e is Exception &&
+            e.toString().contains('netcoreOutputPath is required'))),
+      );
+    });
+
+    test('netcore mode: netcoreOutputPath empty string → throw', () {
+      expect(
+        () => NsgGenerator.fromJson(
+            baseConfig(serverEmitKind: 'netcore', netcoreOutputPath: '')),
+        throwsA(predicate((e) =>
+            e is Exception &&
+            e.toString().contains('netcoreOutputPath is required'))),
+      );
+    });
+
+    test('netcore mode: netcoreOutputPath set → loads OK', () {
+      final g = NsgGenerator.fromJson(baseConfig(
+          serverEmitKind: 'netcore', netcoreOutputPath: 'out_netcore'));
+      expect(g.serverEmitKind, equals(NsgServerEmitKind.netcore));
+      expect(g.netcoreOutputPath, equals('out_netcore'));
+    });
+
+    test('unknown serverEmitKind → throw', () {
+      expect(
+        () => NsgGenerator.fromJson(baseConfig(serverEmitKind: 'rust')),
+        throwsA(predicate(
+            (e) => e is Exception && e.toString().contains('not valid'))),
+      );
+    });
+  });
+
+  group('NsgGenNetcore.emitModel / emitConfiguration (raund 2)', () {
+    // Минимальный NsgGenerator для эмита — без I/O контроллеров.
+    NsgGenerator makeGenerator() {
+      return NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'out_cs',
+        'dartPath': 'out_dart',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'out_netcore',
+        'controller': <dynamic>[],
+      });
+    }
+
+    // ShopItem из NsgDiscounts (после TASK03). PK + scalar + Reference.
+    NsgGenDataItem shopItem() => NsgGenDataItem.fromJson({
+          'typeName': 'ShopItem',
+          'databaseType': 'Магазины',
+          'pgTableName': 'shops',
+          'fields': [
+            {
+              'name': 'Id',
+              'databaseName': 'Идентификатор',
+              'pgColumnName': 'id',
+              'type': 'String',
+              'isPrimary': 'true',
+            },
+            {
+              'name': 'Name',
+              'databaseName': 'Наименование',
+              'pgColumnName': 'name',
+              'type': 'String',
+            },
+            {
+              'name': 'Photo',
+              'databaseName': 'Фото',
+              'pgColumnName': 'photo',
+              'type': 'Reference<FileItem>',
+            },
+          ],
+        });
+
+    test('ShopItem model: byte-identical to §2.0.8 reference', () {
+      final gen = makeGenerator();
+      final di = shopItem();
+      final actual = NsgGenNetcore.emitModel(gen, di);
+      const expected = '// <auto-generated>\n'
+          '//   This file is generated by nsg_generator. Manual edits will be overwritten.\n'
+          '// </auto-generated>\n'
+          '#nullable enable\n'
+          'using System;\n'
+          '\n'
+          'namespace NsgDiscountsServer.Models;\n'
+          '\n'
+          'public class ShopItem\n'
+          '{\n'
+          '    public Guid Id { get; set; }\n'
+          '\n'
+          '    public string? Name { get; set; }\n'
+          '\n'
+          '    public Guid? PhotoId { get; set; }\n'
+          '    public FileItem? Photo { get; set; }\n'
+          '}\n';
+      expect(actual, equals(expected));
+    });
+
+    test('ShopItem configuration: byte-identical to §2.0.8 reference', () {
+      final gen = makeGenerator();
+      final di = shopItem();
+      final actual = NsgGenNetcore.emitConfiguration(gen, di);
+      const expected = '// <auto-generated>\n'
+          '//   This file is generated by nsg_generator. Manual edits will be overwritten.\n'
+          '// </auto-generated>\n'
+          '#nullable enable\n'
+          'using Microsoft.EntityFrameworkCore;\n'
+          'using Microsoft.EntityFrameworkCore.Metadata.Builders;\n'
+          'using NsgDiscountsServer.Models;\n'
+          '\n'
+          'namespace NsgDiscountsServer.Configurations;\n'
+          '\n'
+          'public class ShopItemConfiguration : IEntityTypeConfiguration<ShopItem>\n'
+          '{\n'
+          '    public void Configure(EntityTypeBuilder<ShopItem> builder)\n'
+          '    {\n'
+          '        // Из pgTableName.\n'
+          '        builder.ToTable("shops");\n'
+          '\n'
+          '        builder.HasKey(x => x.Id);\n'
+          '        builder.Property(x => x.Id)\n'
+          '            .HasColumnName("id")                 // из pgColumnName\n'
+          '            .HasColumnType("uuid");\n'
+          '\n'
+          '        builder.Property(x => x.Name)\n'
+          '            .HasColumnName("name");              // из pgColumnName\n'
+          '\n'
+          '        // FK: pgColumnName = "photo" + автоматический "_id" суффикс\n'
+          '        // (симметрия с Dart-логикой nsgGenDataItemField.dart:76-85).\n'
+          '        builder.Property(x => x.PhotoId)\n'
+          '            .HasColumnName("photo_id")\n'
+          '            .HasColumnType("uuid");\n'
+          '\n'
+          '        builder.HasOne(x => x.Photo)\n'
+          '            .WithMany()\n'
+          '            .HasForeignKey(x => x.PhotoId)\n'
+          '            .OnDelete(DeleteBehavior.Restrict);\n'
+          '    }\n'
+          '}\n';
+      expect(actual, equals(expected));
+    });
+
+    test('поле без databaseName — вне базы: [NotMapped], без колонки (UserItem.IsCurrentUser)', () {
+      final gen = makeGenerator();
+      // Минимальный кейс: одно поле с databaseName, одно без.
+      final di = NsgGenDataItem.fromJson({
+        'typeName': 'UserItem',
+        'databaseType': 'Users',
+        'pgTableName': 'users',
+        'fields': [
+          {
+            'name': 'Id',
+            'databaseName': 'Id',
+            'pgColumnName': 'id',
+            'type': 'String',
+            'isPrimary': 'true',
+          },
+          {
+            'name': 'Name',
+            'databaseName': 'Name',
+            'pgColumnName': 'name',
+            'type': 'String',
+          },
+          {
+            // Поле БЕЗ databaseName — вычисляет сервер, в базе его нет.
+            'name': 'IsCurrentUser',
+            'type': 'bool',
+            'allowPost': false,
+            'writeOnServer': false,
+          },
+        ],
+      });
+      final model = NsgGenNetcore.emitModel(gen, di);
+      expect(model, contains('public Guid Id'));
+      expect(model, contains('public string? Name'));
+      expect(model, contains('[NotMapped]\n    public bool? IsCurrentUser { get; set; }'));
+
+      final config = NsgGenNetcore.emitConfiguration(gen, di);
+      expect(config, contains('builder.HasKey(x => x.Id);'));
+      expect(config, contains('HasColumnName("name")'));
+      expect(config, isNot(contains('IsCurrentUser')));
+    });
+
+    test('reference field emits FK Property + HasOne navigation pair', () {
+      final gen = makeGenerator();
+      final di = shopItem();
+      final config = NsgGenNetcore.emitConfiguration(gen, di);
+      expect(config, contains('builder.Property(x => x.PhotoId)'));
+      expect(config, contains('.HasColumnName("photo_id")'));
+      expect(config, contains('builder.HasOne(x => x.Photo)'));
+      expect(config, contains('.WithMany()'));
+      expect(config, contains('.HasForeignKey(x => x.PhotoId)'));
+      expect(config, contains('.OnDelete(DeleteBehavior.Restrict)'));
+    });
+  });
+
+  group('NsgGenNetcore — AppDbContext (раунд 3.А)', () {
+    test('dbSetName: Item-suffix → drop+s', () {
+      expect(NsgGenNetcore.dbSetName('ShopItem'), equals('Shops'));
+      expect(NsgGenNetcore.dbSetName('DiscountCardItem'),
+          equals('DiscountCards'));
+      expect(NsgGenNetcore.dbSetName('UserItem'), equals('Users'));
+      expect(NsgGenNetcore.dbSetName('FileItem'), equals('Files'));
+    });
+
+    test('dbSetName: no Item suffix → +s', () {
+      expect(NsgGenNetcore.dbSetName('BannerPlayerListTable'),
+          equals('BannerPlayerListTables'));
+      expect(NsgGenNetcore.dbSetName('Tournament'), equals('Tournaments'));
+    });
+
+    test('Designer: byte-identical to §2.0.8 reference (1 type)', () {
+      // Эталон §2.0.8 показывает Designer с одним ShopItem.
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'out_cs',
+        'dartPath': 'out_dart',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'out_netcore',
+        'controller': <dynamic>[],
+      });
+      // Заполняем dataItems напрямую — обходим I/O controllers/methods.
+      final shop = NsgGenDataItem.fromJson({
+        'typeName': 'ShopItem',
+        'databaseType': 'Магазины',
+        'pgTableName': 'shops',
+        'fields': [
+          {
+            'name': 'Id',
+            'databaseName': 'Идентификатор',
+            'pgColumnName': 'id',
+            'type': 'String',
+            'isPrimary': 'true',
+          },
+        ],
+      });
+      gen.dataItems['ShopItem'] = shop;
+
+      final actual = NsgGenNetcore.emitDbContextDesigner(gen);
+      const expected = '// <auto-generated>\n'
+          '//   This file is generated by nsg_generator. Manual edits will be overwritten.\n'
+          '// </auto-generated>\n'
+          '#nullable enable\n'
+          'using Microsoft.EntityFrameworkCore;\n'
+          'using NsgDiscountsServer.Configurations;\n'
+          'using NsgDiscountsServer.Models;\n'
+          '\n'
+          'namespace NsgDiscountsServer;\n'
+          '\n'
+          'public partial class AppDbContext : DbContext\n'
+          '{\n'
+          '    public DbSet<ShopItem> Shops => Set<ShopItem>();\n'
+          '\n'
+          '    partial void OnModelCreatingGenerated(ModelBuilder modelBuilder)\n'
+          '    {\n'
+          '        modelBuilder.ApplyConfiguration(new ShopItemConfiguration());\n'
+          '    }\n'
+          '}\n';
+      expect(actual, equals(expected));
+    });
+
+    test('AppDbContext.cs manual: byte-identical to §2.0.8 reference', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'out_cs',
+        'dartPath': 'out_dart',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'out_netcore',
+        'controller': <dynamic>[],
+      });
+      final actual = NsgGenNetcore.emitDbContextManual(gen);
+      const expected = 'using Microsoft.EntityFrameworkCore;\n'
+          '\n'
+          'namespace NsgDiscountsServer;\n'
+          '\n'
+          'public partial class AppDbContext : DbContext\n'
+          '{\n'
+          '    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }\n'
+          '\n'
+          '    protected override void OnModelCreating(ModelBuilder modelBuilder)\n'
+          '    {\n'
+          '        OnModelCreatingGenerated(modelBuilder);\n'
+          '        // место для ручных конфигураций / seed\n'
+          '    }\n'
+          '\n'
+          '    partial void OnModelCreatingGenerated(ModelBuilder modelBuilder);\n'
+          '}\n';
+      expect(actual, equals(expected));
+    });
+
+    test('Designer: DbSet emitted in alphabetic typeName order', () {
+      // Вход — insertion-order Z..A, ожидаем выход — A..Z.
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'X',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      Map<String, dynamic> mk(String name) => {
+            'typeName': name,
+            'databaseType': name,
+            'pgTableName': name.toLowerCase(),
+            'fields': [
+              {
+                'name': 'Id',
+                'databaseName': 'id',
+                'pgColumnName': 'id',
+                'type': 'String',
+                'isPrimary': 'true',
+              }
+            ],
+          };
+      gen.dataItems['ZItem'] = NsgGenDataItem.fromJson(mk('ZItem'));
+      gen.dataItems['AItem'] = NsgGenDataItem.fromJson(mk('AItem'));
+      gen.dataItems['MItem'] = NsgGenDataItem.fromJson(mk('MItem'));
+
+      final out = NsgGenNetcore.emitDbContextDesigner(gen);
+      final aIdx = out.indexOf('DbSet<AItem>');
+      final mIdx = out.indexOf('DbSet<MItem>');
+      final zIdx = out.indexOf('DbSet<ZItem>');
+      expect(aIdx, isNonNegative);
+      expect(aIdx < mIdx, isTrue);
+      expect(mIdx < zIdx, isTrue);
+      // То же для ApplyConfiguration.
+      final aCfg = out.indexOf('AItemConfiguration');
+      final mCfg = out.indexOf('MItemConfiguration');
+      final zCfg = out.indexOf('ZItemConfiguration');
+      expect(aCfg < mCfg, isTrue);
+      expect(mCfg < zCfg, isTrue);
+    });
+
+    test('csproj: byte-identical with parameterized versions', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      final actual = NsgGenNetcore.emitCsproj(gen);
+      final expected = '<Project Sdk="Microsoft.NET.Sdk.Web">\n'
+          '\n'
+          '  <PropertyGroup>\n'
+          '    <TargetFramework>${NsgGenNetcore.targetFramework}</TargetFramework>\n'
+          '    <Nullable>enable</Nullable>\n'
+          '    <RootNamespace>NsgDiscountsServer</RootNamespace>\n'
+          '  </PropertyGroup>\n'
+          '\n'
+          '  <ItemGroup>\n'
+          '    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="${NsgGenNetcore.efCoreVersion}" />\n'
+          '    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="${NsgGenNetcore.efCoreVersion}">\n'
+          '      <PrivateAssets>all</PrivateAssets>\n'
+          '      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>\n'
+          '    </PackageReference>\n'
+          '    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="${NsgGenNetcore.npgsqlVersion}" />\n'
+          '    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="${NsgGenNetcore.efCoreVersion}" />\n'
+          '    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.0" />\n'
+          '  </ItemGroup>\n'
+          '\n'
+          '</Project>\n';
+      expect(actual, equals(expected));
+    });
+
+    test('Program.cs: byte-identical (no implicit usings — explicit using-list)', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      final actual = NsgGenNetcore.emitProgramCs(gen);
+      const expected = 'using System;\n'
+          'using Microsoft.AspNetCore.Builder;\n'
+          'using Microsoft.EntityFrameworkCore;\n'
+          'using Microsoft.Extensions.Configuration;\n'
+          'using Microsoft.Extensions.DependencyInjection;\n'
+          'using Microsoft.Extensions.Hosting;\n'
+          'using NsgDiscountsServer;\n'
+          'using NsgDiscountsServer.Configurations;\n'
+          '\n'
+          '// TASK06 §6.5.a.2 — Windows Service hosting.\n'
+          '// AppContext.BaseDirectory: Service запускается с CWD = C:\\\\Windows\\\\System32,\n'
+          '// поэтому appsettings.json (relative path) не находится. Указываем явный root.\n'
+          '// UseWindowsService — no-op когда не Service-context (safe для dotnet run + тестов).\n'
+          'var builder = WebApplication.CreateBuilder(new WebApplicationOptions\n'
+          '{\n'
+          '    Args = args,\n'
+          '    ContentRootPath = AppContext.BaseDirectory,\n'
+          '});\n'
+          'builder.Host.UseWindowsService(opt => opt.ServiceName = "NsgDiscountsServer");\n'
+          '// TASK06 §6.3 + 6.4 + 6.5: auth-инфра (JWT + custom NsgRawToken handler) + Wire DI\n'
+          '// миграция + S1/S2 security блокеры (placeholder Secret reject + Production stub reject).\n'
+          'builder.Services.AddNsgGeneratedServices(builder.Configuration, builder.Environment);\n'
+          'builder.Services.AddDbContext<AppDbContext>(opt =>\n'
+          '    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));\n'
+          'var app = builder.Build();\n'
+          '// Режим `--migrate`: применить миграции и выйти, не начиная обслуживание.\n'
+          'if (await NsgDatabaseMigrator.RunMigrateCommandAsync(app.Services, args)) return;\n'
+          '// Сверка версии схемы с версией сборки. На отставшей схеме запись прошла бы\n'
+          '// успешно, но с потерей полей, поэтому обслуживание не начинается.\n'
+          'await NsgDatabaseMigrator.EnsureSchemaCurrentAsync(app.Services, builder.Configuration);\n'
+          'app.UseCors();  // TASK06 §6.6.1 — должен быть ПЕРЕД UseAuthentication.\n'
+          'app.UseAuthentication();\n'
+          'app.UseAuthorization();\n'
+          'app.MapControllers();\n'
+          'app.Run();\n'
+          '\n'
+          '// Required for WebApplicationFactory<Program> in integration tests.\n'
+          'public partial class Program { }\n';
+      expect(actual, equals(expected));
+    });
+
+    test('appsettings.json: dev-values with db name from cSharpNamespace (lowercased)', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      final actual = NsgGenNetcore.emitAppsettings(gen);
+      const expected = '{\n'
+          '  "Database": {\n'
+          '    "MigrateOnStartup": false\n'
+          '  },\n'
+          '  "ConnectionStrings": {\n'
+          '    "DefaultConnection": "Host=localhost;Port=5432;Database=nsgdiscountsserver;Username=postgres;Password=postgres"\n'
+          '  },\n'
+          '  "Jwt": {\n'
+          '    "Issuer": "nsgdiscountsserver-pilot",\n'
+          '    "Audience": "nsg-data-client",\n'
+          '    "Secret": "REPLACE-WITH-RANDOM-32+CHAR-SECRET-BEFORE-PROD-DEPLOY",\n'
+          '    "LifetimeDays": 30\n'
+          '  },\n'
+          '  "Logging": {\n'
+          '    "LogLevel": {\n'
+          '      "Default": "Information",\n'
+          '      "Microsoft.AspNetCore": "Warning"\n'
+          '    }\n'
+          '  },\n'
+          '  "AllowedHosts": "*"\n'
+          '}\n';
+      expect(actual, equals(expected));
+    });
+
+    test('launchSettings.json: single http profile on :5000', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      final actual = NsgGenNetcore.emitLaunchSettings(gen);
+      const expected = '{\n'
+          '  "\$schema": "http://json.schemastore.org/launchsettings.json",\n'
+          '  "profiles": {\n'
+          '    "http": {\n'
+          '      "commandName": "Project",\n'
+          '      "dotnetRunMessages": true,\n'
+          '      "launchBrowser": false,\n'
+          '      "applicationUrl": "http://localhost:5000",\n'
+          '      "environmentVariables": {\n'
+          '        "ASPNETCORE_ENVIRONMENT": "Development"\n'
+          '      }\n'
+          '    }\n'
+          '  }\n'
+          '}\n';
+      expect(actual, equals(expected));
+    });
+
+    test('emitHostingFiles: all 4 files are one-shot (not overwritten)', () async {
+      final outDir =
+          '${Directory.systemTemp.path}/nsg_hosting_oneshot_${DateTime.now().microsecondsSinceEpoch}';
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': outDir,
+        'controller': <dynamic>[],
+      });
+
+      try {
+        // 1) First emit — все 4 файла создаются.
+        await NsgGenNetcore.emitHostingFiles(gen);
+        final files = [
+          '$outDir/NsgDiscountsServer.csproj',
+          '$outDir/Program.cs',
+          '$outDir/appsettings.json',
+          '$outDir/Properties/launchSettings.json',
+        ];
+        for (final p in files) {
+          expect(await File(p).exists(), isTrue, reason: 'expected file: $p');
+        }
+
+        // 2) Симулируем ручную правку каждого.
+        const sentinel = '// MANUAL EDIT — MUST SURVIVE\n';
+        for (final p in files) {
+          await File(p).writeAsString(sentinel);
+        }
+
+        // 3) Re-emit без forceOverwrite — все 4 файла нетронуты.
+        await NsgGenNetcore.emitHostingFiles(gen);
+        for (final p in files) {
+          expect(await File(p).readAsString(), equals(sentinel),
+              reason: 'file should not be overwritten: $p');
+        }
+      } finally {
+        await Directory(outDir).delete(recursive: true);
+      }
+    });
+
+    test('cascade: table-row Owner FK gets OnDelete(Cascade); other FKs Restrict', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'FutbolistaServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      // BannerPlayerList с List<BannerPlayerListTable>.
+      final owner = NsgGenDataItem.fromJson({
+        'typeName': 'BannerPlayerList',
+        'databaseType': 'ЭлементБаннера',
+        'pgTableName': 'banner_player_lists',
+        'fields': [
+          { 'name': 'Id', 'databaseName': 'Id', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true' },
+          { 'name': 'Players', 'databaseName': 'Players', 'pgColumnName': 'players', 'type': 'List<BannerPlayerListTable>' },
+        ],
+      });
+      // BannerPlayerListTable — табчасть-row (databaseType ends with .Строка).
+      final row = NsgGenDataItem.fromJson({
+        'typeName': 'BannerPlayerListTable',
+        'databaseType': 'ЭлементБаннера.Строка',
+        'pgTableName': 'banner_player_list_rows',
+        'fields': [
+          { 'name': 'Id', 'databaseName': 'Id', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true' },
+          { 'name': 'Owner', 'databaseName': 'Owner', 'pgColumnName': 'owner', 'type': 'Reference<BannerPlayerList>' },
+          { 'name': 'Player', 'databaseName': 'Player', 'pgColumnName': 'player', 'type': 'Reference<PlayerItem>' },
+        ],
+      });
+      gen.dataItems['BannerPlayerList'] = owner;
+      gen.dataItems['BannerPlayerListTable'] = row;
+
+      // 1) computeTableRowOwners видит owner и имя его обратной коллекции.
+      final ownersMap = NsgGenNetcore.computeTableRowOwners(gen);
+      expect(ownersMap['BannerPlayerListTable']?.typeName,
+          equals('BannerPlayerList'));
+      expect(ownersMap['BannerPlayerListTable']?.collectionFieldName,
+          equals('Players'));
+
+      // 2) В Configuration табчасти-row: Owner FK → Cascade + WithMany(o => o.Players),
+      //    Player FK → Restrict + WithMany().
+      final config = NsgGenNetcore.emitConfiguration(gen, row);
+      final ownerHasOneIdx = config.indexOf('builder.HasOne(x => x.Owner)');
+      expect(ownerHasOneIdx, isNonNegative, reason: 'Owner HasOne expected');
+      final ownerSection = config.substring(ownerHasOneIdx);
+      expect(ownerSection, contains('.WithMany(o => o.Players)'),
+          reason: 'Owner FK must name back-collection or EF creates shadow FK');
+      expect(ownerSection, contains('.OnDelete(DeleteBehavior.Cascade)'),
+          reason: 'Owner FK should be Cascade');
+      final playerHasOneIdx = config.indexOf('builder.HasOne(x => x.Player)');
+      expect(playerHasOneIdx, isNonNegative, reason: 'Player HasOne expected');
+      final playerSection = config.substring(playerHasOneIdx);
+      expect(playerSection, contains('.WithMany()'),
+          reason: 'Non-owner Reference: WithMany without arg');
+      expect(playerSection, contains('.OnDelete(DeleteBehavior.Restrict)'),
+          reason: 'Player FK should be Restrict (non-owner Reference)');
+      // Block-комментарий про Cascade присутствует только в Owner-блоке.
+      expect(config, contains('// FK табчасть → owner: Cascade'));
+    });
+
+    test('FieldMap per-entity: wire ↔ C# round-trip for scalar+FK', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'DiscountServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      final shop = NsgGenDataItem.fromJson({
+        'typeName': 'ShopItem',
+        'databaseType': 'Магазины',
+        'pgTableName': 'shops',
+        'fields': [
+          { 'name': 'Id',    'databaseName': 'Id',   'pgColumnName': 'id',   'type': 'String', 'isPrimary': 'true' },
+          { 'name': 'Name',  'databaseName': 'Name', 'pgColumnName': 'name', 'type': 'String' },
+          { 'name': 'Photo', 'databaseName': 'Фото', 'pgColumnName': 'photo', 'type': 'Reference<FileItem>' },
+        ],
+      });
+      final out = NsgGenNetcore.emitFieldMap(gen, shop);
+      // Wire-имена — snake_case (dartName). FK имеет name=PhotoId после
+      // fromJson-мутации, dartName=photo_id (совпадает с SQL-колонкой).
+      expect(out, contains('"id"] = "Id"'));
+      expect(out, contains('"name"] = "Name"'));
+      expect(out, contains('"photoId"] = "PhotoId"'));
+      // И обратное направление.
+      expect(out, contains('"Id"] = "id"'));
+      expect(out, contains('"PhotoId"] = "photoId"'));
+      // Namespace и имя класса.
+      expect(out, contains('namespace DiscountServer.Configurations;'));
+      expect(out, contains('public static class ShopItemFieldMap'));
+    });
+
+    test('FieldMap: поле вне базы в обмене, List<> nav-коллекция — нет', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'X',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      final di = NsgGenDataItem.fromJson({
+        'typeName': 'BannerPlayerList',
+        'databaseType': 'X',
+        'pgTableName': 'banner_player_lists',
+        'fields': [
+          { 'name': 'Id', 'databaseName': 'Id', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true' },
+          { 'name': 'Players', 'databaseName': 'Players', 'type': 'List<BannerPlayerListTable>' },
+          { 'name': 'Internal', 'type': 'String' },  // no databaseName
+        ],
+      });
+      final out = NsgGenNetcore.emitFieldMap(gen, di);
+      expect(out, contains('"id"] = "Id"'));
+      expect(out, isNot(contains('Players')),  reason: 'List<> nav-collection has no wire-key in NsgCompare');
+      expect(out, contains('["internal"] = "Internal", // вне базы'),
+          reason: 'поле без databaseName идёт в обмене, колонки у него нет');
+    });
+
+    test('TypeNameMap: wire typeName ↔ pgTableName for all entities, sorted by typeName', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'DiscountServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      Map<String, dynamic> mk(String name, String table) => {
+            'typeName': name,
+            'databaseType': name,
+            'pgTableName': table,
+            'fields': [
+              { 'name': 'Id', 'databaseName': 'Id', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true' },
+            ],
+          };
+      gen.dataItems['ZItem'] = NsgGenDataItem.fromJson(mk('ZItem', 'zs'));
+      gen.dataItems['AItem'] = NsgGenDataItem.fromJson(mk('AItem', 'as_'));
+
+      final out = NsgGenNetcore.emitTypeNameMap(gen);
+      // Алфавитный порядок по typeName.
+      expect(out.indexOf('"AItem"'), lessThan(out.indexOf('"ZItem"')));
+      // WireToPgTable: typeName → pgTableName.
+      expect(out, contains('"AItem"] = "as_"'));
+      expect(out, contains('"ZItem"] = "zs"'));
+      // PgTableToWire: обратно.
+      expect(out, contains('"as_"] = "AItem"'));
+      expect(out, contains('"zs"] = "ZItem"'));
+      expect(out, contains('public static class TypeNameMap'));
+    });
+
+    test('TypeFieldMapRegistry: maps every entity to its FieldMap pair', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'DiscountServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      Map<String, dynamic> mk(String name, String table) => {
+            'typeName': name,
+            'databaseType': name,
+            'pgTableName': table,
+            'fields': [
+              { 'name': 'Id', 'databaseName': 'Id', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true' },
+            ],
+          };
+      gen.dataItems['ZItem'] = NsgGenDataItem.fromJson(mk('ZItem', 'zs'));
+      gen.dataItems['AItem'] = NsgGenDataItem.fromJson(mk('AItem', 'as_'));
+
+      final out = NsgGenNetcore.emitTypeFieldMapRegistry(gen);
+      expect(out, contains('public sealed record FieldMaps('));
+      expect(out, contains('public static class TypeFieldMapRegistry'));
+      expect(out, contains('[typeof(AItem)] = new FieldMaps(AItemFieldMap.WireToCSharp, AItemFieldMap.CSharpToWire),'));
+      expect(out, contains('[typeof(ZItem)] = new FieldMaps(ZItemFieldMap.WireToCSharp, ZItemFieldMap.CSharpToWire),'));
+      // Alphabetic.
+      expect(out.indexOf('AItem'), lessThan(out.indexOf('ZItem')));
+    });
+
+    test('Wire DTO emit: NsgCompareDto + NsgRequestDto have expected records', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'DiscountServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      final compareDto = NsgGenNetcore.emitNsgCompareDto(gen);
+      expect(compareDto, contains('namespace DiscountServer.Wire;'));
+      expect(compareDto, contains('public sealed record NsgCompareDto('));
+      expect(compareDto, contains('int LogicalOperator,'));
+      expect(compareDto, contains('NsgCompareParamDto[] ParamList);'));
+      expect(compareDto, contains('public sealed record NsgCompareParamDto('));
+      expect(compareDto, contains('string Name,'));
+      expect(compareDto, contains('int ComparisonOperator,'));
+      expect(compareDto, contains('JsonElement Value,'));
+      expect(compareDto, contains('NsgCompareDto? Nested = null);'));
+
+      final reqDto = NsgGenNetcore.emitNsgRequestDto(gen);
+      expect(reqDto, contains('public sealed record NsgRequestDto('));
+      expect(reqDto, contains('int? Top,'));
+      expect(reqDto, contains('NsgCompareDto? Compare,'));
+      expect(reqDto, contains('bool ShowDeletedObjects,'));
+    });
+
+    test('Wire deserializer/serializer emit: contains required parts', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'DiscountServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      final deserializer = NsgGenNetcore.emitNsgWireDeserializer(gen);
+      expect(deserializer, contains('public static class NsgWireDeserializer'));
+      expect(deserializer, contains('public static NsgRequestDto ParseRequest(JsonElement root)'));
+      expect(deserializer, contains('public static NsgCompareDto ParseCompare(JsonElement compareEl)'));
+      expect(deserializer, contains('private static int? TryGetInt('));
+      expect(deserializer, contains('JsonValueKind.String => int.TryParse'));
+
+      final serializer = NsgGenNetcore.emitNsgWireSerializer(gen);
+      expect(serializer, contains('public static class NsgWireSerializer'));
+      expect(serializer, contains('TypeFieldMapRegistry.ByType.TryGetValue'));
+      expect(serializer, contains('Enum e     => Convert.ToInt32(e)'));
+      expect(serializer, contains('Guid g     => g.ToString'));
+    });
+
+    test('cascade auto-detect: List<UntypedReference<X,...>> in owner is NOT treated as owner-attribute for X', () {
+      // Synthetic кейс: тип `Bag` имеет `List<UntypedReference<XRow, YRow>>`.
+      // XRow — isTableRow. Без defensive-фильтра auto-detect мог бы решить,
+      // что Bag — owner для XRow (потому что parser выставит referenceType=XRow).
+      // Это полиморфная коллекция, не owner-привязка. Owner НЕ должен найтись.
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'X',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      final xRow = NsgGenDataItem.fromJson({
+        'typeName': 'XRow',
+        'databaseType': 'X.Строка',
+        'pgTableName': 'x_rows',
+        'fields': [
+          { 'name': 'Id', 'databaseName': 'Id', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true' },
+        ],
+      });
+      final bag = NsgGenDataItem.fromJson({
+        'typeName': 'Bag',
+        'databaseType': 'Bag',
+        'pgTableName': 'bags',
+        'fields': [
+          { 'name': 'Id', 'databaseName': 'Id', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true' },
+          { 'name': 'Items', 'databaseName': 'Items', 'type': 'List<UntypedReference<XRow, YRow>>' },
+        ],
+      });
+      gen.dataItems['XRow'] = xRow;
+      gen.dataItems['Bag'] = bag;
+
+      final map = NsgGenNetcore.computeTableRowOwners(gen);
+      expect(map['XRow'], isNull,
+          reason: 'List<UntypedReference<...>> must not be treated as owner-attribute');
+    });
+
+    test('cascade: regular entity (not isTableRow) — all FK Restrict', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      // ShopItem из discount_server — обычная сущность, не isTableRow.
+      final shop = NsgGenDataItem.fromJson({
+        'typeName': 'ShopItem',
+        'databaseType': 'Магазины',
+        'pgTableName': 'shops',
+        'fields': [
+          { 'name': 'Id', 'databaseName': 'Id', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true' },
+          { 'name': 'Photo', 'databaseName': 'Фото', 'pgColumnName': 'photo', 'type': 'Reference<FileItem>' },
+        ],
+      });
+      gen.dataItems['ShopItem'] = shop;
+      // Нет isTableRow-сущностей → ownersMap пуст.
+      expect(NsgGenNetcore.computeTableRowOwners(gen), isEmpty);
+      final config = NsgGenNetcore.emitConfiguration(gen, shop);
+      expect(config, contains('.OnDelete(DeleteBehavior.Restrict)'));
+      expect(config, isNot(contains('Cascade')));
+    });
+
+    test('emitDbContext: AppDbContext.cs is one-shot (not overwritten)', () async {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'out_cs',
+        'dartPath': 'out_dart',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath':
+            '${Directory.systemTemp.path}/nsg_oneshot_test_${DateTime.now().microsecondsSinceEpoch}',
+        'controller': <dynamic>[],
+      });
+      final shop = NsgGenDataItem.fromJson({
+        'typeName': 'ShopItem',
+        'databaseType': 'Магазины',
+        'pgTableName': 'shops',
+        'fields': [
+          {
+            'name': 'Id',
+            'databaseName': 'Id',
+            'pgColumnName': 'id',
+            'type': 'String',
+            'isPrimary': 'true',
+          },
+        ],
+      });
+      gen.dataItems['ShopItem'] = shop;
+
+      try {
+        // 1) First emit — оба файла создаются.
+        await NsgGenNetcore.emitDbContext(gen);
+        final manualPath = '${gen.netcoreOutputPath}/AppDbContext.cs';
+        final manualFile = File(manualPath);
+        expect(await manualFile.exists(), isTrue);
+
+        // 2) Симулируем ручные правки.
+        const manualEdit = '// manual edit — must survive regeneration\n';
+        await manualFile.writeAsString(manualEdit);
+
+        // 3) Re-emit без forceOverwrite — manual не трогается.
+        await NsgGenNetcore.emitDbContext(gen);
+        expect(await manualFile.readAsString(), equals(manualEdit));
+
+        // 4) Designer всегда перезаписывается.
+        final designerPath =
+            '${gen.netcoreOutputPath}/AppDbContext.Designer.cs';
+        final designerContent = await File(designerPath).readAsString();
+        expect(designerContent, contains('public partial class AppDbContext'));
+        expect(designerContent, contains('DbSet<ShopItem>'));
+      } finally {
+        await Directory(gen.netcoreOutputPath).delete(recursive: true);
+      }
+    });
+
+    test('emitDatabaseMigrator: сверка обязательна, применение — по флагу', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'out_cs',
+        'dartPath': 'out_dart',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'out_cs',
+        'controller': <dynamic>[],
+      });
+      final src = NsgGenNetcore.emitDatabaseMigrator(gen);
+
+      // Сверка версии схемы не имеет выключателя: флаг влияет только на то,
+      // применять ли миграции, но не на то, проверять ли отставание.
+      expect(src, contains('GetPendingMigrationsAsync'));
+      expect(src, contains('Database:MigrateOnStartup'));
+      expect(src, contains('throw new InvalidOperationException'));
+
+      // Режим --migrate: применить и выйти, без обслуживания запросов.
+      expect(src, contains('"--migrate"'));
+      expect(src, contains('RunMigrateCommandAsync'));
+
+      // Отсутствующая база отличается от отставшей схемы: журнала миграций
+      // ещё нет, и читать его нельзя — иначе вместо внятного сообщения
+      // придёт ошибка драйвера.
+      expect(src, contains('CanConnectAsync'));
+
+      // EnsureCreated не порождается намеренно: он строит схему из модели без
+      // журнала миграций, и обновить такую базу потом можно только пересозданием.
+      expect(src, isNot(contains('EnsureCreated')));
+    });
+
+    test('emitProgramCs: сверка схемы вызывается до начала обслуживания', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'out_cs',
+        'dartPath': 'out_dart',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'out_cs',
+        'controller': <dynamic>[],
+      });
+      final program = NsgGenNetcore.emitProgramCs(gen);
+      final check = program.indexOf('EnsureSchemaCurrentAsync');
+      final migrateCmd = program.indexOf('RunMigrateCommandAsync');
+      final run = program.indexOf('app.Run()');
+      final mapControllers = program.indexOf('app.MapControllers()');
+      expect(check, greaterThan(-1));
+      expect(migrateCmd, greaterThan(-1));
+      // Порядок важен: проверка бесполезна, если маршруты уже отвечают.
+      expect(migrateCmd, lessThan(check));
+      expect(check, lessThan(mapControllers));
+      expect(check, lessThan(run));
+    });
+
+
+    test('ограничитель частоты разделён по адресу и читает настройку', () {
+      final gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'NsgDiscountsServer',
+        'cSharpPath': 'out_cs',
+        'dartPath': 'out_dart',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'out_cs',
+        'anonymousCodeAuth': true,
+        'controller': <dynamic>[],
+      });
+      final src = NsgGenNetcore.emitGeneratedServicesExtensions(gen);
+
+      // Окно обязано быть своим у каждого адреса. Неразделённое окно — одно на
+      // всех: один клиент исчерпывает его для остальных, и ограничитель из
+      // защиты превращается в способ отказать в обслуживании всей аудитории.
+      expect(src, contains('RateLimitPartition.GetFixedWindowLimiter'));
+      expect(src, contains('RemoteIpAddress'));
+      expect(src, isNot(contains('AddFixedWindowLimiter')));
+
+      // Предел берётся из настройки, а не зашивается. Настройка, которая
+      // выглядит настраиваемой и ни на что не влияет, хуже отсутствующей.
+      expect(src, contains('PermitLimit = nsgCodeAuthOptions.ExchangeAttemptsPerMinute'));
+      expect(src, isNot(contains('PermitLimit = 10')));
+
+      // Отказ — 429, а не умолчательный 503.
+      expect(src, contains('StatusCodes.Status429TooManyRequests'));
+    });
+
+  });
+
+  group('Табличные части', () {
+    late NsgGenerator gen;
+    late NsgGenDataItem owner;
+    late NsgGenDataItem row;
+    late NsgGenDataItem plain;
+    late NsgGenController controller;
+
+    NsgGenMethod methodFor(NsgGenDataItem di) {
+      final m = NsgGenMethod.fromJson(
+          {'name': di.typeName, 'dataTypeFile': 'x.json', 'allowPost': 'true', 'allowDelete': 'true'});
+      m.genDataItem = di;
+      return m;
+    }
+
+    setUp(() {
+      gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'Tt',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      owner = NsgGenDataItem.fromJson({
+        'typeName': 'TaskDoc',
+        'databaseType': 'Задача',
+        'pgTableName': 'tasks',
+        'fields': [
+          {'name': 'Id', 'databaseName': 'Идентификатор', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true'},
+          {'name': 'Name', 'databaseName': 'Наименование', 'pgColumnName': 'name', 'type': 'String'},
+          {'name': 'CheckList', 'databaseName': 'ЧекЛист', 'type': 'List<TaskDocCheckListTable>'},
+        ],
+      });
+      row = NsgGenDataItem.fromJson({
+        'typeName': 'TaskDocCheckListTable',
+        'databaseType': 'ДокументыЗадачаЧекЛист.Строка',
+        'pgTableName': 'task_check_list',
+        'fields': [
+          {'name': 'Id', 'databaseName': 'Идентификатор', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true'},
+          {'name': 'OwnerId', 'databaseName': 'Владелец', 'pgColumnName': 'owner', 'type': 'Reference', 'referenceType': 'TaskDoc'},
+          {'name': 'Text', 'databaseName': 'Сделать', 'pgColumnName': 'text', 'type': 'String'},
+        ],
+      });
+      plain = NsgGenDataItem.fromJson({
+        'typeName': 'ProjectItem',
+        'databaseType': 'Проекты',
+        'pgTableName': 'projects',
+        'fields': [
+          {'name': 'Id', 'databaseName': 'Идентификатор', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true'},
+        ],
+      });
+      gen.dataItems
+        ..['TaskDoc'] = owner
+        ..['TaskDocCheckListTable'] = row
+        ..['ProjectItem'] = plain;
+      controller = NsgGenController.fromJson(
+          {'apiPrefix': 'Data', 'className': 'DataController'});
+    });
+
+    test('строка хранит место в таблице, вне обмена', () {
+      expect(NsgGenNetcore.emitModel(gen, row),
+          contains('public int RowNumber { get; set; }'));
+      expect(NsgGenNetcore.emitConfiguration(gen, row),
+          contains('.HasColumnName("row_number")'));
+      expect(NsgGenNetcore.emitFieldMap(gen, row), isNot(contains('RowNumber')),
+          reason: 'порядок передаётся порядком массива, а не полем');
+      expect(NsgGenNetcore.emitModel(gen, owner), isNot(contains('RowNumber')));
+      expect(NsgGenNetcore.emitModel(gen, plain), isNot(contains('RowNumber')));
+    });
+
+    test('поле описания с именем RowNumber отклоняется', () {
+      row.fields.add(NsgGenDataItemField.fromJson(
+          {'name': 'RowNumber', 'databaseName': 'НомерСтроки', 'pgColumnName': 'n', 'type': 'int'}));
+      expect(() => NsgGenNetcore.emitModel(gen, row), throwsException);
+    });
+
+    test('реестр называет часть, тип строки и ссылку на владельца', () {
+      final src = NsgGenNetcore.emitTableParts(gen);
+      expect(src, contains('[typeof(TaskDoc)] = new NsgTablePart[]'));
+      expect(src, contains(
+          'new("checkList", "CheckList", typeof(TaskDocCheckListTable), "OwnerId"),'));
+      expect(src, isNot(contains('[typeof(ProjectItem)]')));
+      // Семантика записи прежнего сервера.
+      expect(src, contains('if (!newTableLogic)'));
+      expect(src, contains('DeletedDocState = 2'));
+      expect(src, contains('прислана дважды'));
+    });
+
+    test('контроллер владельца читает и пишет строки через NsgTableParts', () {
+      final src = NsgGenNetcore.emitControllerGenerated(
+          gen, controller, methodFor(owner), 'Tasks');
+      expect(src, contains('NsgTableParts.SplitReadReferences(typeof(TaskDoc), NsgReadHooks.TablePartReferences<TaskDoc>(req.ReadReferences))'));
+      expect(src, contains('NsgReadReferencesApplier.Apply(query, references, _db.Model)'));
+      expect(src, contains('NsgTableParts.Include(query, tables)'));
+      expect(src, contains('NsgTableParts.IncludeAll(_db.Tasks).FirstOrDefaultAsync(x => x.Id == fresh.Id)'));
+      expect('NsgTableParts.Apply(_db, '.allMatches(src).length, equals(2),
+          reason: 'и для нового, и для существующего владельца');
+      expect(src, contains('NsgTableParts.ToWireDict(x, tables)'));
+    });
+
+    test('контроллер типа без табличных частей не меняется', () {
+      final src = NsgGenNetcore.emitControllerGenerated(
+          gen, controller, methodFor(plain), 'Projects');
+      expect(src, isNot(contains('NsgTableParts')));
+      expect(src, contains('await _db.Projects.FindAsync(fresh.Id)'));
+      expect(src, contains('NsgReadReferencesApplier.Apply(query, NsgReadHooks.TablePartReferences<'));
+    });
+  });
+  group('Функции контроллера', () {
+    late NsgGenerator gen;
+
+    NsgGenController ctrl(List<Map<String, dynamic>> functions,
+        {List<String> methods = const []}) {
+      final c = NsgGenController.fromJson({
+        'apiPrefix': 'Data',
+        'className': 'DataController',
+        'functions': functions,
+      });
+      for (final m in methods) {
+        final method = NsgGenMethod.fromJson({'name': m, 'dataTypeFile': 'x.json'});
+        method.genDataItem = gen.dataItems[m]!;
+        c.methods.add(method);
+      }
+      return c;
+    }
+
+    setUp(() {
+      gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'Tt',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      gen.dataItems['ProjectItem'] = NsgGenDataItem.fromJson({
+        'typeName': 'ProjectItem',
+        'databaseType': 'Проекты',
+        'pgTableName': 'projects',
+        'fields': [
+          {'name': 'Id', 'databaseName': 'Идентификатор', 'pgColumnName': 'id', 'type': 'String', 'isPrimary': 'true'},
+        ],
+      });
+      gen.enums.add(NsgGenEnum(
+          className: 'TaskPriority', databaseType: '', description: '', dataTypeFile: 'p.json', useLocalization: false));
+    });
+
+    test('псевдонимы моделей: имя модели сильнее одноимённого типа .NET', () {
+      final src = NsgGenNetcore.emitModelAliases(gen);
+      expect(src, contains('global using ProjectItem = Tt.Models.ProjectItem;'));
+      expect(src, contains('global using TaskPriority = Tt.Models.TaskPriority;'));
+    });
+
+    test('класс функций отдельно от контроллеров типов', () {
+      expect(NsgGenNetcore.functionsClassName(ctrl([])), 'DataFunctionsController');
+    });
+
+    test('параметры разбираются по типам, обработчик — partial', () {
+      final src = NsgGenNetcore.emitFunctionsGenerated(gen, ctrl([
+        {
+          'name': 'RemoveUser',
+          'type': 'bool',
+          'authorize': 'user',
+          'params': [
+            {'name': 'projectId', 'type': 'String'},
+            {'name': 'when', 'type': 'DateTime'},
+            {'name': 'prio', 'type': 'Enum<TaskPriority>'},
+            {'name': 'project', 'type': 'Reference<ProjectItem>'},
+            {'name': 'ids', 'type': 'List<String>'},
+            {'name': 'params', 'type': 'int'},
+          ],
+        }
+      ]));
+      expect(src, contains('[Route("Data")]'));
+      expect(src, contains('[Authorize(Roles = UserRoles.User)]'));
+      expect(src, contains('[HttpPost("RemoveUser")]'));
+      expect(src, isNot(contains('[HttpGet("RemoveUser")]')));
+      expect(src, contains('projectId = args.Get<string>("projectId");'));
+      expect(src, contains('when = args.Get<DateTime>("when");'));
+      expect(src, contains('prio = args.Get<TaskPriority>("prio");'));
+      expect(src, contains('project = args.GetObject<ProjectItem>("project", _db.Model);'));
+      expect(src, contains('ids = args.GetList<string>("ids");'));
+      expect(src, contains('@params = args.Get<int>("params");'),
+          reason: 'ключевое слово C# экранируется');
+      expect(src, contains('return Ok(NsgFunctionResults.Value(result));'));
+      expect(src, contains(
+          'private partial Task<bool> OnRemoveUser(NsgFunctionArgs args, string projectId, DateTime when, TaskPriority prio, ProjectItem project, List<string> ids, int @params);'));
+    });
+
+    test('вид ответа зависит от типа результата', () {
+      final src = NsgGenNetcore.emitFunctionsGenerated(gen, ctrl([
+        {'name': 'One', 'type': 'Reference<ProjectItem>'},
+        {'name': 'Many', 'type': 'List<ProjectItem>'},
+        {'name': 'Statuses', 'type': 'List<TaskPriority>'},
+        {'name': 'Report', 'type': 'Binary', 'apiType': 'get, post'},
+      ]));
+      expect(src, contains('Task<ProjectItem?> OnOne('));
+      expect(src, contains('Ok(NsgFunctionResults.Object(result))'));
+      expect(src, contains('Task<IEnumerable<ProjectItem>> OnMany('));
+      expect(src, contains('Ok(NsgFunctionResults.Objects(result))'));
+      expect(src, contains('Task<IEnumerable<TaskPriority>> OnStatuses('));
+      expect(src, contains('[HttpGet("Report")]'));
+      expect(src, contains('Task<IActionResult> OnReport(NsgFunctionArgs args)'));
+      expect(src, contains('return result;'));
+    });
+
+    test('GetStream обслуживает хранилище, своего обработчика нет', () {
+      final c = ctrl([
+        {'name': 'GetStream', 'type': 'Binary', 'apiType': 'get, post', 'params': [{'name': 'x', 'type': 'Reference<Nope>'}]},
+      ]);
+      final src = NsgGenNetcore.emitFunctionsGenerated(gen, c);
+      expect(src, contains('[HttpGet("GetStream")]'));
+      expect(src, contains('GetRequiredService<NsgFileStore>().ServeAsync(path)'));
+      expect(src, isNot(contains('OnGetStream')));
+      expect(NsgGenNetcore.emitFunctionsCustom(gen, c), isNot(contains('OnGetStream')));
+    });
+
+    test('заготовка обработчиков совпадает с объявлениями', () {
+      final c = ctrl([
+        {'name': 'Ping', 'type': 'String', 'params': [{'name': 'x', 'type': 'double'}]},
+      ]);
+      final custom = NsgGenNetcore.emitFunctionsCustom(gen, c);
+      expect(custom, contains('public partial class DataFunctionsController'));
+      expect(custom, contains('private partial Task<string> OnPing(NsgFunctionArgs args, double x)'));
+      expect(custom, contains('throw new NotImplementedException("Ping")'));
+    });
+
+    test('маршрут функции не должен совпасть с типом данных', () {
+      expect(
+          () => NsgGenNetcore.emitFunctionsGenerated(gen,
+              ctrl([{'name': 'ProjectItem', 'type': 'bool'}], methods: ['ProjectItem'])),
+          throwsA(predicate((e) => e.toString().contains('уже занят'))));
+    });
+
+    test('неподдержанный тип — отказ генерации с именем функции', () {
+      expect(
+          () => NsgGenNetcore.emitFunctionsGenerated(gen, ctrl([
+                {'name': 'Bad', 'type': 'bool', 'params': [{'name': 'p', 'type': 'Reference<Nope>'}]},
+              ])),
+          throwsA(predicate((e) => e.toString().contains('«Bad»'))));
+    });
+  });
+  group('Вход по логину и файлы', () {
+    NsgGenerator make({bool login = true, bool getStream = true}) {
+      final g = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'Tt',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'applicationName': 'TaskTuner',
+        'loginAuth': login ? 'true' : 'false',
+        'controller': <dynamic>[
+          {
+            'apiPrefix': 'Data',
+            'className': 'DataController',
+            'functions': [
+              if (getStream) {'name': 'GetStream', 'type': 'Binary', 'apiType': 'get, post'},
+            ],
+          }
+        ],
+      });
+      return g;
+    }
+
+    test('флаг loginAuth читается из конфигурации', () {
+      expect(make().loginAuth, isTrue);
+      expect(make(login: false).loginAuth, isFalse);
+    });
+
+    test('службы: сессии вместо заглушки, канал отправки обязателен вне Development', () {
+      final src = NsgGenNetcore.emitGeneratedServicesExtensions(make());
+      expect(src, contains('AddScheme<NsgSessionTokenOptions, NsgSessionTokenHandler>'));
+      expect(src, isNot(contains('NsgRawTokenAuthHandler')));
+      expect(src, isNot(contains('Stub PhoneLogin')),
+          reason: 'при настоящем входе запрет заглушки в Production не нужен');
+      expect(src, contains('вход по почте включён (EmailLogin), а Auth:Smtp не настроен'));
+      expect(src, contains('вход по телефону включён (PhoneLogin), а Auth:Sms не настроен'));
+      expect(src, contains('выключены и PhoneLogin, и EmailLogin'));
+      expect(src, contains('o.AddPolicy("nsg-login"'));
+      expect(src, isNot(contains('nsg-code-exchange')));
+      expect(src, contains('services.AddSingleton<NsgFileStore>()'));
+    });
+
+    test('виды входа: PhoneLogin/EmailLogin в настройках, выключенный отклоняется до кода и пароля', () {
+      final options = NsgGenNetcoreLogin.emitOptions(make());
+      expect(options, contains('public bool PhoneLogin { get; set; } = true;'));
+      expect(options, contains('public bool EmailLogin { get; set; } = true;'));
+      final service = NsgGenNetcoreLogin.emitService(make());
+      final guard = service.indexOf('if (!_options.Allows(login.IsEmail))');
+      expect(guard, greaterThan(0));
+      expect(guard, lessThan(service.indexOf('if (!login.Register)')),
+          reason: 'проверка до входа по паролю и до отправки кода');
+    });
+
+    test('без loginAuth службы прежние', () {
+      final src = NsgGenNetcore.emitGeneratedServicesExtensions(make(login: false, getStream: false));
+      expect(src, contains('NsgRawTokenAuthHandler'));
+      expect(src, contains('Stub PhoneLogin'));
+      expect(src, isNot(contains('NsgAuthService')));
+      expect(src, isNot(contains('AddRateLimiter')));
+      expect(src, isNot(contains('NsgFileStore')));
+    });
+
+    test('контекст: таблицы входа', () {
+      final src = NsgGenNetcore.emitDbContextDesigner(make());
+      expect(src, contains('public DbSet<NsgAuthSession> NsgAuthSessions'));
+      expect(src, contains('NsgAuthModel.Configure(modelBuilder);'));
+      expect(NsgGenNetcore.emitDbContextDesigner(make(login: false)), isNot(contains('NsgAuth')));
+    });
+
+    test('Program.cs включает ограничитель частоты', () {
+      expect(NsgGenNetcore.emitProgramCs(make()), contains('app.UseRateLimiter();'));
+      expect(NsgGenNetcore.emitProgramCs(make(login: false)), isNot(contains('UseRateLimiter')));
+    });
+
+    test('appsettings и csproj: Auth, Files, Minio', () {
+      final settings = NsgGenNetcore.emitAppsettings(make());
+      expect(settings, contains('"Auth": {'));
+      expect(settings, contains('"AppName": "TaskTuner"'));
+      expect(settings, contains('"Prefix": "tt"'));
+      expect(NsgGenNetcore.emitCsproj(make()), contains('<PackageReference Include="Minio" Version="7.0.0" />'));
+      expect(NsgGenNetcore.emitCsproj(make(getStream: false)), isNot(contains('Minio')));
+    });
+
+    test('вход: контракт клиента и защита кода', () {
+      final g = make();
+      final ctrl = NsgGenNetcoreLogin.emitController(g);
+      for (final route in ['AnonymousLogin', 'CheckToken', 'PhoneLoginRequestSMS', 'PhoneLoginRequestEmail', 'PhoneLogin', 'Logout', 'CheckVersion', 'SetLocale']) {
+        expect(ctrl, contains('("$route")'), reason: route);
+      }
+      final service = NsgGenNetcoreLogin.emitService(g);
+      expect(service, contains('JsonConverter(typeof(NsgFractionalDoubleConverter))'),
+          reason: 'клиент читает секунды как double');
+      expect(service, contains('FindUserAsync(code.Login, code.IsEmail, ct)'),
+          reason: 'вход — на адрес, куда ушёл код, а не на присланный при вводе');
+      expect(service, contains('Rfc2898DeriveBytes.Pbkdf2'));
+      expect(service, isNot(contains('999999')), reason: 'отладочного входа в коде нет');
+    });
+
+    test('хранилище: ключ не выходит за префикс, выдача — подписанной ссылкой', () {
+      final store = NsgGenNetcoreLogin.emitFileStore(make());
+      expect(store, contains('s == ".."'));
+      expect(store, contains('PresignedGetObjectAsync'));
+      expect(store, contains('new RedirectResult(url, permanent: false)'));
+      expect(store, isNot(contains('PhysicalFile')), reason: 'файлы с диска сервера не отдаются');
+    });
+
+    test('хранилище: адрес со схемой, как в Infisical, задаёт SSL', () {
+      final store = NsgGenNetcoreLogin.emitFileStore(make());
+      expect(store, contains('useSsl = uri.Scheme == "https"'));
+      expect(store, contains('.WithEndpoint(endpoint)'));
+      expect(store, contains('.WithSSL(useSsl)'));
+    });
+  });
+
+  group('Схема TaskTuner: поля вне базы, клиентские типы, ссылки строки', () {
+    late NsgGenerator gen;
+
+    Map<String, dynamic> field(String name, String type,
+            {String db = 'Поле', String pg = '', String ref = ''}) =>
+        {
+          'name': name,
+          'type': type,
+          if (db.isNotEmpty) 'databaseName': db,
+          if (pg.isNotEmpty) 'pgColumnName': pg,
+          if (ref.isNotEmpty) 'referenceType': ref,
+        };
+
+    setUp(() {
+      gen = NsgGenerator.fromJson({
+        'targetFramework': 'net10.0',
+        'cSharpNamespace': 'Tt',
+        'cSharpPath': 'a',
+        'dartPath': 'b',
+        'serverEmitKind': 'netcore',
+        'netcoreOutputPath': 'n',
+        'controller': <dynamic>[],
+      });
+      gen.dataItems['ProjectItem'] = NsgGenDataItem.fromJson({
+        'typeName': 'ProjectItem',
+        'databaseType': 'Проекты',
+        'pgTableName': 'project_item',
+        'fields': [
+          {...field('Id', 'String', pg: 'id'), 'isPrimary': 'true'},
+          field('PhotoPath', 'String', pg: 'photo_path'),
+          field('PhotoFile', 'Binary', db: ''),
+          field('NumberOfTasksOpen', 'int', db: ''),
+        ],
+      });
+      gen.dataItems['TaskStatus'] = NsgGenDataItem.fromJson({
+        'typeName': 'TaskStatus',
+        'databaseType': 'Статусы',
+        'pgTableName': 'task_status',
+        'fields': [
+          {...field('Id', 'String', pg: 'id'), 'isPrimary': 'true'},
+          field('TransitionTable', 'List<Reference>', ref: 'TaskStatusTransitionTable'),
+        ],
+      });
+      gen.dataItems['TaskStatusTransitionTable'] = NsgGenDataItem.fromJson({
+        'typeName': 'TaskStatusTransitionTable',
+        'databaseType': 'Статусы.ТаблицаПереходы.Строка',
+        'pgTableName': 'task_status_transition_table',
+        'fields': [
+          {...field('Id', 'String', pg: 'id'), 'isPrimary': 'true'},
+          field('Status', 'Reference', pg: 'status', ref: 'TaskStatus'),
+          field('OwnerId', 'Reference', pg: 'owner', ref: 'TaskStatus'),
+        ],
+      });
+      gen.dataItems['ServiceObject'] = NsgGenDataItem.fromJson({
+        'typeName': 'ServiceObject',
+        'fields': [
+          {...field('Id', 'String', db: ''), 'isPrimary': 'true'},
+        ],
+      });
+    });
+
+    test('поле вне базы: [NotMapped] в модели, в обмене в обе стороны', () {
+      final di = gen.dataItems['ProjectItem']!;
+      final model = NsgGenNetcore.emitModel(gen, di);
+      expect(model, contains('using System.ComponentModel.DataAnnotations.Schema;'));
+      expect(model, contains('[NotMapped]\n    public byte[]? PhotoFile { get; set; }'));
+      expect(model, contains('[NotMapped]\n    public int? NumberOfTasksOpen { get; set; }'));
+      final map = NsgGenNetcore.emitFieldMap(gen, di);
+      expect(map, contains('["photoFile"] = "PhotoFile", // вне базы'));
+      expect(map, contains('["PhotoFile"] = "photoFile", // вне базы'));
+      final config = NsgGenNetcore.emitConfiguration(gen, di);
+      expect(config, isNot(contains('PhotoFile')), reason: 'колонки в базе нет');
+      expect(NsgGenNetcore.hasTransientFields(di), isTrue);
+    });
+
+    test('ссылка вне базы — Guid? без навигации (inviteProjectId)', () {
+      gen.dataItems['UserAccount'] = NsgGenDataItem.fromJson({
+        'typeName': 'UserAccount',
+        'databaseType': 'Аккаунты',
+        'pgTableName': 'user_account',
+        'fields': [
+          {...field('Id', 'String', pg: 'id'), 'isPrimary': 'true'},
+          field('InviteProjectId', 'Reference', db: '', ref: 'ProjectItem'),
+        ],
+      });
+      final di = gen.dataItems['UserAccount']!;
+      final model = NsgGenNetcore.emitModel(gen, di);
+      expect(model, contains('[NotMapped]\n    public Guid? InviteProjectId { get; set; }'));
+      expect(model, isNot(contains('public ProjectItem? InviteProject')));
+      expect(NsgGenNetcore.emitFieldMap(gen, di), contains('["inviteProjectId"] = "InviteProjectId", // вне базы'));
+    });
+
+    test('чтение: видимость до фильтра клиента и Top, сортировка вне базы — в памяти', () {
+      final controller = NsgGenController.fromJson(
+          {'apiPrefix': 'Data', 'className': 'DataController'});
+      final method = NsgGenMethod.fromJson(
+          {'name': 'Project', 'authorize': 'user', 'allowPost': 'true', 'dataTypeFile': 'x.json'})
+        ..genDataItem = gen.dataItems['ProjectItem']!;
+      final src = NsgGenNetcore.emitControllerGenerated(gen, controller, method, 'Projects');
+      final filter = src.indexOf('NsgReadHooks.Filter(HttpContext, req.Parameters, query)');
+      final compare = src.indexOf('query = NsgCompareTranslator.Apply');
+      final custom = src.indexOf('CustomizeReadQuery(ref query);');
+      expect(filter, greaterThan(0));
+      expect(filter, lessThan(compare), reason: 'видимость — до фильтра клиента');
+      expect(custom, lessThan(compare));
+      expect(src, contains('var sortInMemory = NsgReadHooks.SortsByTransient<ProjectItem>(req.Sorting);'));
+      expect(src, contains('if (!sortInMemory && req.Top is int top && top > 0)'));
+      expect(src, contains('NsgReadHooks.SortInMemory(items, req.Sorting);'));
+      expect(src, contains('await NsgReadHooks.AfterReadAsync(HttpContext, req.Parameters, items);'));
+      expect(src, contains('catch (NsgRejectedException rejected) { return BadRequest(new { error = "rejected", message = rejected.Message }); }'));
+    });
+
+    test('ReadReferences без полей вне базы: nsg_data просит дочитать все ссылки', () {
+      final controller = NsgGenController.fromJson(
+          {'apiPrefix': 'Data', 'className': 'DataController'});
+      final method = NsgGenMethod.fromJson(
+          {'name': 'Project', 'authorize': 'user', 'dataTypeFile': 'x.json'})
+        ..genDataItem = gen.dataItems['ProjectItem']!;
+      final src = NsgGenNetcore.emitControllerGenerated(gen, controller, method, 'Projects');
+      expect(src, contains('NsgReadHooks.TablePartReferences<ProjectItem>(req.ReadReferences)'));
+      expect(NsgGenNetcore.emitSaveHooks(gen), contains('public static string[]? TablePartReferences<T>'));
+    });
+
+    test('маппер: пустая ссылка и пустая дата nsg_data — null', () {
+      final mapper = NsgGenNetcore.emitNsgEntityMapper(gen);
+      expect(mapper, contains('if (optional && string.IsNullOrEmpty(v.GetString())) return null;'));
+      expect(mapper, contains('new(1754, 1, 1, 0, 0, 0, DateTimeKind.Utc)'));
+      expect(mapper, contains('return d <= NsgEmptyDate ? null : d;'));
+    });
+
+    test('совместимость с nsg_data, найденная на живом клиенте', () {
+      final controller = NsgGenController.fromJson(
+          {'apiPrefix': 'Data', 'className': 'DataController'});
+      final method = NsgGenMethod.fromJson({
+        'name': 'Organization', 'authorize': 'user', 'allowPost': 'true',
+        'allowCreate': 'true', 'dataTypeFile': 'x.json'
+      })..genDataItem = gen.dataItems['ProjectItem']!;
+      final src = NsgGenNetcore.emitControllerGenerated(gen, controller, method, 'Projects');
+      // Ответ на запись — {"results": [...]}: NsgDataPost разбирает Map.
+      expect(src, contains('return Ok(NsgPostResults('));
+      expect(src, contains('new() { ["results"] = items.ToList() }'));
+      // Create — новый объект с новым идентификатором, не записывается.
+      expect(src, contains('[HttpPost("Create")]'));
+      expect(src, contains('var item = new ProjectItem { Id = Guid.NewGuid() };'));
+      expect(src, contains('partial void OnCreate(ProjectItem item);'));
+      // ReadReferences — только табличные части.
+      expect(NsgGenNetcore.emitSaveHooks(gen), contains('public static string[]? TablePartReferences<T>'));
+
+      // Вложенная группа условий узнаётся по значению, оператор «равно» не мешает.
+      final deser = NsgGenNetcore.emitNsgWireDeserializer(gen);
+      expect(deser, contains('(op == 26 || val.TryGetProperty("ParamList", out _))'));
+      // Sorting приходит упакованным jsonEncode.
+      expect(deser, contains('Sorting:               TryGetEncodedString(root, "Sorting")'));
+      // In по необязательной ссылке: поле приводится к типу элемента списка.
+      expect(NsgGenNetcore.emitNsgCompareTranslator(gen),
+          contains('member.Type == elementType ? member : Expression.Convert(member, elementType)'));
+      // Пустые поля в ответе — значения по умолчанию, как у прежнего сервера.
+      final ser = NsgGenNetcore.emitNsgWireSerializer(gen);
+      expect(ser, contains('ConvertForWire(raw) ?? WireDefault(prop.PropertyType)'));
+      expect(ser, contains('if (t == typeof(Guid)) return Guid.Empty.ToString("D");'));
+      // SetLocale отвечает объектом входа.
+      expect(NsgGenNetcoreLogin.emitController(gen),
+          contains('ActionResult<NsgAuthResponse> SetLocale([FromQuery] string? locale) => Ok(new NsgAuthResponse());'));
+    });
+
+    test('отказ бизнес-правила: 400 с message через общий фильтр', () {
+      final hooks = NsgGenNetcore.emitSaveHooks(gen);
+      expect(hooks, contains('public sealed class NsgRejectedException'));
+      expect(hooks, contains('new { error = "rejected", message = rejected.Message }'));
+      expect(hooks, contains('public interface INsgReadHook<T>'));
+      final services = NsgGenNetcore.emitGeneratedServicesExtensions(gen);
+      expect(services, contains('services.AddControllers(o => o.Filters.Add<NsgRejectedFilter>());'));
+    });
+
+    test('обработчики сохранения: из DI, до записи; поля вне базы переносятся', () {
+      final src = NsgGenNetcore.emitSaveHooks(gen);
+      expect(src, contains('public interface INsgSaveHook<T> where T : class'));
+      expect(src, contains('GetServices<INsgSaveHook<T>>()'));
+      expect(src, contains('GetCustomAttribute<NotMappedAttribute>()'));
+    });
+
+    test('ссылка на владельца — OwnerId, вторая ссылка на тот же тип обычная', () {
+      final row = gen.dataItems['TaskStatusTransitionTable']!;
+      expect(NsgGenNetcore.ownerFkFieldOf(row, 'TaskStatus')!.name, 'OwnerId');
+      final config = NsgGenNetcore.emitConfiguration(gen, row);
+      expect(config, contains('HasOne(x => x.Owner)\n            .WithMany(o => o.TransitionTable)'));
+      expect(config, contains('HasOne(x => x.Status)\n            .WithMany()'));
+    });
+
+    test('заготовка тестов: ключ подписи задан, без открытых методов — проверка 401', () {
+      final controller = NsgGenController.fromJson(
+          {'apiPrefix': 'Data', 'className': 'DataController'});
+      controller.methods.add(NsgGenMethod.fromJson(
+          {'name': 'Project', 'authorize': 'user', 'dataTypeFile': 'x.json'})
+        ..genDataItem = gen.dataItems['ProjectItem']!);
+      gen.controllers.add(controller);
+      final src = NsgGenNetcore.emitTestBasicSmoke(gen);
+      expect(src, contains('builder.UseSetting("Jwt:Secret"'));
+      expect(src, contains('Read_without_token_returns_401'));
+      expect(src, contains('PostAsync("/Data/Project"'));
+      controller.methods.add(NsgGenMethod.fromJson(
+          {'name': 'ServiceObject', 'authorize': 'none', 'dataTypeFile': 'x.json'})
+        ..genDataItem = gen.dataItems['ServiceObject']!);
+      final open = NsgGenNetcore.emitTestBasicSmoke(gen);
+      expect(open, contains('PostAsync("/Data/ServiceObject"'));
+      expect(open, contains('Read_empty_collection_returns_200_and_array'));
+    });
+
+    test('клиентский тип: без проверки разметки, контроллер с пустым ответом', () {
+      final di = gen.dataItems['ServiceObject']!;
+      expect(NsgGenNetcore.isClientOnly(di), isTrue);
+      expect(NsgGenNetcore.isClientOnly(gen.dataItems['ProjectItem']!), isFalse);
+      gen.dataItems.remove('TaskStatusTransitionTable');
+      gen.dataItems.remove('TaskStatus');
+      expect(() => gen.validateForNetcoreEmit(), returnsNormally,
+          reason: 'у клиентского типа нет pgTableName — это не ошибка');
+      final controller = NsgGenController.fromJson(
+          {'apiPrefix': 'Data', 'className': 'DataController'});
+      final method = NsgGenMethod.fromJson(
+          {'name': 'ServiceObject', 'authorize': 'none', 'dataTypeFile': 'x.json'})
+        ..genDataItem = di;
+      final src = NsgGenNetcore.emitClientOnlyControllerCs(gen, controller, method);
+      expect(src, contains('[Route("Data/ServiceObject")]'));
+      expect(src, contains('Ok(new List<Dictionary<string, object?>>())'));
+      expect(src, isNot(contains('AppDbContext')));
+    });
+  });
+}

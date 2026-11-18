@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../flutterServer/scif_storekeeper_server"
+		}
+	],
+	"settings": {}
+}

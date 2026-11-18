@@ -1,0 +1,59 @@
+# nsg_generator — документация
+
+Генератор клиент-серверной модели: из json-описаний порождает сервер на C# и модели данных для
+Flutter-клиента на Dart.
+
+## Состояние на 22.08.2026
+
+| ветка | назначение | состояние |
+|---|---|---|
+| `master` | классический эмит: ASP.NET на `NsgServerClasses` + Dart-модели | рабочая, развивается |
+| **`feat/netcore-emit`** | **эмит на ASP.NET Core / EF Core / PostgreSQL без NsgServerClasses** | **актуальная линия netcore**, содержит master |
+| `feat/netcore-wire` | предшествующее имя той же линии | влита в `feat/netcore-emit`, самостоятельного развития не имеет |
+| `feat/schema-hash` | хеш схемы конфигурации | влита в netcore-линию |
+| `feat/netcore-table-parts` | табличные части в netcore-эмите (`NsgTableParts`) | от `feat/netcore-emit`, проверяется на TaskTuner |
+| `feat/netcore-functions` | функции контроллера в netcore-эмите (`<Ctrl>FunctionsController`) | от `feat/netcore-table-parts`, проверяется на TaskTuner |
+| `feat/netcore-login` | вход по логину (`loginAuth`), файлы в MinIO (`GetStream`) | от `feat/netcore-functions`, проверяется на TaskTuner |
+| `feat/netcore-tasktuner` | схема TaskTuner: поля вне базы, `INsgSaveHook<T>`/`INsgReadHook<T>`, отказ с текстом, сортировка по полям вне базы, клиентские типы, псевдонимы моделей, ссылка строки на владельца, заготовка тестов с ключом подписи | от `feat/netcore-login` |
+
+`feat/netcore-emit` 19.08.2026 перемотана на `feat/netcore-wire` (та содержала её целиком) и в неё
+влит `master`. Дальнейшая работа по netcore ведётся в `feat/netcore-emit`.
+
+Проверка: `dart analyze` без замечаний, `dart test` — 102 теста проходят.
+
+Netcore-линия проверена на настоящем PostgreSQL и на первом порождённом клиенте: схема
+разворачивается миграциями, вход по коду и режим «только вставка» отвечают по контракту, Dart-модели
+собираются в составе Flutter-приложения. Четыре дефекта эмита, найденные этими прогонами, исправлены
+и описаны в [netcore-emit.md](netcore-emit.md).
+
+## Документы
+
+| документ | о чём |
+|---|---|
+| [config-reference.md](config-reference.md) | справочник по `generation_config.json` и файлам описания типов: все распознаваемые ключи |
+| [netcore-emit.md](netcore-emit.md) | что именно порождает netcore-эмит: файлы, слои, права на операции |
+| [wire-and-schema.md](wire-and-schema.md) | формат обмена, трансляция `NsgCompare` в EF Core, хеш схемы |
+| [support-chat-integration.md](support-chat-integration.md) | интеграция чата поддержки (эмит `nsgGenSupportChat.dart`) |
+| [../README.md](../README.md) | исходное описание генератора и порядок действий |
+
+## Два режима эмита
+
+Режим задаётся ключом `serverEmitKind` в `generation_config.json`:
+
+| значение | что порождается | СУБД |
+|---|---|---|
+| отсутствует или `classic` | сервер ASP.NET поверх библиотеки `NsgServerClasses`, метаданные из windows-приложения | MS SQL |
+| `netcore` | самостоятельный сервер ASP.NET Core: модели, конфигурации EF Core, `AppDbContext`, контроллеры, wire-слой, аутентификация, `csproj`, `Program.cs`, `appsettings` | PostgreSQL |
+
+Клиентские Dart-модели порождаются одинаково в обоих режимах (`doDart`).
+
+## Правила ведения документации
+
+* **INDEX.md — единственная точка входа.** При появлении нового документа или изменении состояния
+  веток правится таблица выше.
+* **Документация описывает то, что есть в коде**, а не то, что задумано. Если поведение изменилось —
+  правится документ, а не добавляется оговорка в конце.
+* Ключи конфигурации в `config-reference.md` **сверяются с разбором в коде** (`parsedJson['…']` в
+  `bin/*.dart`). Ключ, которого нет в коде, в справочнике не появляется.
+* При добавлении ключа или изменения эмита — правка соответствующего документа в том же коммите, что
+  и код.

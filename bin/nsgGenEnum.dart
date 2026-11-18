@@ -26,35 +26,41 @@ class NsgGenEnum {
   String description;
   List<NsgGenEnumItem>? values;
 
-  NsgGenEnum(
-      {required this.className,
-      required this.databaseType,
-      required this.dataTypeFile,
-      required this.useLocalization,
-      required this.description});
+  NsgGenEnum({
+    required this.className,
+    required this.databaseType,
+    required this.dataTypeFile,
+    required this.useLocalization,
+    required this.description,
+  });
 
   factory NsgGenEnum.fromJson(Map<String, dynamic> parsedJson) {
-    Misc.checkObsoleteKeysInJSON(
-        'enum', parsedJson, {'class_name': 'className'},
-        throwIfAny: true);
+    Misc.checkObsoleteKeysInJSON('enum', parsedJson, {
+      'class_name': 'className',
+    }, throwIfAny: true);
     return NsgGenEnum(
-        className: parsedJson['className'],
-        databaseType: parsedJson['databaseType'] ?? '',
-        dataTypeFile: parsedJson['dataTypeFile'] ?? '',
-        useLocalization: Misc.parseBool(parsedJson['useLocalization']),
-        description: parsedJson['description'] ?? '');
+      className: parsedJson['className'],
+      databaseType: parsedJson['databaseType'] ?? '',
+      dataTypeFile: parsedJson['dataTypeFile'] ?? '',
+      useLocalization: Misc.parseBool(parsedJson['useLocalization']),
+      description: parsedJson['description'] ?? '',
+    );
   }
 
   Future load(NsgGenerator nsgGenerator) async {
     //print('$className Enum initializing');
-    var text =
-        await File('${nsgGenerator.jsonPath}/$dataTypeFile').readAsString();
+    var text = await File(
+      '${nsgGenerator.jsonPath}/$dataTypeFile',
+    ).readAsString();
     var parsedEnumJson = json.decode(text);
     values = (parsedEnumJson['values'] as List)
-        .map((i) => NsgGenEnumItem(
+        .map(
+          (i) => NsgGenEnumItem(
             codeName: i['codeName'],
             name: i['name'] ?? i['codeName'],
-            value: i['value']))
+            value: i['value'],
+          ),
+        )
         .toList();
     //print('$className Enum initialized');
   }
@@ -80,16 +86,19 @@ class NsgGenEnum {
         assert(values != null);
         values!.forEach((i) {
           codeList.add(
-              'public static $className ${i.codeName} { get; } = new $className(${i.value}, "${i.name}");');
+            'public static $className ${i.codeName} { get; } = new $className(${i.value}, "${i.name}");',
+          );
         });
         codeList.add('');
         codeList.add(
-            'private $className(int val, string name) : base(val, name) { }');
+          'private $className(int val, string name) : base(val, name) { }',
+        );
         codeList.add('');
         codeList.add('public static IEnumerable<$className> List()');
         codeList.add('{');
         codeList.add(
-            'return new[] { ${values!.map((e) => e.codeName).join(', ')} };');
+          'return new[] { ${values!.map((e) => e.codeName).join(', ')} };',
+        );
         codeList.add('}');
         codeList.add('');
         codeList.add('public static explicit operator $className(string name)');
@@ -97,7 +106,8 @@ class NsgGenEnum {
         codeList.add('foreach ($className i in List())');
         codeList.add('{');
         codeList.add(
-            'if (string.Equals(i.Name, name, StringComparison.OrdinalIgnoreCase))');
+          'if (string.Equals(i.Name, name, StringComparison.OrdinalIgnoreCase))',
+        );
         codeList.add('    return i;');
         codeList.add('}');
         codeList.add('return null;');
@@ -136,7 +146,9 @@ class NsgGenEnum {
   }
 
   static Future generateEnums(
-      NsgGenerator nsgGenerator, List<NsgGenEnum> enums) async {
+    NsgGenerator nsgGenerator,
+    List<NsgGenEnum> enums,
+  ) async {
     if (enums.isEmpty) return;
     await Future.forEach<NsgGenEnum>(enums, (element) async {
       print('loading ${element.className}');
@@ -153,7 +165,12 @@ class NsgGenEnum {
   }
 
   static Future generateExportFile(
-      NsgGenerator nsgGenerator, List<NsgGenEnum> enums) async {
+    NsgGenerator nsgGenerator,
+    List<NsgGenEnum> enums,
+  ) async {
+    // master: существующие экспорты не удаляются — файл дополняется.
+    // netcore-линия: `_` в Dart 3 — подстановочный знак и не может быть именем
+    // параметра, поэтому переименовано в `e`.
     List<String> codeList;
 
     var filePath = '${nsgGenerator.dartPath}/enums.dart';
@@ -164,16 +181,18 @@ class NsgGenEnum {
       codeList = <String>[];
     }
 
-    enums.forEach((_) {
+    enums.forEach((e) {
       var item =
-          "export 'enums/${Misc.getDartUnderscoreName(_.className)}.dart';";
+          "export 'enums/${Misc.getDartUnderscoreName(e.className)}.dart';";
       if (!codeList.contains(item)) {
         codeList.add(item);
       }
     });
 
     await Misc.writeFileIfChanged(
-        '${nsgGenerator.dartPath}/enums.dart', codeList.join('\r\n'));
+      '${nsgGenerator.dartPath}/enums.dart',
+      codeList.join('\r\n'),
+    );
   }
 
   /// Эмитит рядом с перечислениями файл с безопасным аксессором локализации.
@@ -184,7 +203,9 @@ class NsgGenEnum {
   /// приложения. Поэтому фолбэк идёт на локаль: сначала Get.locale, затем
   /// defaultLocale проекта (язык arb-шаблона).
   static Future generateLocalizationAccessorFile(
-      NsgGenerator nsgGenerator, List<NsgGenEnum> enums) async {
+    NsgGenerator nsgGenerator,
+    List<NsgGenEnum> enums,
+  ) async {
     if (!nsgGenerator.useLocalization && !enums.any((e) => e.useLocalization)) {
       return;
     }
@@ -197,25 +218,32 @@ class NsgGenEnum {
     codeList.add('');
     codeList.add('/// Локализация для автогенерируемых перечислений.');
     codeList.add('///');
-    codeList
-        .add('/// Контекст здесь только предпочтителен: геттеры перечислений');
-    codeList
-        .add('/// вызываются и вне дерева виджетов, где Get.context == null.');
     codeList.add(
-        '/// Нет контекста - имя берётся по текущей локали GetX, нет и её');
-    codeList
-        .add('/// (или язык не поддерживается) - по локали-шаблону проекта.');
+      '/// Контекст здесь только предпочтителен: геттеры перечислений',
+    );
+    codeList.add(
+      '/// вызываются и вне дерева виджетов, где Get.context == null.',
+    );
+    codeList.add(
+      '/// Нет контекста - имя берётся по текущей локали GetX, нет и её',
+    );
+    codeList.add(
+      '/// (или язык не поддерживается) - по локали-шаблону проекта.',
+    );
     codeList.add('AppLocalizations get $localizationAccessor {');
     codeList.add('  final ctx = Get.context;');
     codeList.add(
-        '  final fromContext = ctx != null ? AppLocalizations.of(ctx) : null;');
+      '  final fromContext = ctx != null ? AppLocalizations.of(ctx) : null;',
+    );
     codeList.add('  if (fromContext != null) return fromContext;');
-    codeList
-        .add('  return lookupAppLocalizations(_supportedLocale(Get.locale));');
+    codeList.add(
+      '  return lookupAppLocalizations(_supportedLocale(Get.locale));',
+    );
     codeList.add('}');
     codeList.add('');
     codeList.add(
-        'const Locale _fallbackLocale = Locale(\'${nsgGenerator.defaultLocale}\');');
+      'const Locale _fallbackLocale = Locale(\'${nsgGenerator.defaultLocale}\');',
+    );
     codeList.add('');
     codeList.add('Locale _supportedLocale(Locale? locale) {');
     codeList.add('  if (locale == null) return _fallbackLocale;');
@@ -226,8 +254,9 @@ class NsgGenEnum {
     codeList.add('');
 
     await Misc.writeFileIfChanged(
-        '${nsgGenerator.dartPath}/enums/$localizationAccessorFile',
-        codeList.join('\r\n'));
+      '${nsgGenerator.dartPath}/enums/$localizationAccessorFile',
+      codeList.join('\r\n'),
+    );
   }
 
   Future generateEnumDart(NsgGenerator nsgGenerator) async {
@@ -252,18 +281,21 @@ class NsgGenEnum {
         var iCodeName = Misc.getDartName(i.codeName);
         var localizationKey = '${lowerCaseClassName}_$iCodeName';
         codeList.add(
-            '  static $className get ${Misc.getDartName(i.codeName)} => $className(${i.value}, $localizationAccessor.$localizationKey);');
+          '  static $className get ${Misc.getDartName(i.codeName)} => $className(${i.value}, $localizationAccessor.$localizationKey);',
+        );
         nsgGenerator.localizationDict[localizationKey] = i.name;
       });
     } else {
       values!.forEach((i) {
         codeList.add(
-            '  static $className ${Misc.getDartName(i.codeName)} = $className(${i.value}, \'${i.name}\');');
+          '  static $className ${Misc.getDartName(i.codeName)} = $className(${i.value}, \'${i.name}\');',
+        );
       });
     }
     codeList.add('');
     codeList.add(
-        '  $className(dynamic value, String name) : super(value: value, name: name);');
+      '  $className(dynamic value, String name) : super(value: value, name: name);',
+    );
     codeList.add('');
     codeList.add('  @override');
     codeList.add('  void initialize() {');
@@ -276,8 +308,9 @@ class NsgGenEnum {
     codeList.add('}');
     codeList.add('');
     await Misc.writeFileIfChanged(
-        '${nsgGenerator.dartPath}/enums/${Misc.getDartUnderscoreName(className)}.dart',
-        codeList.join('\r\n'));
+      '${nsgGenerator.dartPath}/enums/${Misc.getDartUnderscoreName(className)}.dart',
+      codeList.join('\r\n'),
+    );
   }
 }
 
@@ -286,6 +319,9 @@ class NsgGenEnumItem {
   final String name;
   final dynamic value;
 
-  NsgGenEnumItem(
-      {required this.codeName, required this.name, required this.value});
+  NsgGenEnumItem({
+    required this.codeName,
+    required this.name,
+    required this.value,
+  });
 }

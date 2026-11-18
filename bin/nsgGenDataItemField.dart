@@ -6,6 +6,12 @@ class NsgGenDataItemField {
   final String name;
   final String type;
   final String databaseName;
+
+  /// Имя колонки в Postgres для netcore-эмита. Additive-поле (см. TASK03/TASK04).
+  /// Для `Reference<T>` / `UntypedReference<T>` хранится семантическое имя БЕЗ
+  /// суффикса `_id` — генератор добавит сам, симметрично с Dart-логикой
+  /// (`nsgGenDataItemField.dart:76-85`). Валидация — в `fromJson` ниже.
+  final String pgColumnName;
   final int maxLength;
   final bool useDate;
   final bool useTime;
@@ -27,6 +33,7 @@ class NsgGenDataItemField {
       {required this.name,
       required this.type,
       this.databaseName = '',
+      this.pgColumnName = '',
       this.maxLength = 0,
       this.useDate = true,
       this.useTime = true,
@@ -111,12 +118,27 @@ class NsgGenDataItemField {
         var referenceTypes = split.map((e) => e.trim()).toList();
         untTypes.addAll(referenceTypes);
       }
+      currentProperty = 'pgColumnName';
+      var pgColumnName = (parsedJson['pgColumnName'] ?? '').toString();
+      // Валидация: для Reference*/UntypedReference* pgColumnName не должен
+      // оканчиваться на `_id` — генератор добавит суффикс сам. Симметрично
+      // с Dart-логикой обработки `name.endsWith('Id')` выше.
+      if (pgColumnName.isNotEmpty &&
+          pgColumnName.endsWith('_id') &&
+          (type.startsWith('Reference') ||
+              type.startsWith('UntypedReference'))) {
+        throw Exception(
+            'pgColumnName must NOT end with "_id" for Reference fields '
+            '(got "$pgColumnName" on field "$name" of type "$type"). '
+            'Use semantic name; generator appends "_id" automatically.');
+      }
       currentProperty = '';
       isReference = !Misc.isPrimitiveType(type);
       return NsgGenDataItemField(
           name: name,
           type: type,
           databaseName: parsedJson['databaseName'] ?? '',
+          pgColumnName: pgColumnName,
           maxLength: ml ??
               (defaultMaxLength.containsKey(type) ? defaultMaxLength[type] : 0),
           useDate: Misc.parseBoolOrTrue(parsedJson['useDate']),

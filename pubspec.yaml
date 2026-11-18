@@ -4,11 +4,20 @@ description: A simple command-line application.
 # homepage: https://www.example.com
 
 environment:
-  sdk: '>=2.18.1 <3.0.0'
+  # Финализировано постановщиком: фиксируем Dart 3.10+. Все актуальные потребители
+  # (FUTBOLISTA, nsg_discounts_app и др.) уже на 3.10+.
+  # Baseline schema hash (84af1356e618e48b на FootballersDiary GeneratorConfig)
+  # посчитан под этим SDK; при апгрейде верхней границы или смене канонизации
+  # — обязательная сверка baseline-а (см. TASK01.md, §«Чек-лист совместимости»).
+  sdk: '>=3.10.0 <4.0.0'
 
 
 dependencies:
   path: ^1.8.2
+  unorm_dart: ^0.3.0
 
-# dev_dependencies:
-#   pedantic: ^1.9.0
+dev_dependencies:
+  test: ^1.21.0
+
+executables:
+  check_schema_hash:
