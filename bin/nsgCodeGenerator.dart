@@ -84,6 +84,7 @@ Future startGenerator(NsgGeneratorArgs args) async {
   if (args.dartPath.isNotEmpty) {
     generator.dartPath = args.dartPath;
   }
+  generator.writeLocalization &= args.writeLocalization;
   print('STARTING ${DateTime.now()}');
   print('controllers: ${generator.controllers.length}');
   Misc.changedFiles.clear();
